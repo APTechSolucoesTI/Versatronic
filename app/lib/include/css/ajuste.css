@@ -1,0 +1,14 @@
+.tdatagrid_cell{
+    padding: 10px !important;
+}
+
+span.estado_atividade {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    border-radius: 50%;
+    border: 1px solid;
+}
+.info-box{
+    min-height: 10px !important;
+}

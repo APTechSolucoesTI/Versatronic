@@ -1,0 +1,34 @@
+<html>
+<head> 
+    <style>
+        .header {   
+            position: fixed;
+            left: 0px;
+            margin-top: 0px;
+            top:0px;
+            right: 0px;
+            height: 100px;
+            width: 100%;
+        }
+
+        @page {
+            margin-top: 50px;
+            margin-left: 25px;
+            margin-right: 25px;
+            margin-bottom: 25px;
+        }
+
+        body {
+            margin-top: 50px;
+            margin-bottom: 50px;
+        }
+    </style>
+</head>
+
+<body>
+<h1 style="text-align: center;">Interação #{$id}</h1>
+<p style="margin: 1px 0;"><strong>Cliente: </strong>{$cliente->razao_social}, {$cliente->cpf_cnpj}<br /><strong>Categoria: </strong>{$cliente->categoria_cliente->nome}<br /><strong>Representante: </strong>{$vendedor->razao_social}<br /><strong>Etapa: </strong><span style="background-color: {$etapa_interacao->nome}; color: white;">{$etapa_interacao->nome}</span><br /><strong>Origem do Contato: </strong>{$origem_contato->nome}<br /><strong>Inicio: </strong>{$data_inicio}<br /><strong>Fechamento Esperado: </strong>{$data_fechamento_esperada}<br /><strong>Fechamento: </strong>{$data_fechamento}</p>
+<h4 style="text-align: center;">Histórico</h4>
+<div>{$timeline}</div>
+</body>
+</html>

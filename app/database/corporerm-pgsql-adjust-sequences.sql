@@ -1,0 +1,16 @@
+SELECT setval('DTIPOBAIRRO_CODIGO_seq', coalesce(max(CODIGO),0) + 1, false) FROM DTIPOBAIRRO;
+SELECT setval('DTIPORUA_CODIGO_seq', coalesce(max(CODIGO),0) + 1, false) FROM DTIPORUA;
+SELECT setval('FCFO_id_seq', coalesce(max(id),0) + 1, false) FROM FCFO;
+SELECT setval('FCFOCONTATO_IDINTEGRACAO_seq', coalesce(max(IDINTEGRACAO),0) + 1, false) FROM FCFOCONTATO;
+SELECT setval('FCFODEF_id_seq', coalesce(max(id),0) + 1, false) FROM FCFODEF;
+SELECT setval('FTCF_id_seq', coalesce(max(id),0) + 1, false) FROM FTCF;
+SELECT setval('GCCUSTO_ID_seq', coalesce(max(ID),0) + 1, false) FROM GCCUSTO;
+SELECT setval('GETD_id_seq', coalesce(max(id),0) + 1, false) FROM GETD;
+SELECT setval('GMUNICIPIO_id_seq', coalesce(max(id),0) + 1, false) FROM GMUNICIPIO;
+SELECT setval('GPAIS_IDPAIS_seq', coalesce(max(IDPAIS),0) + 1, false) FROM GPAIS;
+SELECT setval('orcamentos_cnc_row_num_seq', coalesce(max(row_num),0) + 1, false) FROM orcamentos_cnc;
+SELECT setval('orcamentos_comercio_row_num_seq', coalesce(max(row_num),0) + 1, false) FROM orcamentos_comercio;
+SELECT setval('TCPG_id_seq', coalesce(max(id),0) + 1, false) FROM TCPG;
+SELECT setval('TRPR_id_seq', coalesce(max(id),0) + 1, false) FROM TRPR;
+SELECT setval('TTRA_id_seq', coalesce(max(id),0) + 1, false) FROM TTRA;
+SELECT setval('TVEN_id_seq', coalesce(max(id),0) + 1, false) FROM TVEN;

@@ -1,0 +1,847 @@
+CREATE TABLE api_error( 
+      id  SERIAL    NOT NULL  , 
+      classe varchar  (255)   , 
+      metodo varchar  (255)   , 
+      url varchar  (500)   , 
+      dados varchar  (3000)   , 
+      error_message varchar  (3000)   , 
+      created_at timestamp   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE categoria_cliente( 
+      id  SERIAL    NOT NULL  , 
+      codigo varchar  (255)   , 
+      nome varchar  (255)   NOT NULL  , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE centro_custo( 
+      id  SERIAL    NOT NULL  , 
+      codcusto varchar  (25)   NOT NULL  , 
+      nome varchar  (60)   , 
+      ativo char  (1)   , 
+      created_at timestamp   , 
+      updated_at timestamp   , 
+      deleted_at timestamp   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE cep_cache( 
+      id  SERIAL    NOT NULL  , 
+      cep varchar  (10)   , 
+      rua varchar  (150)   , 
+      cidade varchar  (500)   , 
+      bairro varchar  (500)   , 
+      codigo_ibge varchar  (20)   , 
+      uf varchar  (2)   , 
+      cidade_id integer   , 
+      estado_id integer   , 
+      created_at timestamp   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE cidade( 
+      id  SERIAL    NOT NULL  , 
+      estado_id integer   NOT NULL  , 
+      cod_municipio varchar  (255)   , 
+      nome varchar  (255)   NOT NULL  , 
+      codigo_ibge varchar  (10)   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE coligada( 
+      id  SERIAL    NOT NULL  , 
+      cnpj varchar  (14)   , 
+      nome varchar  (255)   NOT NULL  , 
+      senha varchar  (255)   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE complemento( 
+      id  SERIAL    NOT NULL  , 
+      vendedor_id integer   , 
+      pessoa_id integer   , 
+      representante_id integer   , 
+      transportadora_id integer   , 
+      transportadora1_id integer   , 
+      ciffob varchar  (100)   , 
+      created_at timestamp   , 
+      updated_at timestamp   , 
+      deleted_at timestamp   , 
+      codcoligada text   , 
+      data_alteracao_totvs timestamp   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE condicao_pagamento( 
+      id  SERIAL    NOT NULL  , 
+      codcpg varchar  (5)   NOT NULL  , 
+      nome varchar  (100)   , 
+      ativo char  (1)   , 
+      created_at timestamp   , 
+      updated_at timestamp   , 
+      deleted_at timestamp   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE email_template( 
+      id  SERIAL    NOT NULL  , 
+      titulo text   , 
+      mensagem text   , 
+      created_at timestamp   , 
+      updated_at timestamp   , 
+      deleted_at timestamp   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE estado( 
+      id  SERIAL    NOT NULL  , 
+      pais_id integer   NOT NULL  , 
+      nome varchar  (255)   NOT NULL  , 
+      sigla char  (2)   NOT NULL  , 
+      codigo_ibge varchar  (10)   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE estado_atividade( 
+      id  SERIAL    NOT NULL  , 
+      nome text   NOT NULL  , 
+      cor text   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE etapa_interacao( 
+      id  SERIAL    NOT NULL  , 
+      nome text   , 
+      cor text   , 
+      ordem integer   , 
+      roteiro text   , 
+      kanban char  (1)   , 
+      permite_edicao char  (1)   , 
+      permite_exclusao char  (1)   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE fabricante( 
+      id  SERIAL    NOT NULL  , 
+      nome varchar  (255)   NOT NULL  , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE familia_produto( 
+      id  SERIAL    NOT NULL  , 
+      nome varchar  (255)   NOT NULL  , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE grupo( 
+      id  SERIAL    NOT NULL  , 
+      nome varchar  (255)   NOT NULL  , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE interacao( 
+      id  SERIAL    NOT NULL  , 
+      tipo_interacao_id integer   NOT NULL  , 
+      cliente_id integer   , 
+      vendedor_id integer   NOT NULL  , 
+      origem_contato_id integer   , 
+      etapa_interacao_id integer   NOT NULL  , 
+      data_inicio date   NOT NULL  , 
+      data_fechamento date   , 
+      data_fechamento_esperada date   , 
+      valor_total float   , 
+      ordem integer   , 
+      mes integer   , 
+      ano integer   , 
+      created_at timestamp   , 
+      updated_at timestamp   , 
+      deleted_at timestamp   , 
+      cliente_nome varchar  (255)   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE interacao_arquivo( 
+      id  SERIAL    NOT NULL  , 
+      interacao_id integer   NOT NULL  , 
+      nome_arquivo text   , 
+      conteudo_arquivo text   , 
+      dt_arquivo timestamp   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE interacao_atividade( 
+      id  SERIAL    NOT NULL  , 
+      tipo_atividade_id integer   NOT NULL  , 
+      interacao_id integer   NOT NULL  , 
+      estado_atividade_id integer   NOT NULL  , 
+      descricao text   , 
+      horario_inicial timestamp   , 
+      horario_final timestamp   , 
+      observacao text   , 
+      dt_atividade timestamp   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE interacao_historico_arquivo( 
+      id  SERIAL    NOT NULL  , 
+      interacao_id integer   NOT NULL  , 
+      dt_arquivo timestamp   , 
+      movimentacao_id integer   NOT NULL  , 
+      descricao text   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE interacao_historico_atividade( 
+      id  SERIAL    NOT NULL  , 
+      interacao_id integer   NOT NULL  , 
+      movimentacao_id integer   NOT NULL  , 
+      tipo_atividade_id integer   NOT NULL  , 
+      estado_atividade_id integer   NOT NULL  , 
+      dt_atividade timestamp   , 
+      descricao text   , 
+      observacao text   , 
+      horario_inicial timestamp   , 
+      horario_final timestamp   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE interacao_historico_etapa( 
+      id  SERIAL    NOT NULL  , 
+      interacao_id integer   NOT NULL  , 
+      etapa_interacao_id integer   NOT NULL  , 
+      dt_etapa timestamp   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE interacao_historico_observacao( 
+      id  SERIAL    NOT NULL  , 
+      interacao_id integer   NOT NULL  , 
+      dt_observacao timestamp   , 
+      movimentacao_id integer   NOT NULL  , 
+      descricao text   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE interacao_item( 
+      id  SERIAL    NOT NULL  , 
+      produto_id integer   NOT NULL  , 
+      interacao_id integer   NOT NULL  , 
+      quantidade float   , 
+      valor float   , 
+      valor_total float   , 
+      dt_item timestamp   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE interacao_localizacao( 
+      id  SERIAL    NOT NULL  , 
+      interacao_id integer   NOT NULL  , 
+      descricao text   NOT NULL  , 
+      latitude varchar  (50)   NOT NULL  , 
+      longitude varchar  (50)   NOT NULL  , 
+      dt_localizacao timestamp   NOT NULL  , 
+      created_at timestamp   , 
+      deleted_at timestamp   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE interacao_observacao( 
+      id  SERIAL    NOT NULL  , 
+      interacao_id integer   NOT NULL  , 
+      observacao text   , 
+      dt_observacao timestamp   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE log_crontab( 
+      system_unit_id integer   NOT NULL  , 
+      id  SERIAL    NOT NULL  , 
+      classe text   NOT NULL  , 
+      metodo text   , 
+      data_hora timestamp   , 
+      status integer   , 
+      mensagem text   , 
+      observacao text   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE movimentacao( 
+      id  SERIAL    NOT NULL  , 
+      nome varchar  (50)   NOT NULL  , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE nacionalidade( 
+      id  SERIAL    NOT NULL  , 
+      pais_id integer   NOT NULL  , 
+      descricao varchar  (255)   NOT NULL  , 
+      created_at timestamp   , 
+      updated_at timestamp   , 
+      deleted_at timestamp   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE nota_baixada( 
+      id  SERIAL    NOT NULL  , 
+      coligada_id integer   NOT NULL  , 
+      nota_status_id integer   NOT NULL  , 
+      numero varchar  (255)   NOT NULL  , 
+      numero_nf varchar  (255)   , 
+      serie_nf varchar  (255)   , 
+      data_emissao timestamp   , 
+      razao_social varchar  (255)   , 
+      documento varchar  (25)   , 
+      valor_total float   , 
+      enviado_email integer   , 
+      totvs_xml text   , 
+      rps_xml text   , 
+      nfs_xml text   , 
+      nfs_pdf text   , 
+      obs text   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE nota_status( 
+      id  SERIAL    NOT NULL  , 
+      nome varchar  (255)   NOT NULL  , 
+      cor varchar  (7)   , 
+      icone varchar  (255)   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE origem_contato( 
+      id  SERIAL    NOT NULL  , 
+      nome text   NOT NULL  , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE pais( 
+      id  SERIAL    NOT NULL  , 
+      codigo varchar  (5)   , 
+      nome varchar  (255)   NOT NULL  , 
+      created_at timestamp   , 
+      updated_at timestamp   , 
+      deleted_at timestamp   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE pessoa( 
+      id  SERIAL    NOT NULL  , 
+      codigo varchar  (255)   , 
+      tipo_pessoa_id integer   NOT NULL  , 
+      categoria_cliente_id integer   , 
+      system_user_id integer   , 
+      origem char  (2)   , 
+      razao_social varchar  (500)   NOT NULL  , 
+      nome_fantasia varchar  (255)   , 
+      cpf_cnpj varchar  (20)   , 
+      rg_ie varchar  (30)   , 
+      nacionalidade_id integer   , 
+      fone varchar  (255)   , 
+      email varchar  (255)   , 
+      obs varchar  (1000)   , 
+      created_at timestamp   , 
+      updated_at timestamp   , 
+      deleted_at timestamp   , 
+      ativo char  (1)   , 
+      data_alteracao_totvs timestamp   , 
+      bloqueado char  (1)   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE pessoa_contato( 
+      id  SERIAL    NOT NULL  , 
+      pessoa_id integer   NOT NULL  , 
+      nome varchar  (255)   , 
+      email varchar  (255)   , 
+      telefone varchar  (255)   , 
+      obs varchar  (500)   , 
+      created_at timestamp   , 
+      updated_at timestamp   , 
+      idcontato integer   , 
+      codcoligada text   , 
+      data_alteracao_totvs timestamp   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE pessoa_endereco( 
+      id  SERIAL    NOT NULL  , 
+      pessoa_id integer   NOT NULL  , 
+      cidade_id integer   , 
+      nome varchar  (255)   , 
+      principal char  (1)   , 
+      cep varchar  (10)   , 
+      rua varchar  (500)   , 
+      numero varchar  (20)   , 
+      bairro varchar  (500)   , 
+      complemento varchar  (500)   , 
+      data_desativacao date   , 
+      created_at timestamp   , 
+      updated_at timestamp   , 
+      data_alteracao_totvs timestamp   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE pessoa_grupo( 
+      id  SERIAL    NOT NULL  , 
+      pessoa_id integer   NOT NULL  , 
+      grupo_id integer   NOT NULL  , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE preferencia_sistema( 
+      id  SERIAL    NOT NULL  , 
+      system_users_id integer   NOT NULL  , 
+      zoom integer   NOT NULL    DEFAULT 100, 
+      menu_fixado integer   NOT NULL    DEFAULT 0, 
+      data_criacao timestamp   , 
+      criacao_user_id integer   , 
+      data_modificacao timestamp   , 
+      modificacao_user_id integer   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE produto( 
+      id  SERIAL    NOT NULL  , 
+      tipo_produto_id integer   NOT NULL  , 
+      familia_produto_id integer   NOT NULL  , 
+      fornecedor_id integer   NOT NULL  , 
+      unidade_medida_id integer   NOT NULL  , 
+      fabricante_id integer   , 
+      nome varchar  (255)   NOT NULL  , 
+      cod_barras varchar  (255)   , 
+      preco_venda float   , 
+      preco_custo float   , 
+      peso_liquido float   , 
+      peso_bruto float   , 
+      largura float   , 
+      altura float   , 
+      volume float   , 
+      estoque_minimo float   , 
+      qtde_estoque float   , 
+      estoque_maximo float   , 
+      obs varchar  (500)   , 
+      ativo char  (1)   , 
+      foto varchar  (500)   , 
+      created_at timestamp   , 
+      updated_at timestamp   , 
+      deleted_at timestamp   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE representante( 
+      id  SERIAL    NOT NULL  , 
+      codigo varchar  (15)   NOT NULL  , 
+      system_user_id integer   , 
+      razao_social varchar  (255)   NOT NULL  , 
+      cpf_cnpj varchar  (20)   , 
+      inscrestadual varchar  (20)   , 
+      telefone varchar  (20)   , 
+      ativo char  (1)   , 
+      email varchar  (40)   , 
+      cor text   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE representante_divergente( 
+      id  SERIAL    NOT NULL  , 
+      pessoa_id integer   NOT NULL  , 
+      rep_ap_id integer   NOT NULL  , 
+      rep_totvs_id integer   NOT NULL  , 
+      status integer   NOT NULL    DEFAULT 0, 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE representante_totvs( 
+      id  SERIAL    NOT NULL  , 
+      codigo varchar  (15)   NOT NULL  , 
+      razao_social varchar  (255)   NOT NULL  , 
+      fantasia varchar  (255)   , 
+      cpf_cnpj varchar  (20)   , 
+      inscrestadual varchar  (20)   , 
+      cep varchar  (20)   , 
+      rua varchar  (255)   , 
+      numero varchar  (20)   , 
+      complemento text   , 
+      bairro varchar  (255)   , 
+      cidade_id integer   , 
+      contato varchar  (255)   , 
+      telefone varchar  (20)   , 
+      pais_id integer   , 
+      percentual_comissao float   , 
+      fatclientedireto integer   , 
+      ativo char  (1)   , 
+      celular varchar  (20)   , 
+      email varchar  (40)   , 
+      codcoligada text   , 
+      cor text   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE system_group( 
+      id integer   NOT NULL  , 
+      name text   NOT NULL  , 
+      uuid varchar  (36)   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE system_group_program( 
+      id integer   NOT NULL  , 
+      system_group_id integer   NOT NULL  , 
+      system_program_id integer   NOT NULL  , 
+      actions text   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE system_preference( 
+      id varchar  (255)   NOT NULL  , 
+      preference text   NOT NULL  , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE system_program( 
+      id integer   NOT NULL  , 
+      name text   NOT NULL  , 
+      controller text   NOT NULL  , 
+      actions text   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE system_unit( 
+      id integer   NOT NULL  , 
+      name text   NOT NULL  , 
+      connection_name text   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE system_user_group( 
+      id integer   NOT NULL  , 
+      system_user_id integer   NOT NULL  , 
+      system_group_id integer   NOT NULL  , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE system_user_program( 
+      id integer   NOT NULL  , 
+      system_user_id integer   NOT NULL  , 
+      system_program_id integer   NOT NULL  , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE system_users( 
+      id integer   NOT NULL  , 
+      name text   NOT NULL  , 
+      login text   NOT NULL  , 
+      password text   NOT NULL  , 
+      email text   , 
+      frontpage_id integer   , 
+      system_unit_id integer   , 
+      active char  (1)   , 
+      accepted_term_policy_at text   , 
+      accepted_term_policy char  (1)   , 
+      two_factor_enabled char  (1)     DEFAULT 'N', 
+      two_factor_type varchar  (100)   , 
+      two_factor_secret varchar  (255)   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE system_user_unit( 
+      id integer   NOT NULL  , 
+      system_user_id integer   NOT NULL  , 
+      system_unit_id integer   NOT NULL  , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE tipo_atividade( 
+      id  SERIAL    NOT NULL  , 
+      nome text   , 
+      cor text   , 
+      icone text   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE tipo_atividade_interacao( 
+      id  SERIAL    NOT NULL  , 
+      tipo_atividade_id integer   NOT NULL  , 
+      tipo_interacao_id integer   NOT NULL  , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE tipo_interacao( 
+      id  SERIAL    NOT NULL  , 
+      nome varchar  (255)   NOT NULL  , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE tipo_pessoa( 
+      id  SERIAL    NOT NULL  , 
+      nome varchar  (255)   NOT NULL  , 
+      sigla char  (2)   NOT NULL  , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE tipo_produto( 
+      id  SERIAL    NOT NULL  , 
+      nome varchar  (255)   NOT NULL  , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE transportadora( 
+      id  SERIAL    NOT NULL  , 
+      created_at timestamp   , 
+      updated_at timestamp   , 
+      deleted_at timestamp   , 
+      codtra varchar  (5)   NOT NULL  , 
+      nome varchar  (40)   , 
+      rua varchar  (100)   , 
+      numero varchar  (8)   , 
+      complemento varchar  (100)   , 
+      bairro varchar  (100)   , 
+      cidade_id integer   , 
+      cep varchar  (10)   , 
+      cgc varchar  (20)   , 
+      inscrestadual varchar  (20)   , 
+      contato varchar  (30)   , 
+      telefone varchar  (15)   , 
+      telex varchar  (15)   , 
+      fax varchar  (15)   , 
+      livre varchar  (20)   , 
+      nomefantasia varchar  (60)   , 
+      cei varchar  (20)   , 
+      inscrmunicipal varchar  (20)   , 
+      ativo char  (1)   , 
+      email varchar  (60)   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE unidade_medida( 
+      id  SERIAL    NOT NULL  , 
+      nome varchar  (255)   NOT NULL  , 
+      sigla char  (2)   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE vendedor( 
+      system_user_id integer   , 
+      id  SERIAL    NOT NULL  , 
+      codigo varchar  (16)   NOT NULL  , 
+      razao_social varchar  (255)   NOT NULL  , 
+      fantasia varchar  (255)   , 
+      cpf varchar  (20)   , 
+      cargo varchar  (255)   , 
+      telefone varchar  (20)   , 
+      codfilial varchar  (255)   , 
+      codloc varchar  (255)   , 
+      vendecompra varchar  (255)   , 
+      codusuario varchar  (255)   , 
+      senha varchar  (255)   , 
+      ativo varchar  (255)   , 
+      pfvendedor varchar  (255)   , 
+      pfcaixa varchar  (255)   , 
+      pfsupervisor varchar  (255)   , 
+      pfgerente varchar  (255)   , 
+      descmaximo float   , 
+      cor text   , 
+      codcoligada text   , 
+ PRIMARY KEY (id)) ; 
+
+ 
+  
+ ALTER TABLE cidade ADD CONSTRAINT fk_cidade_1 FOREIGN KEY (estado_id) references estado(id); 
+ALTER TABLE complemento ADD CONSTRAINT fk_complemento_7 FOREIGN KEY (representante_id) references representante(id); 
+ALTER TABLE complemento ADD CONSTRAINT fk_complemento_4 FOREIGN KEY (transportadora_id) references transportadora(id); 
+ALTER TABLE complemento ADD CONSTRAINT fk_complemento_5 FOREIGN KEY (transportadora1_id) references transportadora(id); 
+ALTER TABLE complemento ADD CONSTRAINT fk_fcfo_def_1 FOREIGN KEY (vendedor_id) references vendedor(id); 
+ALTER TABLE complemento ADD CONSTRAINT fk_fcfo_def_2 FOREIGN KEY (pessoa_id) references pessoa(id); 
+ALTER TABLE estado ADD CONSTRAINT fk_estado_1 FOREIGN KEY (pais_id) references pais(id); 
+ALTER TABLE interacao ADD CONSTRAINT fk_interacao_1 FOREIGN KEY (cliente_id) references pessoa(id); 
+ALTER TABLE interacao ADD CONSTRAINT fk_interacao_5 FOREIGN KEY (vendedor_id) references representante(id); 
+ALTER TABLE interacao ADD CONSTRAINT fk_interacao_3 FOREIGN KEY (origem_contato_id) references origem_contato(id); 
+ALTER TABLE interacao ADD CONSTRAINT fk_interacao_4 FOREIGN KEY (etapa_interacao_id) references etapa_interacao(id); 
+ALTER TABLE interacao ADD CONSTRAINT fk_interacao_5 FOREIGN KEY (tipo_interacao_id) references tipo_interacao(id); 
+ALTER TABLE interacao_arquivo ADD CONSTRAINT fk_interacao_arquivo_1 FOREIGN KEY (interacao_id) references interacao(id); 
+ALTER TABLE interacao_atividade ADD CONSTRAINT fk_interacao_atividade_1 FOREIGN KEY (interacao_id) references interacao(id); 
+ALTER TABLE interacao_atividade ADD CONSTRAINT fk_interacao_atividade_2 FOREIGN KEY (tipo_atividade_id) references tipo_atividade(id); 
+ALTER TABLE interacao_atividade ADD CONSTRAINT fk_interacao_atividade_3 FOREIGN KEY (estado_atividade_id) references estado_atividade(id); 
+ALTER TABLE interacao_historico_arquivo ADD CONSTRAINT fk_interacao_historico_arquivo_1 FOREIGN KEY (interacao_id) references interacao(id); 
+ALTER TABLE interacao_historico_arquivo ADD CONSTRAINT fk_interacao_historico_arquivo_2 FOREIGN KEY (movimentacao_id) references movimentacao(id); 
+ALTER TABLE interacao_historico_atividade ADD CONSTRAINT fk_interacao_historico_atividade_4 FOREIGN KEY (estado_atividade_id) references estado_atividade(id); 
+ALTER TABLE interacao_historico_atividade ADD CONSTRAINT fk_interacao_historico_atividade_1 FOREIGN KEY (interacao_id) references interacao(id); 
+ALTER TABLE interacao_historico_atividade ADD CONSTRAINT fk_interacao_historico_atividade_2 FOREIGN KEY (movimentacao_id) references movimentacao(id); 
+ALTER TABLE interacao_historico_atividade ADD CONSTRAINT fk_interacao_historico_atividade_3 FOREIGN KEY (tipo_atividade_id) references tipo_atividade(id); 
+ALTER TABLE interacao_historico_etapa ADD CONSTRAINT fk_interacao_historico_etapa_1 FOREIGN KEY (interacao_id) references interacao(id); 
+ALTER TABLE interacao_historico_etapa ADD CONSTRAINT fk_interacao_historico_etapa_2 FOREIGN KEY (etapa_interacao_id) references etapa_interacao(id); 
+ALTER TABLE interacao_historico_observacao ADD CONSTRAINT fk_interacao_historico_observacao_1 FOREIGN KEY (interacao_id) references interacao(id); 
+ALTER TABLE interacao_historico_observacao ADD CONSTRAINT fk_interacao_historico_observacao_2 FOREIGN KEY (movimentacao_id) references movimentacao(id); 
+ALTER TABLE interacao_item ADD CONSTRAINT fk_interacao_item_1 FOREIGN KEY (interacao_id) references interacao(id); 
+ALTER TABLE interacao_item ADD CONSTRAINT fk_interacao_item_2 FOREIGN KEY (produto_id) references produto(id); 
+ALTER TABLE interacao_localizacao ADD CONSTRAINT fk_interacao_localizacao_1 FOREIGN KEY (interacao_id) references interacao(id); 
+ALTER TABLE interacao_observacao ADD CONSTRAINT fk_interacao_observacao_1 FOREIGN KEY (interacao_id) references interacao(id); 
+ALTER TABLE log_crontab ADD CONSTRAINT fk_log_crontab_1 FOREIGN KEY (system_unit_id) references system_unit(id); 
+ALTER TABLE nacionalidade ADD CONSTRAINT fk_nacionalidade_1 FOREIGN KEY (pais_id) references pais(id); 
+ALTER TABLE nota_baixada ADD CONSTRAINT fk_nota_baixada_2 FOREIGN KEY (nota_status_id) references nota_status(id); 
+ALTER TABLE nota_baixada ADD CONSTRAINT fk_nota_baixada_1 FOREIGN KEY (coligada_id) references coligada(id); 
+ALTER TABLE pessoa ADD CONSTRAINT fk_pessoa_1 FOREIGN KEY (tipo_pessoa_id) references tipo_pessoa(id); 
+ALTER TABLE pessoa ADD CONSTRAINT fk_pessoa_2 FOREIGN KEY (categoria_cliente_id) references categoria_cliente(id); 
+ALTER TABLE pessoa ADD CONSTRAINT fk_pessoa_3 FOREIGN KEY (system_user_id) references system_users(id); 
+ALTER TABLE pessoa ADD CONSTRAINT fk_pessoa_4 FOREIGN KEY (nacionalidade_id) references nacionalidade(id); 
+ALTER TABLE pessoa_contato ADD CONSTRAINT fk_pessoa_contato_1 FOREIGN KEY (pessoa_id) references pessoa(id); 
+ALTER TABLE pessoa_endereco ADD CONSTRAINT fk_pessoa_endereco_1 FOREIGN KEY (pessoa_id) references pessoa(id); 
+ALTER TABLE pessoa_endereco ADD CONSTRAINT fk_pessoa_endereco_2 FOREIGN KEY (cidade_id) references cidade(id); 
+ALTER TABLE pessoa_grupo ADD CONSTRAINT fk_pessoa_grupo_1 FOREIGN KEY (pessoa_id) references pessoa(id); 
+ALTER TABLE pessoa_grupo ADD CONSTRAINT fk_pessoa_grupo_2 FOREIGN KEY (grupo_id) references grupo(id); 
+ALTER TABLE preferencia_sistema ADD CONSTRAINT fk_preferencia_sistema_1 FOREIGN KEY (system_users_id) references system_users(id); 
+ALTER TABLE produto ADD CONSTRAINT fk_produto_1 FOREIGN KEY (tipo_produto_id) references tipo_produto(id); 
+ALTER TABLE produto ADD CONSTRAINT fk_produto_2 FOREIGN KEY (familia_produto_id) references familia_produto(id); 
+ALTER TABLE produto ADD CONSTRAINT fk_produto_3 FOREIGN KEY (fabricante_id) references fabricante(id); 
+ALTER TABLE produto ADD CONSTRAINT fk_produto_4 FOREIGN KEY (unidade_medida_id) references unidade_medida(id); 
+ALTER TABLE produto ADD CONSTRAINT fk_produto_5 FOREIGN KEY (fornecedor_id) references pessoa(id); 
+ALTER TABLE representante ADD CONSTRAINT fk_representante_1 FOREIGN KEY (system_user_id) references system_users(id); 
+ALTER TABLE representante_divergente ADD CONSTRAINT fk_representante_divergente_1 FOREIGN KEY (rep_ap_id) references representante(id); 
+ALTER TABLE representante_divergente ADD CONSTRAINT fk_representante_divergente_2 FOREIGN KEY (rep_totvs_id) references representante(id); 
+ALTER TABLE representante_divergente ADD CONSTRAINT fk_representante_divergente_3 FOREIGN KEY (pessoa_id) references pessoa(id); 
+ALTER TABLE system_group_program ADD CONSTRAINT fk_system_group_program_1 FOREIGN KEY (system_program_id) references system_program(id); 
+ALTER TABLE system_group_program ADD CONSTRAINT fk_system_group_program_2 FOREIGN KEY (system_group_id) references system_group(id); 
+ALTER TABLE system_user_group ADD CONSTRAINT fk_system_user_group_1 FOREIGN KEY (system_group_id) references system_group(id); 
+ALTER TABLE system_user_group ADD CONSTRAINT fk_system_user_group_2 FOREIGN KEY (system_user_id) references system_users(id); 
+ALTER TABLE system_user_program ADD CONSTRAINT fk_system_user_program_1 FOREIGN KEY (system_program_id) references system_program(id); 
+ALTER TABLE system_user_program ADD CONSTRAINT fk_system_user_program_2 FOREIGN KEY (system_user_id) references system_users(id); 
+ALTER TABLE system_users ADD CONSTRAINT fk_system_user_1 FOREIGN KEY (system_unit_id) references system_unit(id); 
+ALTER TABLE system_users ADD CONSTRAINT fk_system_user_2 FOREIGN KEY (frontpage_id) references system_program(id); 
+ALTER TABLE system_user_unit ADD CONSTRAINT fk_system_user_unit_1 FOREIGN KEY (system_user_id) references system_users(id); 
+ALTER TABLE system_user_unit ADD CONSTRAINT fk_system_user_unit_2 FOREIGN KEY (system_unit_id) references system_unit(id); 
+ALTER TABLE tipo_atividade_interacao ADD CONSTRAINT fk_tipo_atividade_interacao_1 FOREIGN KEY (tipo_atividade_id) references tipo_atividade(id); 
+ALTER TABLE tipo_atividade_interacao ADD CONSTRAINT fk_tipo_atividade_interacao_2 FOREIGN KEY (tipo_interacao_id) references tipo_interacao(id); 
+ALTER TABLE transportadora ADD CONSTRAINT fk_ttra_1 FOREIGN KEY (cidade_id) references cidade(id); 
+ALTER TABLE vendedor ADD CONSTRAINT fk_vendedor_1 FOREIGN KEY (system_user_id) references system_users(id); 
+
+ CREATE VIEW view_cliente AS SELECT 
+    p.id AS "id",
+    p.codigo AS "codigo",
+    cat.nome AS "categoria",
+    p.razao_social AS "razao_social",
+    p.cpf_cnpj AS "cpf_cnpj",
+    p.ativo AS "ativo",
+    p.bloqueado AS "bloqueado",
+    p.data_alteracao_totvs AS "data_alteracao_totvs",
+    cd.nome AS "cidade",
+    uf.nome AS "estado",
+    uf.sigla AS "uf",
+    cd.nome || '/' || uf.sigla as "cidade_uf",
+    comp.representante_id AS "representante_id",
+    rep.razao_social AS "representante_razao"
+FROM
+    pessoa p
+    INNER JOIN pessoa_grupo pg 
+		ON pg.pessoa_id = p.id AND pg.grupo_id = 2
+    LEFT JOIN pessoa_endereco pe 
+		ON p.id = pe.pessoa_id
+    LEFT JOIN cidade cd 
+		ON pe.cidade_id = cd.id
+    LEFT JOIN estado uf 
+		ON cd.estado_id = uf.id
+    LEFT JOIN categoria_cliente cat 
+		ON cat.id = p.categoria_cliente_id
+    LEFT JOIN complemento comp 
+		ON comp.pessoa_id = p.id 
+    LEFT JOIN representante rep
+		ON comp.representante_id = rep.id
+GROUP BY
+	p.id,
+	p.codigo,
+	cat.nome,
+	p.razao_social,
+	p.cpf_cnpj,
+	p.ativo,
+	p.data_alteracao_totvs,
+	cd.nome,
+	uf.nome,
+	uf.sigla,
+	comp.representante_id,
+	rep.razao_social
+ORDER BY p.id ASC; 
+
+CREATE VIEW view_cliente_cidade AS SELECT 
+    pessoa.id as "cliente_id",
+    pessoa.codigo as "cliente_codigo",
+    pessoa.tipo_pessoa_id as "tipo_pessoa_id",
+    pessoa.razao_social as "cliente_razao_social",
+    interacao.id as "interacao_id",
+    interacao.vendedor_id as "representante_id",
+    representante.razao_social as "representante",
+    interacao.mes as "mes",
+    interacao.ano as "ano",
+    cidade.nome as "cidade",
+    estado.sigla as "uf",
+    cidade.nome||'/'||estado.sigla as "cidade_uf"
+FROM 
+    pessoa, 
+    pessoa_endereco, 
+    interacao, 
+    cidade, 
+    estado,
+    representante
+WHERE 
+    pessoa_endereco.pessoa_id = pessoa.id AND 
+    pessoa_endereco.cidade_id = cidade.id AND 
+    interacao.cliente_id = pessoa.id AND 
+    cidade.estado_id = estado.id AND
+    interacao.vendedor_id = representante.id AND
+    pessoa_endereco.principal = 'S'; 
+
+CREATE VIEW view_interacao_timeline AS SELECT
+    id as "chave",
+    interacao_id as "interacao_id",
+    dt_observacao as "dt_historico",
+    'observacao' as "tipo"
+ FROM interacao_historico_observacao
+
+UNION ALL
+
+SELECT
+    id as "chave",
+    interacao_id as "interacao_id",
+    dt_arquivo as "dt_historico",
+    'arquivo' as "tipo"
+ FROM interacao_historico_arquivo
+
+UNION ALL
+
+SELECT
+    id as "chave",
+    interacao_id as "interacao_id",
+    dt_atividade as "dt_historico",
+    'atividade' as "tipo"
+ FROM interacao_historico_atividade
+
+UNION ALL
+
+SELECT
+    id as "chave",
+    interacao_id as "interacao_id",
+    dt_etapa as "dt_historico",
+    'etapa' as "tipo"
+ FROM interacao_historico_etapa
+ 
+ UNION ALL
+ 
+ SELECT
+    id as "chave",
+    interacao_id as "interacao_id",
+    dt_localizacao as "dt_historico",
+    'localizacao' as "tipo"
+FROM interacao_localizacao;; 
+ 
+ 
+ CREATE index idx_cidade_estado_id on cidade(estado_id); 
+CREATE index idx_complemento_representante_id on complemento(representante_id); 
+CREATE index idx_complemento_transportadora_id on complemento(transportadora_id); 
+CREATE index idx_complemento_transportadora1_id on complemento(transportadora1_id); 
+CREATE index idx_complemento_vendedor_id on complemento(vendedor_id); 
+CREATE index idx_complemento_pessoa_id on complemento(pessoa_id); 
+CREATE index idx_estado_pais_id on estado(pais_id); 
+CREATE index idx_interacao_cliente_id on interacao(cliente_id); 
+CREATE index idx_interacao_vendedor_id on interacao(vendedor_id); 
+CREATE index idx_interacao_origem_contato_id on interacao(origem_contato_id); 
+CREATE index idx_interacao_etapa_interacao_id on interacao(etapa_interacao_id); 
+CREATE index idx_interacao_tipo_interacao_id on interacao(tipo_interacao_id); 
+CREATE index idx_interacao_arquivo_interacao_id on interacao_arquivo(interacao_id); 
+CREATE index idx_interacao_atividade_interacao_id on interacao_atividade(interacao_id); 
+CREATE index idx_interacao_atividade_tipo_atividade_id on interacao_atividade(tipo_atividade_id); 
+CREATE index idx_interacao_atividade_estado_atividade_id on interacao_atividade(estado_atividade_id); 
+CREATE index idx_interacao_historico_arquivo_interacao_id on interacao_historico_arquivo(interacao_id); 
+CREATE index idx_interacao_historico_arquivo_movimentacao_id on interacao_historico_arquivo(movimentacao_id); 
+CREATE index idx_interacao_historico_atividade_estado_atividade_id on interacao_historico_atividade(estado_atividade_id); 
+CREATE index idx_interacao_historico_atividade_interacao_id on interacao_historico_atividade(interacao_id); 
+CREATE index idx_interacao_historico_atividade_movimentacao_id on interacao_historico_atividade(movimentacao_id); 
+CREATE index idx_interacao_historico_atividade_tipo_atividade_id on interacao_historico_atividade(tipo_atividade_id); 
+CREATE index idx_interacao_historico_etapa_interacao_id on interacao_historico_etapa(interacao_id); 
+CREATE index idx_interacao_historico_etapa_etapa_interacao_id on interacao_historico_etapa(etapa_interacao_id); 
+CREATE index idx_interacao_historico_observacao_interacao_id on interacao_historico_observacao(interacao_id); 
+CREATE index idx_interacao_historico_observacao_movimentacao_id on interacao_historico_observacao(movimentacao_id); 
+CREATE index idx_interacao_item_interacao_id on interacao_item(interacao_id); 
+CREATE index idx_interacao_item_produto_id on interacao_item(produto_id); 
+CREATE index idx_interacao_localizacao_interacao_id on interacao_localizacao(interacao_id); 
+CREATE index idx_interacao_observacao_interacao_id on interacao_observacao(interacao_id); 
+CREATE index idx_log_crontab_system_unit_id on log_crontab(system_unit_id); 
+CREATE index idx_nacionalidade_pais_id on nacionalidade(pais_id); 
+CREATE index idx_nota_baixada_nota_status_id on nota_baixada(nota_status_id); 
+CREATE index idx_nota_baixada_coligada_id on nota_baixada(coligada_id); 
+CREATE index idx_pessoa_tipo_pessoa_id on pessoa(tipo_pessoa_id); 
+CREATE index idx_pessoa_categoria_cliente_id on pessoa(categoria_cliente_id); 
+CREATE index idx_pessoa_system_user_id on pessoa(system_user_id); 
+CREATE index idx_pessoa_nacionalidade_id on pessoa(nacionalidade_id); 
+CREATE index idx_pessoa_contato_pessoa_id on pessoa_contato(pessoa_id); 
+CREATE index idx_pessoa_endereco_pessoa_id on pessoa_endereco(pessoa_id); 
+CREATE index idx_pessoa_endereco_cidade_id on pessoa_endereco(cidade_id); 
+CREATE index idx_pessoa_grupo_pessoa_id on pessoa_grupo(pessoa_id); 
+CREATE index idx_pessoa_grupo_grupo_id on pessoa_grupo(grupo_id); 
+CREATE index idx_preferencia_sistema_system_users_id on preferencia_sistema(system_users_id); 
+CREATE index idx_produto_tipo_produto_id on produto(tipo_produto_id); 
+CREATE index idx_produto_familia_produto_id on produto(familia_produto_id); 
+CREATE index idx_produto_fabricante_id on produto(fabricante_id); 
+CREATE index idx_produto_unidade_medida_id on produto(unidade_medida_id); 
+CREATE index idx_produto_fornecedor_id on produto(fornecedor_id); 
+CREATE index idx_representante_system_user_id on representante(system_user_id); 
+CREATE index idx_representante_divergente_rep_ap_id on representante_divergente(rep_ap_id); 
+CREATE index idx_representante_divergente_rep_totvs_id on representante_divergente(rep_totvs_id); 
+CREATE index idx_representante_divergente_pessoa_id on representante_divergente(pessoa_id); 
+CREATE index idx_system_group_program_system_program_id on system_group_program(system_program_id); 
+CREATE index idx_system_group_program_system_group_id on system_group_program(system_group_id); 
+CREATE index idx_system_user_group_system_group_id on system_user_group(system_group_id); 
+CREATE index idx_system_user_group_system_user_id on system_user_group(system_user_id); 
+CREATE index idx_system_user_program_system_program_id on system_user_program(system_program_id); 
+CREATE index idx_system_user_program_system_user_id on system_user_program(system_user_id); 
+CREATE index idx_system_users_system_unit_id on system_users(system_unit_id); 
+CREATE index idx_system_users_frontpage_id on system_users(frontpage_id); 
+CREATE index idx_system_user_unit_system_user_id on system_user_unit(system_user_id); 
+CREATE index idx_system_user_unit_system_unit_id on system_user_unit(system_unit_id); 
+CREATE index idx_tipo_atividade_interacao_tipo_atividade_id on tipo_atividade_interacao(tipo_atividade_id); 
+CREATE index idx_tipo_atividade_interacao_tipo_interacao_id on tipo_atividade_interacao(tipo_interacao_id); 
+CREATE index idx_transportadora_cidade_id on transportadora(cidade_id); 
+CREATE index idx_vendedor_system_user_id on vendedor(system_user_id); 

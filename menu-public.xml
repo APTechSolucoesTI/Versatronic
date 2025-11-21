@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu>
+  <menuitem label="CRM">
+    <icon>fas:bullseye fa-fw </icon>
+    <menu>
+      <menuitem label="Negociações">
+        <icon>fas:chevron-right fa-fw </icon>
+        <action>NegociacaoList#method=onShow</action>
+      </menuitem>
+      <menuitem label="Kanban">
+        <icon>fas:chevron-right fa-fw </icon>
+        <action>BuscaKanbanNegociacaoForm#method=onShow</action>
+      </menuitem>
+      <menuitem label="Agenda Global">
+        <icon>fas:chevron-right fa-fw </icon>
+        <action>BuscaAgendaGlobalAtividadeForm#method=onShow</action>
+      </menuitem>
+    </menu>
+  </menuitem>
+  <menuitem label="Preferências do Usuário">
+    <icon>fas:eye-dropper fa-fw </icon>
+    <action>PreferenciaSistemaForm#method=onShow</action>
+    <menu>
+      <menuitem label="Preferencia do Usuário">
+        <icon>far:circle fa-fw </icon>
+        <action>PreferenciaSistemaForm#method=onShow</action>
+      </menuitem>
+    </menu>
+  </menuitem>
+  <menuitem label="Login">
+    <icon>fas:shield-alt fa-fw</icon>
+    <menu>
+      <menuitem label="Login">
+        <icon>fa:sign-in-alt fa-fw</icon>
+        <action>LoginForm</action>
+      </menuitem>
+      <menuitem label="_t{Create account}">
+        <icon>fa:user-plus fa-fw</icon>
+        <action>SystemRegistrationForm</action>
+      </menuitem>
+      <menuitem label="_t{Reset password}">
+        <icon>fa:eraser fa-fw</icon>
+        <action>SystemRequestPasswordResetForm</action>
+      </menuitem>
+    </menu>
+  </menuitem>
+</menu>
