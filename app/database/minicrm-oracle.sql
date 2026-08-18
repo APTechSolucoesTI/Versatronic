@@ -24,6 +24,14 @@ CREATE TABLE centro_custo(
       deleted_at timestamp(0)   , 
  PRIMARY KEY (id)) ; 
 
+CREATE TABLE centro_custo_nota( 
+      id number(10)    NOT NULL , 
+      nota_baixada_id number(10)    NOT NULL , 
+      centro_custo_id number(10)    NOT NULL , 
+      valor_centro_custo binary_double  (15,2)   , 
+      comissao_centro_custo binary_double   , 
+ PRIMARY KEY (id)) ; 
+
 CREATE TABLE cep_cache( 
       id number(10)    NOT NULL , 
       cep varchar  (10)   , 
@@ -52,6 +60,28 @@ CREATE TABLE coligada(
       senha varchar  (255)   , 
  PRIMARY KEY (id)) ; 
 
+CREATE TABLE comissao_repres( 
+      id number(10)    NOT NULL , 
+      representante_id number(10)    NOT NULL , 
+      tipo_comissao char    DEFAULT 'P' , 
+      valor binary_double   , 
+      created_at timestamp(0)   , 
+      updated_at timestamp(0)   , 
+      deleted_at timestamp(0)   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE comissao_repres_excecao( 
+      id number(10)    NOT NULL , 
+      pessoa_id number(10)    NOT NULL , 
+      representante_id number(10)    NOT NULL , 
+      valor binary_double   , 
+      ativo char   , 
+      tipo_comissao char    DEFAULT 'P' , 
+      deleted_at timestamp(0)   , 
+      created_at timestamp(0)   , 
+      updated_at timestamp(0)   , 
+ PRIMARY KEY (id)) ; 
+
 CREATE TABLE complemento( 
       id number(10)    NOT NULL , 
       vendedor_id number(10)   , 
@@ -77,6 +107,25 @@ CREATE TABLE condicao_pagamento(
       deleted_at timestamp(0)   , 
  PRIMARY KEY (id)) ; 
 
+CREATE TABLE configuracao_email( 
+      id number(10)    NOT NULL , 
+      system_users_id number(10)    NOT NULL , 
+      mail_from varchar(3000)   , 
+      smtp_auth varchar(3000)   , 
+      smtp_host varchar(3000)   , 
+      smtp_port varchar(3000)   , 
+      smtp_user varchar(3000)   , 
+      smtp_pass varchar(3000)   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE controle_nota( 
+      id number(10)    NOT NULL , 
+      nota_baixada_id number(10)    NOT NULL , 
+      obs varchar(3000)   , 
+      created_at timestamp(0)   , 
+      created_by number(10)   , 
+ PRIMARY KEY (id)) ; 
+
 CREATE TABLE email_template( 
       id number(10)    NOT NULL , 
       titulo varchar(3000)   , 
@@ -84,6 +133,8 @@ CREATE TABLE email_template(
       created_at timestamp(0)   , 
       updated_at timestamp(0)   , 
       deleted_at timestamp(0)   , 
+      assunto varchar(3000)   , 
+      conteudo_arquivo varchar(3000)   , 
  PRIMARY KEY (id)) ; 
 
 CREATE TABLE estado( 
@@ -144,6 +195,8 @@ CREATE TABLE interacao(
       updated_at timestamp(0)   , 
       deleted_at timestamp(0)   , 
       cliente_nome varchar  (255)   , 
+      cidade varchar  (50)   , 
+      estado varchar  (50)   , 
  PRIMARY KEY (id)) ; 
 
 CREATE TABLE interacao_arquivo( 
@@ -152,6 +205,8 @@ CREATE TABLE interacao_arquivo(
       nome_arquivo varchar(3000)   , 
       conteudo_arquivo varchar(3000)   , 
       dt_arquivo timestamp(0)   , 
+      interacao_atividade number(10)   , 
+      deleted_at timestamp(0)   , 
  PRIMARY KEY (id)) ; 
 
 CREATE TABLE interacao_atividade( 
@@ -164,6 +219,18 @@ CREATE TABLE interacao_atividade(
       horario_final timestamp(0)   , 
       observacao varchar(3000)   , 
       dt_atividade timestamp(0)   , 
+      conteudo_arquivo varchar(3000)   , 
+      destinatario varchar(3000)   , 
+      copia varchar(3000)   , 
+      assunto varchar(3000)   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE interacao_atividade_revisao( 
+      id number(10)    NOT NULL , 
+      system_users_id number(10)    NOT NULL , 
+      interacao_atividade_id number(10)    NOT NULL , 
+      observacao varchar(3000)   , 
+      created_at timestamp(0)   , 
  PRIMARY KEY (id)) ; 
 
 CREATE TABLE interacao_historico_arquivo( 
@@ -172,6 +239,7 @@ CREATE TABLE interacao_historico_arquivo(
       dt_arquivo timestamp(0)   , 
       movimentacao_id number(10)    NOT NULL , 
       descricao varchar(3000)   , 
+      interacao_arquivo_id number(10)   , 
  PRIMARY KEY (id)) ; 
 
 CREATE TABLE interacao_historico_atividade( 
@@ -181,10 +249,11 @@ CREATE TABLE interacao_historico_atividade(
       tipo_atividade_id number(10)    NOT NULL , 
       estado_atividade_id number(10)    NOT NULL , 
       dt_atividade timestamp(0)   , 
-      descricao varchar(3000)   , 
       observacao varchar(3000)   , 
       horario_inicial timestamp(0)   , 
       horario_final timestamp(0)   , 
+      deleted_at timestamp(0)   , 
+      interacao_atividade_id number(10)   , 
  PRIMARY KEY (id)) ; 
 
 CREATE TABLE interacao_historico_etapa( 
@@ -210,6 +279,7 @@ CREATE TABLE interacao_item(
       valor binary_double   , 
       valor_total binary_double   , 
       dt_item timestamp(0)   , 
+      deleted_at timestamp(0)   , 
  PRIMARY KEY (id)) ; 
 
 CREATE TABLE interacao_localizacao( 
@@ -221,6 +291,7 @@ CREATE TABLE interacao_localizacao(
       dt_localizacao timestamp(0)    NOT NULL , 
       created_at timestamp(0)   , 
       deleted_at timestamp(0)   , 
+      interacao_atividade number(10)   , 
  PRIMARY KEY (id)) ; 
 
 CREATE TABLE interacao_observacao( 
@@ -228,6 +299,7 @@ CREATE TABLE interacao_observacao(
       interacao_id number(10)    NOT NULL , 
       observacao varchar(3000)   , 
       dt_observacao timestamp(0)   , 
+      deleted_at timestamp(0)   , 
  PRIMARY KEY (id)) ; 
 
 CREATE TABLE log_crontab( 
@@ -259,6 +331,28 @@ CREATE TABLE nota_baixada(
       id number(10)    NOT NULL , 
       coligada_id number(10)    NOT NULL , 
       nota_status_id number(10)    NOT NULL , 
+      numero varchar  (255)    NOT NULL , 
+      numero_nf varchar  (255)   , 
+      serie_nf varchar  (255)   , 
+      data_emissao timestamp(0)   , 
+      data_emissao_os timestamp(0)   , 
+      razao_social varchar  (255)   , 
+      documento varchar  (25)   , 
+      valor_total binary_double   , 
+      enviado_email number(10)   , 
+      totvs_xml varchar(3000)   , 
+      rps_xml varchar(3000)   , 
+      nfs_xml varchar(3000)   , 
+      obs varchar(3000)   , 
+      nfs_pdf varchar(3000)   , 
+      tem_comissao char   , 
+      comissao binary_double   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE nota_baixada_teste( 
+      id number(10)    NOT NULL , 
+      nota_status_id number(10)    NOT NULL , 
+      coligada_id number(10)    NOT NULL , 
       numero varchar  (255)    NOT NULL , 
       numero_nf varchar  (255)   , 
       serie_nf varchar  (255)   , 
@@ -355,6 +449,17 @@ CREATE TABLE pessoa_grupo(
       grupo_id number(10)    NOT NULL , 
  PRIMARY KEY (id)) ; 
 
+CREATE TABLE prazo_atividade( 
+      id number(10)    NOT NULL , 
+      regras_tipo_atividade_id number(10)    NOT NULL , 
+      categoria_cliente_id number(10)    NOT NULL , 
+      ambos char  (1)    DEFAULT 'N' , 
+      dias number(10)   , 
+      created_at timestamp(0)   , 
+      updated_at timestamp(0)   , 
+      deleted_at timestamp(0)   , 
+ PRIMARY KEY (id)) ; 
+
 CREATE TABLE preferencia_sistema( 
       id number(10)    NOT NULL , 
       system_users_id number(10)    NOT NULL , 
@@ -388,6 +493,15 @@ CREATE TABLE produto(
       obs varchar  (500)   , 
       ativo char  (1)   , 
       foto varchar  (500)   , 
+      created_at timestamp(0)   , 
+      updated_at timestamp(0)   , 
+      deleted_at timestamp(0)   , 
+ PRIMARY KEY (id)) ; 
+
+CREATE TABLE regras_tipo_atividade( 
+      id number(10)    NOT NULL , 
+      tipo number(10)   , 
+      nome varchar(3000)   , 
       created_at timestamp(0)   , 
       updated_at timestamp(0)   , 
       deleted_at timestamp(0)   , 
@@ -509,6 +623,7 @@ CREATE TABLE tipo_atividade(
       nome varchar(3000)   , 
       cor varchar(3000)   , 
       icone varchar(3000)   , 
+      regras_tipo_atividade_id number(10)    NOT NULL , 
  PRIMARY KEY (id)) ; 
 
 CREATE TABLE tipo_atividade_interacao( 
@@ -592,14 +707,21 @@ CREATE TABLE vendedor(
 
  
   
- ALTER TABLE cidade ADD CONSTRAINT fk_cidade_1 FOREIGN KEY (estado_id) references estado(id); 
+ ALTER TABLE centro_custo_nota ADD CONSTRAINT fk_centro_custo_nota_1 FOREIGN KEY (centro_custo_id) references centro_custo(id); 
+ALTER TABLE centro_custo_nota ADD CONSTRAINT fk_centro_custo_nota_2 FOREIGN KEY (nota_baixada_id) references nota_baixada(id); 
+ALTER TABLE cidade ADD CONSTRAINT fk_cidade_1 FOREIGN KEY (estado_id) references estado(id); 
+ALTER TABLE comissao_repres ADD CONSTRAINT fk_comissao_repres_1 FOREIGN KEY (representante_id) references representante(id); 
+ALTER TABLE comissao_repres_excecao ADD CONSTRAINT fk_comissao_repres_excecao_1 FOREIGN KEY (representante_id) references representante(id); 
+ALTER TABLE comissao_repres_excecao ADD CONSTRAINT fk_comissao_repres_excecao_2 FOREIGN KEY (pessoa_id) references pessoa(id); 
 ALTER TABLE complemento ADD CONSTRAINT fk_complemento_7 FOREIGN KEY (representante_id) references representante(id); 
 ALTER TABLE complemento ADD CONSTRAINT fk_complemento_4 FOREIGN KEY (transportadora_id) references transportadora(id); 
 ALTER TABLE complemento ADD CONSTRAINT fk_complemento_5 FOREIGN KEY (transportadora1_id) references transportadora(id); 
 ALTER TABLE complemento ADD CONSTRAINT fk_fcfo_def_1 FOREIGN KEY (vendedor_id) references vendedor(id); 
 ALTER TABLE complemento ADD CONSTRAINT fk_fcfo_def_2 FOREIGN KEY (pessoa_id) references pessoa(id); 
+ALTER TABLE configuracao_email ADD CONSTRAINT fk_configuracao_email_1 FOREIGN KEY (system_users_id) references system_users(id); 
+ALTER TABLE controle_nota ADD CONSTRAINT fk_controle_nota_1 FOREIGN KEY (nota_baixada_id) references nota_baixada(id); 
 ALTER TABLE estado ADD CONSTRAINT fk_estado_1 FOREIGN KEY (pais_id) references pais(id); 
-ALTER TABLE interacao ADD CONSTRAINT fk_interacao_1 FOREIGN KEY (cliente_id) references pessoa(id); 
+ALTER TABLE interacao ADD CONSTRAINT fk_interacao_5 FOREIGN KEY (cliente_id) references pessoa(id); 
 ALTER TABLE interacao ADD CONSTRAINT fk_interacao_5 FOREIGN KEY (vendedor_id) references representante(id); 
 ALTER TABLE interacao ADD CONSTRAINT fk_interacao_3 FOREIGN KEY (origem_contato_id) references origem_contato(id); 
 ALTER TABLE interacao ADD CONSTRAINT fk_interacao_4 FOREIGN KEY (etapa_interacao_id) references etapa_interacao(id); 
@@ -608,6 +730,8 @@ ALTER TABLE interacao_arquivo ADD CONSTRAINT fk_interacao_arquivo_1 FOREIGN KEY 
 ALTER TABLE interacao_atividade ADD CONSTRAINT fk_interacao_atividade_1 FOREIGN KEY (interacao_id) references interacao(id); 
 ALTER TABLE interacao_atividade ADD CONSTRAINT fk_interacao_atividade_2 FOREIGN KEY (tipo_atividade_id) references tipo_atividade(id); 
 ALTER TABLE interacao_atividade ADD CONSTRAINT fk_interacao_atividade_3 FOREIGN KEY (estado_atividade_id) references estado_atividade(id); 
+ALTER TABLE interacao_atividade_revisao ADD CONSTRAINT fk_interacao_atividade_revisao_2 FOREIGN KEY (interacao_atividade_id) references interacao_atividade(id); 
+ALTER TABLE interacao_atividade_revisao ADD CONSTRAINT fk_interacao_atividade_revisao_2 FOREIGN KEY (system_users_id) references system_users(id); 
 ALTER TABLE interacao_historico_arquivo ADD CONSTRAINT fk_interacao_historico_arquivo_1 FOREIGN KEY (interacao_id) references interacao(id); 
 ALTER TABLE interacao_historico_arquivo ADD CONSTRAINT fk_interacao_historico_arquivo_2 FOREIGN KEY (movimentacao_id) references movimentacao(id); 
 ALTER TABLE interacao_historico_atividade ADD CONSTRAINT fk_interacao_historico_atividade_4 FOREIGN KEY (estado_atividade_id) references estado_atividade(id); 
@@ -626,6 +750,8 @@ ALTER TABLE log_crontab ADD CONSTRAINT fk_log_crontab_1 FOREIGN KEY (system_unit
 ALTER TABLE nacionalidade ADD CONSTRAINT fk_nacionalidade_1 FOREIGN KEY (pais_id) references pais(id); 
 ALTER TABLE nota_baixada ADD CONSTRAINT fk_nota_baixada_2 FOREIGN KEY (nota_status_id) references nota_status(id); 
 ALTER TABLE nota_baixada ADD CONSTRAINT fk_nota_baixada_1 FOREIGN KEY (coligada_id) references coligada(id); 
+ALTER TABLE nota_baixada_teste ADD CONSTRAINT fk_nota_baixada_teste_1 FOREIGN KEY (nota_status_id) references nota_status(id); 
+ALTER TABLE nota_baixada_teste ADD CONSTRAINT fk_nota_baixada_teste_2 FOREIGN KEY (coligada_id) references coligada(id); 
 ALTER TABLE pessoa ADD CONSTRAINT fk_pessoa_1 FOREIGN KEY (tipo_pessoa_id) references tipo_pessoa(id); 
 ALTER TABLE pessoa ADD CONSTRAINT fk_pessoa_2 FOREIGN KEY (categoria_cliente_id) references categoria_cliente(id); 
 ALTER TABLE pessoa ADD CONSTRAINT fk_pessoa_3 FOREIGN KEY (system_user_id) references system_users(id); 
@@ -635,6 +761,8 @@ ALTER TABLE pessoa_endereco ADD CONSTRAINT fk_pessoa_endereco_1 FOREIGN KEY (pes
 ALTER TABLE pessoa_endereco ADD CONSTRAINT fk_pessoa_endereco_2 FOREIGN KEY (cidade_id) references cidade(id); 
 ALTER TABLE pessoa_grupo ADD CONSTRAINT fk_pessoa_grupo_1 FOREIGN KEY (pessoa_id) references pessoa(id); 
 ALTER TABLE pessoa_grupo ADD CONSTRAINT fk_pessoa_grupo_2 FOREIGN KEY (grupo_id) references grupo(id); 
+ALTER TABLE prazo_atividade ADD CONSTRAINT fk_prazo_atividade_1 FOREIGN KEY (regras_tipo_atividade_id) references regras_tipo_atividade(id); 
+ALTER TABLE prazo_atividade ADD CONSTRAINT fk_prazo_atividade_2 FOREIGN KEY (categoria_cliente_id) references categoria_cliente(id); 
 ALTER TABLE preferencia_sistema ADD CONSTRAINT fk_preferencia_sistema_1 FOREIGN KEY (system_users_id) references system_users(id); 
 ALTER TABLE produto ADD CONSTRAINT fk_produto_1 FOREIGN KEY (tipo_produto_id) references tipo_produto(id); 
 ALTER TABLE produto ADD CONSTRAINT fk_produto_2 FOREIGN KEY (familia_produto_id) references familia_produto(id); 
@@ -655,6 +783,7 @@ ALTER TABLE system_users ADD CONSTRAINT fk_system_user_1 FOREIGN KEY (system_uni
 ALTER TABLE system_users ADD CONSTRAINT fk_system_user_2 FOREIGN KEY (frontpage_id) references system_program(id); 
 ALTER TABLE system_user_unit ADD CONSTRAINT fk_system_user_unit_1 FOREIGN KEY (system_user_id) references system_users(id); 
 ALTER TABLE system_user_unit ADD CONSTRAINT fk_system_user_unit_2 FOREIGN KEY (system_unit_id) references system_unit(id); 
+ALTER TABLE tipo_atividade ADD CONSTRAINT fk_tipo_atividade_1 FOREIGN KEY (regras_tipo_atividade_id) references regras_tipo_atividade(id); 
 ALTER TABLE tipo_atividade_interacao ADD CONSTRAINT fk_tipo_atividade_interacao_1 FOREIGN KEY (tipo_atividade_id) references tipo_atividade(id); 
 ALTER TABLE tipo_atividade_interacao ADD CONSTRAINT fk_tipo_atividade_interacao_2 FOREIGN KEY (tipo_interacao_id) references tipo_interacao(id); 
 ALTER TABLE transportadora ADD CONSTRAINT fk_ttra_1 FOREIGN KEY (cidade_id) references cidade(id); 
@@ -704,6 +833,21 @@ BEFORE INSERT ON centro_custo FOR EACH ROW
         SELECT centro_custo_id_seq.NEXTVAL INTO :NEW.id FROM DUAL; 
 
 END;
+CREATE SEQUENCE centro_custo_nota_id_seq START WITH 1 INCREMENT BY 1; 
+
+CREATE OR REPLACE TRIGGER centro_custo_nota_id_seq_tr 
+
+BEFORE INSERT ON centro_custo_nota FOR EACH ROW 
+
+    WHEN 
+
+        (NEW.id IS NULL) 
+
+    BEGIN 
+
+        SELECT centro_custo_nota_id_seq.NEXTVAL INTO :NEW.id FROM DUAL; 
+
+END;
 CREATE SEQUENCE cep_cache_id_seq START WITH 1 INCREMENT BY 1; 
 
 CREATE OR REPLACE TRIGGER cep_cache_id_seq_tr 
@@ -749,6 +893,36 @@ BEFORE INSERT ON coligada FOR EACH ROW
         SELECT coligada_id_seq.NEXTVAL INTO :NEW.id FROM DUAL; 
 
 END;
+CREATE SEQUENCE comissao_repres_id_seq START WITH 1 INCREMENT BY 1; 
+
+CREATE OR REPLACE TRIGGER comissao_repres_id_seq_tr 
+
+BEFORE INSERT ON comissao_repres FOR EACH ROW 
+
+    WHEN 
+
+        (NEW.id IS NULL) 
+
+    BEGIN 
+
+        SELECT comissao_repres_id_seq.NEXTVAL INTO :NEW.id FROM DUAL; 
+
+END;
+CREATE SEQUENCE comissao_repres_excecao_id_seq START WITH 1 INCREMENT BY 1; 
+
+CREATE OR REPLACE TRIGGER comissao_repres_excecao_id_seq_tr 
+
+BEFORE INSERT ON comissao_repres_excecao FOR EACH ROW 
+
+    WHEN 
+
+        (NEW.id IS NULL) 
+
+    BEGIN 
+
+        SELECT comissao_repres_excecao_id_seq.NEXTVAL INTO :NEW.id FROM DUAL; 
+
+END;
 CREATE SEQUENCE complemento_id_seq START WITH 1 INCREMENT BY 1; 
 
 CREATE OR REPLACE TRIGGER complemento_id_seq_tr 
@@ -777,6 +951,36 @@ BEFORE INSERT ON condicao_pagamento FOR EACH ROW
     BEGIN 
 
         SELECT condicao_pagamento_id_seq.NEXTVAL INTO :NEW.id FROM DUAL; 
+
+END;
+CREATE SEQUENCE configuracao_email_id_seq START WITH 1 INCREMENT BY 1; 
+
+CREATE OR REPLACE TRIGGER configuracao_email_id_seq_tr 
+
+BEFORE INSERT ON configuracao_email FOR EACH ROW 
+
+    WHEN 
+
+        (NEW.id IS NULL) 
+
+    BEGIN 
+
+        SELECT configuracao_email_id_seq.NEXTVAL INTO :NEW.id FROM DUAL; 
+
+END;
+CREATE SEQUENCE controle_nota_id_seq START WITH 1 INCREMENT BY 1; 
+
+CREATE OR REPLACE TRIGGER controle_nota_id_seq_tr 
+
+BEFORE INSERT ON controle_nota FOR EACH ROW 
+
+    WHEN 
+
+        (NEW.id IS NULL) 
+
+    BEGIN 
+
+        SELECT controle_nota_id_seq.NEXTVAL INTO :NEW.id FROM DUAL; 
 
 END;
 CREATE SEQUENCE email_template_id_seq START WITH 1 INCREMENT BY 1; 
@@ -927,6 +1131,21 @@ BEFORE INSERT ON interacao_atividade FOR EACH ROW
     BEGIN 
 
         SELECT interacao_atividade_id_seq.NEXTVAL INTO :NEW.id FROM DUAL; 
+
+END;
+CREATE SEQUENCE interacao_atividade_revisao_id_seq START WITH 1 INCREMENT BY 1; 
+
+CREATE OR REPLACE TRIGGER interacao_atividade_revisao_id_seq_tr 
+
+BEFORE INSERT ON interacao_atividade_revisao FOR EACH ROW 
+
+    WHEN 
+
+        (NEW.id IS NULL) 
+
+    BEGIN 
+
+        SELECT interacao_atividade_revisao_id_seq.NEXTVAL INTO :NEW.id FROM DUAL; 
 
 END;
 CREATE SEQUENCE interacao_historico_arquivo_id_seq START WITH 1 INCREMENT BY 1; 
@@ -1094,6 +1313,21 @@ BEFORE INSERT ON nota_baixada FOR EACH ROW
         SELECT nota_baixada_id_seq.NEXTVAL INTO :NEW.id FROM DUAL; 
 
 END;
+CREATE SEQUENCE nota_baixada_teste_id_seq START WITH 1 INCREMENT BY 1; 
+
+CREATE OR REPLACE TRIGGER nota_baixada_teste_id_seq_tr 
+
+BEFORE INSERT ON nota_baixada_teste FOR EACH ROW 
+
+    WHEN 
+
+        (NEW.id IS NULL) 
+
+    BEGIN 
+
+        SELECT nota_baixada_teste_id_seq.NEXTVAL INTO :NEW.id FROM DUAL; 
+
+END;
 CREATE SEQUENCE nota_status_id_seq START WITH 1 INCREMENT BY 1; 
 
 CREATE OR REPLACE TRIGGER nota_status_id_seq_tr 
@@ -1199,6 +1433,21 @@ BEFORE INSERT ON pessoa_grupo FOR EACH ROW
         SELECT pessoa_grupo_id_seq.NEXTVAL INTO :NEW.id FROM DUAL; 
 
 END;
+CREATE SEQUENCE prazo_atividade_id_seq START WITH 1 INCREMENT BY 1; 
+
+CREATE OR REPLACE TRIGGER prazo_atividade_id_seq_tr 
+
+BEFORE INSERT ON prazo_atividade FOR EACH ROW 
+
+    WHEN 
+
+        (NEW.id IS NULL) 
+
+    BEGIN 
+
+        SELECT prazo_atividade_id_seq.NEXTVAL INTO :NEW.id FROM DUAL; 
+
+END;
 CREATE SEQUENCE preferencia_sistema_id_seq START WITH 1 INCREMENT BY 1; 
 
 CREATE OR REPLACE TRIGGER preferencia_sistema_id_seq_tr 
@@ -1227,6 +1476,21 @@ BEFORE INSERT ON produto FOR EACH ROW
     BEGIN 
 
         SELECT produto_id_seq.NEXTVAL INTO :NEW.id FROM DUAL; 
+
+END;
+CREATE SEQUENCE regras_tipo_atividade_id_seq START WITH 1 INCREMENT BY 1; 
+
+CREATE OR REPLACE TRIGGER regras_tipo_atividade_id_seq_tr 
+
+BEFORE INSERT ON regras_tipo_atividade FOR EACH ROW 
+
+    WHEN 
+
+        (NEW.id IS NULL) 
+
+    BEGIN 
+
+        SELECT regras_tipo_atividade_id_seq.NEXTVAL INTO :NEW.id FROM DUAL; 
 
 END;
 CREATE SEQUENCE representante_id_seq START WITH 1 INCREMENT BY 1; 
@@ -1395,7 +1659,279 @@ BEFORE INSERT ON vendedor FOR EACH ROW
 
 END;
  
- CREATE VIEW view_cliente AS SELECT 
+ CREATE VIEW view_classificacao AS SELECT
+    x.id as id,
+    x.categoria as categoria,
+    x.representante as representante,
+    x.codigo_cliente as codigo_cliente,
+    x.nome_cliente as nome_cliente,
+    x.cidade as cidade,
+    x.uf as uf,
+    x.s_id as s_id,
+
+    CASE
+        WHEN x.tipo1 = 9999 THEN 'Não Aplicável'
+        ELSE CAST(x.tipo1 AS varchar)
+    END as tipo1,
+
+    CASE
+        WHEN x.tipo2 = 9999 THEN 'Não Aplicável'
+        ELSE CAST(x.tipo2 AS varchar)
+    END as tipo2,
+
+    CASE
+        WHEN x.tipo1 = 9999 THEN 'N/A'
+        WHEN x.tipo1 > 0 THEN 'Sim'
+        ELSE 'Não'
+    END AS dentro_prazo_tipo1,
+
+    CASE
+        WHEN x.tipo2 = 9999 THEN 'N/A'
+        WHEN x.tipo2 > 0 THEN 'Sim'
+        ELSE 'Não'
+    END AS dentro_prazo_tipo2,
+
+    CASE
+        WHEN x.categoria IN ('D', 'E') AND (x.tipo1 > 0 OR x.tipo2 > 0) THEN 'Sim'
+        WHEN x.tipo1 = 9999 AND x.tipo2 = 9999 THEN 'Não'
+        WHEN (x.tipo1 > 0 OR x.tipo1 = 9999)
+         AND (x.tipo2 > 0 OR x.tipo2 = 9999)
+        THEN 'Sim'
+        ELSE 'Não'
+    END AS dentro_prazo_ambos
+
+FROM
+(
+    SELECT
+        p.id AS id,
+        cc.nome AS categoria,
+        r.razao_social AS representante,
+        p.codigo AS codigo_cliente,
+        p.razao_social AS nome_cliente,
+        cid.nome AS cidade,
+        est.sigla AS uf,
+        r.system_user_id AS s_id,
+
+        CASE
+            WHEN ult_tipo1_real.ultima_atividade IS NOT NULL THEN 1
+            ELSE 0
+        END AS tem_tipo1_real,
+
+        CASE
+            WHEN p.categoria_cliente_id IS NULL THEN 9999
+
+            WHEN cc.nome IN ('D', 'E') AND pr2.dias IS NULL THEN 9999
+            WHEN cc.nome IN ('D', 'E') AND ult_tipo1_real.ultima_atividade IS NULL THEN 0
+            WHEN cc.nome IN ('D', 'E') AND pr2.dias - (CURRENT_DATE - ult_tipo1_real.ultima_atividade::date) < 0 THEN 0
+            WHEN cc.nome IN ('D', 'E') THEN pr2.dias - (CURRENT_DATE - ult_tipo1_real.ultima_atividade::date)
+
+            WHEN pr1.regras_tipo_atividade_id IS NULL THEN 9999
+            WHEN ult1.ultima_atividade IS NULL THEN 0
+            WHEN pr1.dias - (CURRENT_DATE - ult1.ultima_atividade::date) < 0 THEN 0
+            ELSE pr1.dias - (CURRENT_DATE - ult1.ultima_atividade::date)
+        END AS tipo1,
+
+        CASE
+            WHEN p.categoria_cliente_id IS NULL THEN 9999
+
+            WHEN pr2.regras_tipo_atividade_id IS NULL THEN 9999
+
+            /*
+            * Se o Contato estiver com ambos = S,
+            * usa a atividade mais recente entre Física e Contato.
+            *
+            * A atividade Física não precisa ter um prazo próprio cadastrado.
+            * O prazo utilizado será o prazo do Contato: pr2.dias.
+            */
+            WHEN COALESCE(pr2.ambos, 'N') = 'S' THEN
+                CASE
+                    WHEN ult_tipo1_real.ultima_atividade IS NULL
+                    AND ult2.ultima_atividade IS NULL
+                    THEN 0
+
+                    ELSE GREATEST(
+                        pr2.dias - (
+                            CURRENT_DATE
+                            - GREATEST(
+                                ult_tipo1_real.ultima_atividade,
+                                ult2.ultima_atividade
+                            )::date
+                        ),
+                        0
+                    )
+                END
+
+            /*
+            * Se ambos = N, somente a atividade de Contato
+            * renova o prazo de Contato.
+            */
+            WHEN ult2.ultima_atividade IS NULL THEN 0
+
+            ELSE GREATEST(
+                pr2.dias - (
+                    CURRENT_DATE - ult2.ultima_atividade::date
+                ),
+                0
+            )
+        END AS tipo2
+
+    FROM pessoa p
+
+    LEFT JOIN categoria_cliente cc
+        ON cc.id = p.categoria_cliente_id
+
+    LEFT JOIN (
+        SELECT x.pessoa_id, x.representante_id
+        FROM (
+            SELECT
+                c.pessoa_id,
+                c.representante_id,
+                ROW_NUMBER() OVER (
+                    PARTITION BY c.pessoa_id
+                    ORDER BY c.created_at DESC NULLS LAST, c.id DESC
+                ) AS rn
+            FROM complemento c
+        ) x
+        WHERE x.rn = 1
+    ) comp
+        ON comp.pessoa_id = p.id
+
+    LEFT JOIN representante r
+        ON r.id = comp.representante_id
+
+    LEFT JOIN (
+        SELECT x.pessoa_id, x.cidade_id
+        FROM (
+            SELECT
+                pe.pessoa_id,
+                pe.cidade_id,
+                ROW_NUMBER() OVER (
+                    PARTITION BY pe.pessoa_id
+                    ORDER BY pe.id DESC
+                ) AS rn
+            FROM pessoa_endereco pe
+            WHERE pe.principal = 'S'
+        ) x
+        WHERE x.rn = 1
+    ) pe
+        ON pe.pessoa_id = p.id
+
+    LEFT JOIN cidade cid
+        ON cid.id = pe.cidade_id
+
+    LEFT JOIN estado est
+        ON est.id = cid.estado_id
+
+    LEFT JOIN (
+        SELECT
+            z.categoria_cliente_id,
+            z.regras_tipo_atividade_id,
+            z.dias
+        FROM (
+            SELECT
+                pa.categoria_cliente_id,
+                pa.regras_tipo_atividade_id,
+                pa.dias,
+                ROW_NUMBER() OVER (
+                    PARTITION BY pa.categoria_cliente_id
+                    ORDER BY pa.id DESC
+                ) AS rn
+            FROM prazo_atividade pa
+            INNER JOIN regras_tipo_atividade rta
+                ON rta.id = pa.regras_tipo_atividade_id
+            WHERE rta.tipo = 1
+        ) z
+        WHERE z.rn = 1
+    ) pr1
+        ON pr1.categoria_cliente_id = p.categoria_cliente_id
+
+        LEFT JOIN (
+        SELECT
+            z.categoria_cliente_id,
+            z.regras_tipo_atividade_id,
+            z.dias,
+            z.ambos
+        FROM (
+            SELECT
+                pa.categoria_cliente_id,
+                pa.regras_tipo_atividade_id,
+                pa.dias,
+                pa.ambos,
+                ROW_NUMBER() OVER (
+                    PARTITION BY pa.categoria_cliente_id
+                    ORDER BY pa.id DESC
+                ) AS rn
+            FROM prazo_atividade pa
+            INNER JOIN regras_tipo_atividade rta
+                ON rta.id = pa.regras_tipo_atividade_id
+            WHERE rta.tipo = 2
+        ) z
+        WHERE z.rn = 1
+    ) pr2
+        ON pr2.categoria_cliente_id = p.categoria_cliente_id
+
+    LEFT JOIN (
+        SELECT
+            i.cliente_id,
+            ta.regras_tipo_atividade_id,
+            MAX(ia.horario_final) AS ultima_atividade
+        FROM interacao i
+        INNER JOIN interacao_atividade ia
+            ON ia.interacao_id = i.id
+        INNER JOIN tipo_atividade ta
+            ON ta.id = ia.tipo_atividade_id
+        WHERE ia.estado_atividade_id = 2
+          AND ta.regras_tipo_atividade_id IS NOT NULL
+          AND ia.horario_final IS NOT NULL
+        GROUP BY i.cliente_id, ta.regras_tipo_atividade_id
+    ) ult1
+        ON ult1.cliente_id = p.id
+       AND ult1.regras_tipo_atividade_id = pr1.regras_tipo_atividade_id
+
+    LEFT JOIN (
+        SELECT
+            i.cliente_id,
+            ta.regras_tipo_atividade_id,
+            MAX(ia.horario_final) AS ultima_atividade
+        FROM interacao i
+        INNER JOIN interacao_atividade ia
+            ON ia.interacao_id = i.id
+        INNER JOIN tipo_atividade ta
+            ON ta.id = ia.tipo_atividade_id
+        WHERE ia.estado_atividade_id = 2
+          AND ta.regras_tipo_atividade_id IS NOT NULL
+          AND ia.horario_final IS NOT NULL
+        GROUP BY i.cliente_id, ta.regras_tipo_atividade_id
+    ) ult2
+        ON ult2.cliente_id = p.id
+       AND ult2.regras_tipo_atividade_id = pr2.regras_tipo_atividade_id
+
+    LEFT JOIN (
+        SELECT
+            i.cliente_id,
+            MAX(ia.horario_final) AS ultima_atividade
+        FROM interacao i
+        INNER JOIN interacao_atividade ia
+            ON ia.interacao_id = i.id
+        INNER JOIN tipo_atividade ta
+            ON ta.id = ia.tipo_atividade_id
+        INNER JOIN regras_tipo_atividade rta
+            ON rta.id = ta.regras_tipo_atividade_id
+        WHERE ia.estado_atividade_id = 2
+          AND ia.horario_final IS NOT NULL
+          AND rta.tipo = 1
+        GROUP BY i.cliente_id
+    ) ult_tipo1_real
+        ON ult_tipo1_real.cliente_id = p.id
+
+    WHERE comp.representante_id IS NOT NULL
+) x
+
+ORDER BY
+    x.categoria ASC,
+    x.codigo_cliente ASC;; 
+
+CREATE VIEW view_cliente AS SELECT 
     p.id AS "id",
     p.codigo AS "codigo",
     cat.nome AS "categoria",
@@ -1409,7 +1945,10 @@ END;
     uf.sigla AS "uf",
     cd.nome || '/' || uf.sigla as "cidade_uf",
     comp.representante_id AS "representante_id",
-    rep.razao_social AS "representante_razao"
+    rep.razao_social AS "representante_razao",
+    cd.id as cidade_id,
+    uf.id as estado_id
+    
 FROM
     pessoa p
     INNER JOIN pessoa_grupo pg 
@@ -1438,8 +1977,10 @@ GROUP BY
 	uf.nome,
 	uf.sigla,
 	comp.representante_id,
-	rep.razao_social
-ORDER BY p.id ASC; 
+	rep.razao_social,
+  cd.id,
+  uf.id
+  ORDER BY p.id ASC; 
 
 CREATE VIEW view_cliente_cidade AS SELECT 
     pessoa.id as "cliente_id",
@@ -1468,6 +2009,92 @@ WHERE
     cidade.estado_id = estado.id AND
     interacao.vendedor_id = representante.id AND
     pessoa_endereco.principal = 'S'; 
+
+CREATE VIEW view_comissao_repres AS WITH notas AS (
+    SELECT
+        nb.id,
+        nb.coligada_id,
+        nb.data_emissao,
+        nb.data_emissao_os,
+        nb.numero,
+        nb.valor_total,
+        nb.tem_comissao,
+        nb.comissao,
+        regexp_replace(COALESCE(nb.documento, ''), '[^0-9]', '', 'g') AS documento_limpo
+    FROM nota_baixada nb
+    WHERE nb.coligada_id NOT IN (3)
+      AND nb.data_emissao_os IS NOT NULL
+      AND nb.tem_comissao IS NOT NULL
+),
+
+documentos_notas AS (
+    SELECT DISTINCT
+        documento_limpo
+    FROM notas
+    WHERE documento_limpo <> ''
+),
+
+clientes AS (
+    SELECT DISTINCT ON (
+        regexp_replace(COALESCE(p.cpf_cnpj, ''), '[^0-9]', '', 'g')
+    )
+        p.id AS pessoa_id,
+        p.codigo AS codigo_cliente,
+        regexp_replace(COALESCE(p.cpf_cnpj, ''), '[^0-9]', '', 'g') AS documento_limpo,
+        COALESCE(NULLIF(p.nome_fantasia, ''), p.razao_social) AS fantasia,
+        p.categoria_cliente_id
+    FROM pessoa p
+    INNER JOIN documentos_notas dn
+        ON dn.documento_limpo = regexp_replace(COALESCE(p.cpf_cnpj, ''), '[^0-9]', '', 'g')
+    WHERE p.deleted_at IS NULL
+      AND regexp_replace(COALESCE(p.cpf_cnpj, ''), '[^0-9]', '', 'g') <> ''
+    ORDER BY
+        regexp_replace(COALESCE(p.cpf_cnpj, ''), '[^0-9]', '', 'g'),
+        p.id DESC
+),
+
+representantes AS (
+    SELECT DISTINCT ON (comp.pessoa_id)
+        comp.pessoa_id,
+        r.razao_social AS representante
+    FROM complemento comp
+    INNER JOIN clientes c
+        ON c.pessoa_id = comp.pessoa_id
+    INNER JOIN representante r
+        ON r.id = comp.representante_id
+    WHERE comp.deleted_at IS NULL
+      AND COALESCE(comp.representante_id, 0) <> 0
+    ORDER BY
+        comp.pessoa_id,
+        comp.id DESC
+)
+
+SELECT
+    nb.id                              AS id,
+    nb.coligada_id                     AS coligada_id,
+    nb.data_emissao                    AS data_emissao,
+    nb.data_emissao_os                 AS data_emissao_os,
+
+    c.codigo_cliente                   AS codigo_cliente,
+    c.fantasia                         AS fantasia,
+    cc.nome                            AS categoria_cliente,
+    rep.representante                  AS representante,
+
+    nb.numero                          AS numero_nota,
+    nb.valor_total                     AS valor,
+    nb.tem_comissao                    AS tem_comissao,
+    nb.comissao                        AS comissao
+
+FROM notas nb
+
+LEFT JOIN clientes c
+    ON c.documento_limpo = nb.documento_limpo
+
+LEFT JOIN categoria_cliente cc
+    ON cc.id = c.categoria_cliente_id
+
+LEFT JOIN representantes rep
+    ON rep.pessoa_id = c.pessoa_id;; 
 
 CREATE VIEW view_interacao_timeline AS SELECT
     id as "chave",

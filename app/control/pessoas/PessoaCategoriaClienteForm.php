@@ -54,7 +54,7 @@ class PessoaCategoriaClienteForm extends TWindow
         $row2->layout = [' col-sm-12'];
 
         // create the form actions
-        $btn_onsave = $this->form->addAction("Salvar", new TAction([$this, 'onSave']), 'fas:save #ffffff');
+        $btn_onsave = $this->form->addAction("Salvar", new TAction([$this, 'onSave'],['static' => 1]), 'fas:save #ffffff');
         $this->btn_onsave = $btn_onsave;
         $btn_onsave->addStyleClass('btn-primary'); 
 
@@ -95,17 +95,21 @@ class PessoaCategoriaClienteForm extends TWindow
 
             TTransaction::open('corporerm');
 
-            Fcfo::where('CODCFO', 'like', $object->codigo)
+            Fcfo::where('CODCFO', '=', $object->codigo)
                   ->set('CODTCF', $codigoCategoria)
                   ->update();
 
             TTransaction::close();
+/*
 
             TToast::show('success', "Registro salvo", 'topRight', 'far:check-circle');
             TApplication::loadPage('ClienteList', 'onShow', $loadPageParam); 
 
+*/
+    TToast::show('success', "Registro salvo", 'topRight', 'far:check-circle');    
                 TWindow::closeWindow(parent::getId()); 
 
+    TApplication::loadPage('ClienteList', 'onRefresh');
         }
         catch (Exception $e) // in case of exception
         {

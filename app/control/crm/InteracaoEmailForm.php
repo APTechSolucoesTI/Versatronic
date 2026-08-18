@@ -9,6 +9,8 @@ class InteracaoEmailForm extends TPage
     private static $primaryKey = '';
     private static $formName = 'form_InteracaoEmailForm';
 
+    use Adianti\Base\AdiantiFileSaveTrait;
+
     /**
      * Form constructor
      * @param $param Request
@@ -30,28 +32,46 @@ class InteracaoEmailForm extends TPage
         $criteria_TDBCheckList = new TCriteria();
         $criteria_email_template_id = new TCriteria();
 
-           TTransaction::open('minicrm');
-        //  $filterVar = (Interacao::find($param['interacao_id'])->first())->cliente_id;;
-         $filterVar = new TFilter("pessoa_id","=","(SELECT cliente_id FROM interacao WHERE id = ". $param['interacao_id']. ")");
-        $criteria_TDBCheckList->add($filterVar); 
+        TTransaction::open('minicrm');
+
+        $interacaoId = (int) ($param['interacao_id'] ?? 0);
+
+        if ($interacaoId <= 0) {
+            throw new Exception('Interação não informada para envio de e-mail.');
+        }
+
+        $filterVar = new TFilter("pessoa_id", "=", "(SELECT cliente_id FROM interacao WHERE id = {$interacaoId})");
+        $criteria_TDBCheckList->add($filterVar);                       
 
         TTransaction::close();
 
         $interacao_id = new THidden('interacao_id');
         $TDBCheckList = new TCheckList('TDBCheckList');
+        $com_copia = new TEntry('com_copia');
         $email_template_id = new TDBCombo('email_template_id', 'minicrm', 'EmailTemplate', 'id', '{titulo}','titulo asc' , $criteria_email_template_id );
+        $assunto = new TEntry('assunto');
         $mensagem = new THtmlEditor('mensagem');
+        $conteudo_arquivo = new TMultiFile('conteudo_arquivo');
 
         $email_template_id->setChangeAction(new TAction([$this,'onChangeTemplateEmail']));
 
         $TDBCheckList->addValidation("Selecione um Email", new TRequiredValidator()); 
-        $email_template_id->addValidation("Template de email", new TRequiredValidator()); 
+        $assunto->addValidation("Assunto", new TRequiredValidator()); 
+        $mensagem->addValidation("Corpo do E-mail", new TRequiredValidator()); 
 
         $interacao_id->setValue($param["interacao_id"] ?? "");
+        $com_copia->enableToggleVisibility(false);
         $email_template_id->enableSearch();
+        $conteudo_arquivo->enableFileHandling();
+        $conteudo_arquivo->setLimitUploadSize(1000);
+        $conteudo_arquivo->setAllowedExtensions(["pdf","doc","docs","xls","xlsx","jpg","jpeg","png","zip","rar"]);
+        $conteudo_arquivo->enableImageGallery('0', NULL);
+        $assunto->setSize('100%');
+        $com_copia->setSize('60%');
         $interacao_id->setSize(200);
         $mensagem->setSize('100%', 160);
-        $email_template_id->setSize('100%');
+        $email_template_id->setSize('60%');
+        $conteudo_arquivo->setSize('100%');
 
         $TDBCheckList->setIdColumn('id');
 
@@ -65,20 +85,38 @@ class InteracaoEmailForm extends TPage
 
         $TDBCheckList->fillWith('minicrm', 'PessoaContato', 'id', 'id asc' , $criteria_TDBCheckList);
 
+        $geo_latitude = new THidden('geo_latitude');
+        $geo_longitude = new THidden('geo_longitude');
+        $geo_endereco = new THidden('geo_endereco');
+
+        $geo_latitude->setValue($param['geo_latitude'] ?? null);
+        $geo_longitude->setValue($param['geo_longitude'] ?? null);
+        $geo_endereco->setValue($param['geo_endereco'] ?? null);
 
         $row1 = $this->form->addFields([new TLabel("Interações:", '#F44336', '14px', null, '100%'),$interacao_id,$TDBCheckList]);
         $row1->layout = [' col-sm-12'];
 
-        $row2 = $this->form->addFields([new TLabel("Template de email:", '#F44336', '14px', null, '100%'),$email_template_id]);
-        $row2->layout = [' col-sm-12'];
+        $row2 = $this->form->addFields([new TLabel("Cc (Com Cópia):", null, '14px', null, '100%'),$com_copia]);
+        $row2->layout = ['col-sm-12'];
 
-        $row3 = $this->form->addFields([new TLabel("Mensagem:", '#F44336', '14px', null, '100%'),$mensagem]);
+        $row3 = $this->form->addFields([new TLabel("Template de email:", '#2E2E2E', '14px', null, '100%'),$email_template_id]);
         $row3->layout = [' col-sm-12'];
 
+        $row4 = $this->form->addFields([new TLabel("Assunto:", '#F44336', '14px', null, '100%'),$assunto]);
+        $row4->layout = [' col-sm-12'];
+
+        $row5 = $this->form->addFields([new TLabel("Corpo do E-mail:", '#F44336', '14px', null, '100%'),$mensagem]);
+        $row5->layout = [' col-sm-12'];
+
+        $row6 = $this->form->addFields([new TLabel("Anexar arquivo:", '#000000', '14px', null, '100%'),$conteudo_arquivo]);
+        $row6->layout = [' col-sm-12'];
+
+        $this->form->addFields([$geo_latitude], [$geo_longitude], [$geo_endereco]);
+
         // create the form actions
-        $btn_onenviaremail = $this->form->addAction("Enviar", new TAction([$this, 'onEnviarEmail']), 'fas:rocket #ffffff');
-        $this->btn_onenviaremail = $btn_onenviaremail;
-        $btn_onenviaremail->addStyleClass('btn-primary'); 
+        $btn_env = $this->form->addAction("Enviar", new TAction([$this, 'onEnviarEmail']), 'fas:rocket #ffffff');
+        $this->btn_env = $btn_env;
+        $btn_env->addStyleClass('btn-primary'); 
 
         parent::setTargetContainer('adianti_right_panel');
 
@@ -93,10 +131,6 @@ class InteracaoEmailForm extends TPage
 
         parent::add($this->form);
 
-        $style = new TStyle('right-panel > .container-part[page-name=InteracaoEmailForm]');
-        $style->width = '60% !important';   
-        $style->show(true);
-
     }
 
     public static function onChangeTemplateEmail($param = null) 
@@ -104,7 +138,7 @@ class InteracaoEmailForm extends TPage
         try 
         {
 
-            if(!empty($param['key']))
+            if (!empty($param['key']))
             {
                 TTransaction::open('minicrm');
 
@@ -114,6 +148,7 @@ class InteracaoEmailForm extends TPage
 
                 $obj = new stdClass();
                 $obj->mensagem = $emailTemplate->mensagem;
+                $obj->assunto  = $emailTemplate->titulo;
 
                 TForm::sendData(self::$formName, $obj);
 
@@ -133,51 +168,127 @@ class InteracaoEmailForm extends TPage
         {
             $this->form->validate();
             $data = $this->form->getData();
-            $mensagem = $data->mensagem;
-
-            if($data->interacao_id)
-            {
-                TTransaction::open('minicrm');
-                $emailTemplate = new EmailTemplate($data->email_template_id);
-
-                foreach($data->TDBCheckList as $contato_id)
-                {
-                    $contato = new PessoaContato($contato_id);
-                    $interacao = new Interacao($data->interacao_id);
-
-                    $mensagem = str_replace('{nome}', $interacao->cliente->razao_social, $mensagem);
-                    $mensagem = str_replace('{id}', $interacao->id, $mensagem);
-
-                    $emailTemplate->titulo = str_replace('{nome}', $interacao->cliente->nome, $emailTemplate->titulo);
-
-                    if($interacao->cliente->email)
-                    {
-                        MailService::send($contato->email, $emailTemplate->titulo, $mensagem,  'html');    
-                    }
-
-                }
-                TTransaction::close();
-            }
-
             $this->form->setData($data);
 
-            new TMessage('info', 'Emails enviados!');
+            $email = TSession::getValue("usermail");
+            TTransaction::open('minicrm');
 
-            // veio da listagem
-            if(!$data->interacao_id)
+            $configuracao =  ConfiguracaoEmail::where('mail_from', '=', $email)->first();
+
+            if (empty($configuracao->id))
             {
-                // limpa a variavel de sessao
-                TSession::setValue('InteracaoListbuilder_datagrid_check', null);
-
-                TApplication::loadPage('InteracaoList', 'onShow');
+                throw new Exception('Selecione um email de envio válido.');
             }
 
-            // fecha a cortina lateral
-            TScript::create("Template.closeRightPanel();");
+            $interacao = new Interacao($data->interacao_id);
 
+            $tipo = $interacao->tipo_interacao_id;
+
+            if (empty($interacao->id))
+            {
+                throw new Exception('Interação não encontrada.');
+            }
+
+            $tos = [];
+
+            if (!empty($data->TDBCheckList))
+            {
+                foreach ((array) $data->TDBCheckList as $contato_id)
+                {
+                    $contato = new PessoaContato($contato_id);
+
+                    if (!empty($contato->email))
+                    {
+                        $tos[] = trim($contato->email);
+                    }
+                }
+            }
+
+            $tos = array_values(array_unique($tos));
+
+            if (empty($tos))
+            {
+                throw new Exception('Nenhum contato selecionado possui email cadastrado.');
+            }
+
+            $destinatarios = implode(', ', $tos);
+
+            $clienteNome = $interacao->cliente->razao_social ?: $interacao->cliente->nome;
+
+            TTransaction::close();
+
+            $assunto = self::aplicarMarcadores($data->assunto, [
+                '{nome}' => $clienteNome,
+                '{id}'   => $interacao->id
+            ]);
+
+            $mensagem = self::aplicarMarcadores($data->mensagem, [
+                '{nome}' => $clienteNome,
+                '{id}'   => $interacao->id
+            ]);
+
+            $ccs    = self::normalizarEmails($data->com_copia ?? null);
+            $anexos = self::normalizarAnexosEmail($data->conteudo_arquivo ?? null);
+
+            //var_dump($data->conteudo_arquivo);
+
+            if (!empty($data->conteudo_arquivo) && empty($anexos))
+            {
+                throw new Exception('Os arquivos foram selecionados, mas não foram encontrados no servidor para anexar.');
+            }
+
+            $confirma = self::enviarEmailComConfiguracao(
+                $tos,
+                $assunto,
+                $mensagem,
+                $configuracao,
+                'html',
+                $anexos,
+                $ccs
+            );
+
+            $dadosGeolocalizacao = InteracaoAtividadeCalendarForm::registrarEmailEnviadoNaAtividade(
+                $data->interacao_id,
+                $destinatarios,
+                $data->com_copia,
+                $assunto,
+                $mensagem,
+                $data->conteudo_arquivo ?? null
+            );
+
+            if (empty($data->geo_latitude) || empty($data->geo_longitude) || empty($data->geo_endereco)) {
+                throw new Exception('Dados de geolocalização não encontrados.');
+            }
+
+            if (empty($dadosGeolocalizacao['interacao_atividade'])) {
+                throw new Exception('Atividade do e-mail não encontrada para registrar localização.');
+            }
+
+            TTransaction::open('minicrm');            
+
+            $localizacao = new InteracaoLocalizacao;
+            $localizacao->interacao_id = $data->interacao_id;
+            $localizacao->interacao_atividade = $dadosGeolocalizacao['interacao_atividade'];
+            $localizacao->descricao = $data->geo_endereco ?? null;
+            $localizacao->latitude = $data->geo_latitude ?? null;
+            $localizacao->longitude = $data->geo_longitude ?? null;
+            $localizacao->dt_localizacao = date('Y-m-d H:i:55');
+            $localizacao->store();
+
+            if (!$data->interacao_id)
+            {                
+                TSession::setValue('InteracaoListbuilder_datagrid_check', null);
+                TApplication::loadPage('InteracaoList', 'onShow');
+            }
+            TTransaction::close();
+
+            TToast::show('info', 'Email enviado com sucesso!', 'topRight', 'far:check-circle');
+            TApplication::loadPage('InteracaoFormView', null, ['key'=>$interacao->id]);
         }
         catch (Exception $e)
         {
+            TTransaction::rollback();
+
             $data = $this->form->getData();
             $this->form->setData($data);
             new TMessage('error', $e->getMessage());
@@ -202,6 +313,297 @@ class InteracaoEmailForm extends TPage
         }
 
         return [-1];
+    }
+
+    private static function normalizarEmails($valor)
+    {
+        if (empty($valor))
+        {
+            return [];
+        }
+
+        if (is_array($valor))
+        {
+            $lista = $valor;
+        }
+        else
+        {
+            $lista = explode(';', str_replace(',', ';', (string) $valor));
+        }
+
+        $emails = [];
+
+        foreach ($lista as $item)
+        {
+            $email = trim((string) $item);
+
+            if ($email !== '')
+            {
+                $emails[] = $email;
+            }
+        }
+
+        return array_values(array_unique($emails));
+    }
+
+    private static function toBool($valor)
+    {
+        return in_array(strtolower(trim((string) $valor)), ['1', 't', 'true', 'y', 'yes', 's', 'sim'], true);
+    }
+
+    private static function normalizarAnexos($valor, $interacaoId)
+    {
+        if (empty($valor))
+        {
+            return [];
+        }
+
+        if (empty($interacaoId))
+        {
+            throw new Exception('Interação não informada para salvar os anexos.');
+        }
+
+        $lista = is_array($valor) ? $valor : [$valor];
+
+        $interacaoId  = (int) $interacaoId;
+        $destinoBase  = "anexos/interacao_$interacaoId";
+        $destinoFinal = $destinoBase . '/' . $interacaoId;
+
+        if (!is_dir($destinoBase))
+        {
+            if (!mkdir($destinoBase, 0777, true))
+            {
+                throw new Exception('Não foi possível criar a pasta base de anexos: ' . $destinoBase);
+            }
+        }
+
+        if (!is_dir($destinoFinal))
+        {
+            if (!mkdir($destinoFinal, 0777, true))
+            {
+                throw new Exception('Não foi possível criar a pasta da interação: ' . $destinoFinal);
+            }
+        }
+
+        if (!is_writable($destinoFinal))
+        {
+            throw new Exception('A pasta da interação não tem permissão de escrita: ' . $destinoFinal);
+        }
+
+        $anexos = [];
+
+        foreach ($lista as $item)
+        {
+            $arquivo = '';
+
+            if (is_string($item))
+            {
+                $itemDecodificado = urldecode($item);
+                $json = json_decode($itemDecodificado);
+
+                if (json_last_error() === JSON_ERROR_NONE && is_object($json))
+                {
+                    $arquivo = $json->newFile ?? $json->fileName ?? '';
+                }
+                else
+                {
+                    $arquivo = $item;
+                }
+            }
+            else if (is_object($item))
+            {
+                $arquivo = $item->newFile ?? $item->fileName ?? $item->name ?? '';
+            }
+            else
+            {
+                $arquivo = (string) $item;
+            }
+
+            $arquivo = trim($arquivo);
+
+            if ($arquivo === '')
+            {
+                continue;
+            }
+
+            $candidatos = [
+                $arquivo,
+                ltrim($arquivo, '/'),
+                getcwd() . '/' . ltrim($arquivo, '/'),
+            ];
+
+            $origemEncontrada = null;
+
+            foreach ($candidatos as $caminho)
+            {
+                if (is_file($caminho))
+                {
+                    $origemEncontrada = $caminho;
+                    break;
+                }
+            }
+
+            if (!$origemEncontrada)
+            {
+                continue;
+            }
+
+            $nomeOriginal   = basename($arquivo);
+            $destinoArquivo = $destinoFinal . '/' . uniqid() . '_' . $nomeOriginal;
+
+            if (!copy($origemEncontrada, $destinoArquivo))
+            {
+                throw new Exception('Não foi possível copiar o anexo para a pasta da interação: ' . $nomeOriginal);
+            }
+
+            $anexos[] = [$destinoArquivo, $nomeOriginal];
+        }
+
+        return $anexos;
+    }
+
+    private static function aplicarMarcadores($texto, array $marcadores)
+    {
+        return str_replace(
+            array_keys($marcadores),
+            array_values($marcadores),
+            (string) $texto
+        );
+    }
+
+    private static function enviarEmailComConfiguracao($tos, $subject, $body, ConfiguracaoEmail $configuracao, $bodytype = 'html', $attachs = [], $ccs = null)
+    {
+        $mail = new TMail;
+        $mail->setFrom(trim($configuracao->mail_from), APPLICATION_NAME);
+        $mail->setSubject($subject);
+
+        foreach (self::normalizarEmails($tos) as $to)
+        {
+            $mail->addAddress($to);
+        }
+
+        foreach (self::normalizarEmails($ccs) as $cc)
+        {
+            $mail->addCC($cc);
+        }
+
+        $usarSmtp = !empty($configuracao->smtp_host) && !empty($configuracao->smtp_port);
+        $mail->setUseSmtp($usarSmtp);
+
+        if ($usarSmtp)
+        {
+            $mail->SetSmtpHost($configuracao->smtp_host, $configuracao->smtp_port);
+
+            if (self::toBool($configuracao->smtp_auth))
+            {
+                $chaveSecreta = 'lakjsdlkasjdalksjdlakjdlk';
+                $senhaDescriptografada = openssl_decrypt(
+                    $configuracao->smtp_pass,
+                    'AES-128-CTR',
+                    $chaveSecreta,
+                    0,
+                    '1234567891011121'
+                );
+
+                if ($senhaDescriptografada === false)
+                {
+                    throw new Exception('Não foi possível descriptografar a senha do email.');
+                }
+
+                $mail->SetSmtpUser($configuracao->smtp_user, $senhaDescriptografada);
+            }
+        }
+
+        if (!empty($attachs))
+        {
+            foreach ($attachs as $attach)
+            {
+                $mail->addAttach($attach[0], $attach[1] ?? null);
+            }
+        }
+
+        if ($bodytype == 'text')
+        {
+            $mail->setTextBody($body);
+        }
+        else
+        {
+            $mail->setHtmlBody($body);
+        }
+
+        try {
+        $mail->send();
+        return true;
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
+        }
+    }
+
+     private static function normalizarAnexosEmail($valor)
+    {
+        if (empty($valor))
+        {
+            return [];
+        }
+
+        $lista = is_array($valor) ? $valor : [$valor];
+        $anexos = [];
+
+        foreach ($lista as $item)
+        {
+            $arquivo = '';
+
+            if (is_string($item))
+            {
+                $itemDecodificado = urldecode($item);
+                $json = json_decode($itemDecodificado);
+
+                if (json_last_error() === JSON_ERROR_NONE && is_object($json))
+                {
+                    $arquivo = $json->newFile ?? $json->fileName ?? $json->name ?? '';
+                }
+                else
+                {
+                    $arquivo = $item;
+                }
+            }
+            else if (is_object($item))
+            {
+                $arquivo = $item->newFile ?? $item->fileName ?? $item->name ?? '';
+            }
+            else if (is_array($item))
+            {
+                $arquivo = $item['newFile'] ?? $item['fileName'] ?? $item['name'] ?? '';
+            }
+            else
+            {
+                $arquivo = (string) $item;
+            }
+
+            $arquivo = trim($arquivo);
+
+            if ($arquivo === '')
+            {
+                continue;
+            }
+
+            $candidatos = [
+                $arquivo,
+                ltrim($arquivo, '/'),
+                getcwd() . '/' . ltrim($arquivo, '/'),
+            ];
+
+            foreach ($candidatos as $caminho)
+            {
+                if (is_file($caminho))
+                {
+                    $anexos[] = [$caminho, basename($arquivo)];
+                    break;
+                }
+            }
+        }
+
+        return $anexos;
     }
 
 }

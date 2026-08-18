@@ -34,16 +34,24 @@ class PessoaForm extends TPage
         $criteria_categoria_cliente_id = new TCriteria();
         $criteria_pessoa_endereco_pessoa_cidade_id = new TCriteria();
 
+        $filterUser = TSession::getValue("userid");
+        $ids = [$filterUser, 19];
+
+        $criteria_representante_id->add(
+            new TFilter('system_user_id', 'IN', $ids)
+        );
+
         $id = new TEntry('id');
         $tipo_pessoa_id = new TDBCombo('tipo_pessoa_id', 'minicrm', 'TipoPessoa', 'id', '{nome}','nome asc' , $criteria_tipo_pessoa_id );
         $buscar_cnpj = new TButton('buscar_cnpj');
         $razao_social = new TEntry('razao_social');
+        $nome_fantasia = new TEntry('nome_fantasia');
         $fone = new TEntry('fone');
         $email = new TEntry('email');
         $cpf_cnpj = new TEntry('cpf_cnpj');
         $rg_ie = new TEntry('rg_ie');
         $ativo = new TCombo('ativo');
-        $representante_id = new TDBCombo('representante_id', 'minicrm', 'Representante', 'id', '{razao_social}','razao_social asc' , $criteria_representante_id );
+        $representante_id = new TDBCombo('representante_id', 'minicrm', 'Representante', 'system_user_id', '{razao_social}','razao_social asc' , $criteria_representante_id );
         $categoria_cliente_id = new TDBCombo('categoria_cliente_id', 'minicrm', 'CategoriaCliente', 'id', '{nome}','nome asc' , $criteria_categoria_cliente_id );
         $pessoa_endereco_pessoa_nome = new TEntry('pessoa_endereco_pessoa_nome');
         $pessoa_endereco_pessoa_cep = new TEntry('pessoa_endereco_pessoa_cep');
@@ -59,8 +67,6 @@ class PessoaForm extends TPage
 
         $tipo_pessoa_id->setChangeAction(new TAction([$this,'onSelectTipo']));
 
-        $cpf_cnpj->setExitAction(new TAction([$this,'onInsertCNPJ']));
-
         $tipo_pessoa_id->addValidation("Tipo de pessoa", new TRequiredValidator()); 
         $razao_social->addValidation("Razão social", new TRequiredValidator()); 
         $ativo->addValidation("Ativo não informado", new TRequiredValidator()); 
@@ -74,13 +80,9 @@ class PessoaForm extends TPage
         $pessoa_endereco_pessoa_principal->setUseSwitch(true, 'blue');
         $pessoa_endereco_pessoa_principal->setIndexValue("S");
         $pessoa_endereco_pessoa_principal->setInactiveIndexValue("N");
-        $ativo->setValue('S');
-        $tipo_pessoa_id->setValue('2');
-        $pessoa_endereco_pessoa_principal->setValue('S');
-
         $button_buscar_pessoa_endereco_pessoa->setAction(new TAction([$this, 'onBuscarCEP']), "Buscar");
         $button_adicionar_pessoa_endereco_pessoa->setAction(new TAction([$this, 'onAddDetailPessoaEnderecoPessoa'],['static' => 1]), "Adicionar");
-        $buscar_cnpj->setAction(new TAction(['BuscarCNPJForm', 'onShow'],['campo' => '["razao_social", "fone" ,"cpf_cnpj", "pessoa_endereco_pessoa_cep" ,"pessoa_endereco_pessoa_cidade_id", "pessoa_endereco_pessoa_id", "pessoa_endereco_pessoa_bairro", "pessoa_endereco_pessoa_rua" ,"pessoa_endereco_pessoa_numero" ,"pessoa_endereco_pessoa_complemento"]',"form" => self::$formName,"page" => "PessoaForm"]), "Buscar");
+        $buscar_cnpj->setAction(new TAction(['BuscarCNPJForm', 'onShow'],['campo' => '["razao_social", "nome_fantasia","fone" ,"cpf_cnpj", "pessoa_endereco_pessoa_cep" ,"pessoa_endereco_pessoa_cidade_id", "pessoa_endereco_pessoa_id", "pessoa_endereco_pessoa_bairro", "pessoa_endereco_pessoa_rua" ,"pessoa_endereco_pessoa_numero" ,"pessoa_endereco_pessoa_complemento"]',"form" => self::$formName,"page" => "PessoaForm"]), "Buscar");
 
         $buscar_cnpj->addStyleClass('btn-default');
         $button_buscar_pessoa_endereco_pessoa->addStyleClass('btn-default');
@@ -89,6 +91,11 @@ class PessoaForm extends TPage
         $buscar_cnpj->setImage('fas:search #000000');
         $button_buscar_pessoa_endereco_pessoa->setImage('fas:search #000000');
         $button_adicionar_pessoa_endereco_pessoa->setImage('fas:plus #2ecc71');
+
+        $ativo->setValue('S');
+        $tipo_pessoa_id->setValue('2');
+        $pessoa_endereco_pessoa_principal->setValue('S');
+        $representante_id->setValue(TSession::getValue("userid"));
 
         $ativo->enableSearch();
         $tipo_pessoa_id->enableSearch();
@@ -115,6 +122,7 @@ class PessoaForm extends TPage
         $ativo->setSize('100%');
         $cpf_cnpj->setSize('100%');
         $razao_social->setSize('100%');
+        $nome_fantasia->setSize('100%');
         $representante_id->setSize('100%');
         $categoria_cliente_id->setSize('100%');
         $pessoa_endereco_pessoa_id->setSize(200);
@@ -141,8 +149,8 @@ class PessoaForm extends TPage
         $row1 = $tab_66e84664306d9->addFields([new TLabel("Id:", null, '14px', null, '100%'),$id]);
         $row1->layout = [' col-sm-3'];
 
-        $row2 = $tab_66e84664306d9->addFields([new TLabel("Tipo de pessoa:", '#ff0000', '14px', null, '100%'),$tipo_pessoa_id,$buscar_cnpj],[new TLabel("Razão social:", '#ff0000', '14px', null, '100%'),$razao_social]);
-        $row2->layout = [' col-sm-4',' col-sm-8'];
+        $row2 = $tab_66e84664306d9->addFields([new TLabel("Tipo de pessoa:", '#ff0000', '14px', null, '100%'),$tipo_pessoa_id,$buscar_cnpj],[new TLabel("Razão social:", '#ff0000', '14px', null, '100%'),$razao_social],[new TLabel("Nome Fantasia:", '#FF0000', '14px', null),$nome_fantasia]);
+        $row2->layout = ['col-sm-4','col-sm-8',' col-sm-12'];
 
         $row3 = $tab_66e84664306d9->addFields([new TLabel("Telefone:", null, '14px', null, '100%'),$fone],[new TLabel("Email:", null, '14px', null, '100%'),$email]);
         $row3->layout = [' col-sm-6',' col-sm-6'];
@@ -264,29 +272,6 @@ class PessoaForm extends TPage
 
     }
 
-    public static function onInsertCNPJ($param = null) 
-    {
-        try 
-        {
-            TTransaction::open(self::$database);
-            $cpf_cnpj = preg_replace("/[^0-9.]/", "",$param['cpf_cnpj']);
-            $pessoa = Pessoa::where('cpf_cnpj','=',$cpf_cnpj)->first();
-            if($pessoa){
-                TToast::show("warning", "Documento já cadastrado.", "topRight", "");
-                $data = new stdClass();
-                $data->cpf_cnpj = null;
-                TForm::sendData(self::$formName, $data);
-            }
-
-            TTransaction::close();
-
-        }
-        catch (Exception $e) 
-        {
-            new TMessage('error', $e->getMessage());    
-        }
-    }
-
     public static function onSelectTipo($param = null) 
     {
         try 
@@ -326,13 +311,15 @@ class PessoaForm extends TPage
             $dadosCEP = CEPService::get($param['pessoa_endereco_pessoa_cep']);
             TTransaction::close();
 
-            if($dadosCEP)
+            if ($dadosCEP)
             {
-                $data = new stdClass;
+                $data = $this->form->getData();
+
                 $data->pessoa_endereco_pessoa_cidade_id = $dadosCEP->cidade_id;
-                $data->pessoa_endereco_pessoa_bairro = $dadosCEP->bairro;
-                $data->pessoa_endereco_pessoa_rua = $dadosCEP->rua;    
-                TForm::sendData(self::$formName, $data);
+                $data->pessoa_endereco_pessoa_bairro    = $dadosCEP->bairro;
+                $data->pessoa_endereco_pessoa_rua       = $dadosCEP->rua;
+
+                TForm::sendData(self::$formName, $data, false, false);
             }
             else
             {
@@ -515,31 +502,135 @@ class PessoaForm extends TPage
     {
         try
         {
-            TTransaction::open(self::$database); // open a transaction
-
             $messageAction = null;
 
-            $this->form->validate(); // validate form data
-
-            $object = new Pessoa(); // create an empty object 
-
+            $this->form->validate(); // validate form data            
             $data = $this->form->getData(); // get form data as array
 
-            $cpf_cnpj = preg_replace("/[^0-9.]/", "",$data->cpf_cnpj);
+            TTransaction::open('corporerm');
+            $cpf_cnpj = preg_replace("/[^0-9]/", "",$data->cpf_cnpj);
+            $fone = preg_replace("/[^0-9]/", "",$data->fone);
+            $length = strlen($cpf_cnpj);
 
-            $validate = Pessoa::where('cpf_cnpj','=',  $cpf_cnpj)->first();
+            $conn = TTransaction::get();
 
-            if($validate){
-                throw new Exception('Documento já cadastrado.');
-            }else{
-                $object->fromArray( (array) $data); // load the object with data
-
-                $pessoa = Pessoa::where('cpf_cnpj','=',$param['cpf_cnpj'])->first();
-                if($pessoa){
-                    throw new Exception('Documento já cadastrado.');
+            if ($data->tipo_pessoa_id== '1'){
+                if ($length != 11) {
+                    new TMessage('warning', 'Formato incompatível com CPF!');
+                    TTransaction::rollback();
+                    return;   
                 }
 
-                $object->origem = 'AP';
+                $cpf = preg_replace("/(\d{3})(\d{3})(\d{3})(\d{2})/", "$1.$2.$3-$4", $cpf_cnpj);
+                $result = $conn->query("
+                                        SELECT 
+                                            TOP 1 CGCCFO 
+                                        FROM FCFO
+                                        WHERE CGCCFO = '{$cpf_cnpj}'
+                                        OR CGCCFO = '{$cpf}'
+                                        ");
+            }
+            else if ($data->tipo_pessoa_id== '2'){      
+                if ($length != 14) {
+                    new TMessage('warning', 'Formato incompatível com CNPJ!');
+                    TTransaction::rollback();
+                    return;   
+                }
+
+                $cnpj = preg_replace('/^([a-zA-Z0-9]{2})([a-zA-Z0-9]{3})([a-zA-Z0-9]{3})([a-zA-Z0-9]{4})([a-zA-Z0-9]{2})$/','$1.$2.$3/$4-$5',$cpf_cnpj); 
+                $result = $conn->query("
+                                        SELECT 
+                                            TOP 1 CGCCFO 
+                                        FROM FCFO
+                                        WHERE CGCCFO = '{$cpf_cnpj}'
+                                        OR CGCCFO = '{$cnpj}'
+                                        ");
+            }
+            if (empty($result)) {
+                throw new Exception('Erro ao executar consulta.');
+            }
+            $select = $result->fetch(PDO::FETCH_ASSOC);
+
+            if (!empty($select)) {               
+                if($data->tipo_pessoa_id== '1')
+                {                    
+                    new TMessage('warning', 'Este CPF já esta cadastrado na TOTVS, sincronize para trazer cadastro!');
+                    TTransaction::rollback();
+                    return;   
+
+                }
+                else  if($data->tipo_pessoa_id== '2')
+                {
+                    new TMessage('warning', 'Este CNPJ já esta cadastrado na TOTVS, sincronize para trazer cadastro!');
+                    TTransaction::rollback();
+                    return; 
+                }
+            }
+
+            TTransaction::close();
+
+            TTransaction::open(self::$database);
+            $pessoaPadrao = Pessoa::where('cpf_cnpj','=', $data->cpf_cnpj)->first();
+            $pessoaRegex = Pessoa::where('cpf_cnpj','=',$cpf_cnpj)->first();
+
+            if ($pessoaPadrao) {
+                $keyPadrao = ['key' => $pessoaPadrao->id];
+            }
+            if ($pessoaRegex) {
+                $keyRegex = ['key' => $pessoaRegex->id];
+            }
+
+            if($data->tipo_pessoa_id== '1')
+            {
+
+                if($pessoaPadrao){
+                    new TQuestion(
+                                "Este CPF já está cadastrado como cliente. Deseja visualizar o cadastro existente?",
+                                new TAction(['ClienteFormView', 'onEdit' ], $keyPadrao),
+                                new TAction([ __CLASS__, 'onNo' ], $keyPadrao)
+                            );
+                    TTransaction::rollback();
+                    return; 
+                }
+                else if($pessoaRegex){
+                    new TQuestion(
+                                "Este CPF já está cadastrado como cliente. Deseja visualizar o cadastro existente?",
+                                new TAction(['ClienteFormView', 'onEdit' ], $keyRegex),
+                                new TAction([ __CLASS__, 'onNo' ], $keyRegex)
+                            );
+                    TTransaction::rollback();
+                    return; 
+                }
+
+            }
+            else  if($data->tipo_pessoa_id== '2')
+            {
+                if($pessoaPadrao){
+                    new TQuestion(
+                                "Este CNPJ já está cadastrado como cliente. Deseja visualizar o cadastro existente?",
+                                new TAction(['ClienteFormView', 'onEdit' ], $keyPadrao),
+                                new TAction([ __CLASS__, 'onNo' ], $keyPadrao)
+                            );
+                    TTransaction::rollback();
+                    return;                     
+                }
+                else if($pessoaRegex){
+                    new TQuestion(
+                                "Este CNPJ já está cadastrado como cliente. Deseja visualizar o cadastro existente?",
+                                new TAction(['ClienteFormView', 'onEdit' ], $keyRegex),
+                                new TAction([ __CLASS__, 'onNo' ], $keyRegex)
+                            );
+                    TTransaction::rollback();
+                    return; 
+                }
+            }        
+
+            $object = new Pessoa(); // create an empty object 
+            $object->fromArray((array) $data);
+            $object->cpf_cnpj = $cpf_cnpj;
+            if(!empty($fone)){
+                $object->fone = $fone;
+            }
 
             $object->store(); // save the object 
 
@@ -548,9 +639,12 @@ class PessoaForm extends TPage
             $grupo->pessoa_id =  $object->id;
             $grupo->store();
 
+            $representante = Representante::where('system_user_id', '=', $data->representante_id)->first();
+            $representante = $representante->id;
+
             $complemento = new Complemento();
             $complemento->pessoa_id =  $object->id;
-            $complemento->representante_id = $data->representante_id;
+            $complemento->representante_id = $representante;
             $complemento->store();
 
             TForm::sendData(self::$formName, (object)['id' => $object->id]);
@@ -561,6 +655,43 @@ class PessoaForm extends TPage
 
             }, $this->pessoa_endereco_pessoa_criteria); 
 
+           if (empty($pessoa_endereco_pessoa_items))
+            {
+                throw new Exception('O cliente deve possuir pelo menos um endereço cadastrado.');
+            }
+
+            $temEnderecoPrincipal = false;
+
+            foreach ($pessoa_endereco_pessoa_items as $item)
+            {
+                $principal = null;
+
+                if (is_object($item))
+                {
+                    $principal = $item->principal ?? null;
+                }
+                else if (is_array($item))
+                {
+                    $principal = $item['principal'] ?? null;
+                }
+
+                if (
+                    $principal === 'S' ||
+                    $principal === 's' ||
+                    $principal === '1' ||
+                    $principal === 1 ||
+                    $principal === true ||
+                    $principal === 'on'
+                ) {
+                    $temEnderecoPrincipal = true;
+                    break;
+                }
+            }
+
+            if (!$temEnderecoPrincipal)
+            {
+                throw new Exception('O cliente deve possuir pelo menos um endereço principal.');
+            }
             // get the generated {PRIMARY_KEY}
             $data->id = $object->id; 
 
@@ -572,12 +703,10 @@ class PessoaForm extends TPage
              TApplication::loadPage('ClienteList', 'onShow');
                         TScript::create("Template.closeRightPanel();"); 
 
-            }
         }
         catch (Exception $e) // in case of exception
         {
 
-            var_dump($e->getMessage() . '</br>' . $e->getLine());
             new TMessage('error', $e->getMessage()); // shows the exception error message
             $this->form->setData( $this->form->getData() ); // keep form data
             TTransaction::rollback(); // undo all pending operations
@@ -635,6 +764,11 @@ class PessoaForm extends TPage
     public static function getFormName()
     {
         return self::$formName;
+    }
+
+    public static function onNo()
+    {
+        return;
     }
 
 }

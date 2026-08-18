@@ -6,7 +6,6 @@ class InteracaoLocalizacao extends TRecord
     const PRIMARYKEY = 'id';
     const IDPOLICY   =  'serial'; // {max, serial}
 
-    const DELETEDAT  = 'deleted_at';
     const CREATEDAT  = 'created_at';
 
     private Interacao $interacao;
@@ -24,6 +23,7 @@ class InteracaoLocalizacao extends TRecord
         parent::addAttribute('dt_localizacao');
         parent::addAttribute('created_at');
         parent::addAttribute('deleted_at');
+        parent::addAttribute('interacao_atividade');
     
     }
 

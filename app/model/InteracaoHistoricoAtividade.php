@@ -24,10 +24,11 @@ class InteracaoHistoricoAtividade extends TRecord
         parent::addAttribute('tipo_atividade_id');
         parent::addAttribute('estado_atividade_id');
         parent::addAttribute('dt_atividade');
-        parent::addAttribute('descricao');
         parent::addAttribute('observacao');
         parent::addAttribute('horario_inicial');
         parent::addAttribute('horario_final');
+        parent::addAttribute('deleted_at');
+        parent::addAttribute('interacao_atividade_id');
             
     }
 

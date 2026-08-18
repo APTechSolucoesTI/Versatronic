@@ -108,6 +108,7 @@ class NotaStatusForm extends TPage
             TApplication::loadPage('NotaStatusHeaderList', 'onShow', $loadPageParam); 
 
                         TScript::create("Template.closeRightPanel();"); 
+
         }
         catch (Exception $e) // in case of exception
         {

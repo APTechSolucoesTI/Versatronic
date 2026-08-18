@@ -58,5 +58,45 @@ class InteracaoDocument extends TPage
         }
     }
 
+private static function formatarCpfCnpj($valor)
+{
+    $valor = preg_replace('/\D/', '', (string) $valor);
+
+    if (strlen($valor) == 11) {
+        return preg_replace('/(\d{3})(\d{3})(\d{3})(\d{2})/', '$1.$2.$3-$4', $valor);
+    }
+
+    if (strlen($valor) == 14) {
+        return preg_replace('/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/', '$1.$2.$3/$4-$5', $valor);
+    }
+
+    return $valor;
+}
+
+private static function formatarTelefone($valor)
+{
+    $valor = preg_replace('/\D/', '', (string) $valor);
+
+    if (strlen($valor) == 11) {
+        return preg_replace('/(\d{2})(\d{5})(\d{4})/', '($1) $2-$3', $valor);
+    }
+
+    if (strlen($valor) == 10) {
+        return preg_replace('/(\d{2})(\d{4})(\d{4})/', '($1) $2-$3', $valor);
+    }
+
+    return $valor;
+}
+
+private static function formatarCep($valor)
+{
+    $valor = preg_replace('/\D/', '', (string) $valor);
+
+    if (strlen($valor) == 8) {
+        return preg_replace('/(\d{5})(\d{3})/', '$1-$2', $valor);
+    }
+
+    return $valor;
+}
 }
 

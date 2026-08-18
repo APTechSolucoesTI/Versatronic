@@ -28,6 +28,15 @@ class CategoriaCliente extends TRecord
         $criteria->add(new TFilter('categoria_cliente_id', '=', $this->id));
         return Pessoa::getObjects( $criteria );
     }
+    /**
+     * Method getPrazoAtividades
+     */
+    public function getPrazoAtividades()
+    {
+        $criteria = new TCriteria;
+        $criteria->add(new TFilter('categoria_cliente_id', '=', $this->id));
+        return PrazoAtividade::getObjects( $criteria );
+    }
 
     public function set_pessoa_tipo_pessoa_to_string($pessoa_tipo_pessoa_to_string)
     {
@@ -130,6 +139,58 @@ class CategoriaCliente extends TRecord
         }
     
         $values = Pessoa::where('categoria_cliente_id', '=', $this->id)->getIndexedArray('nacionalidade_id','{nacionalidade->descricao}');
+        return implode(', ', $values);
+    }
+
+    public function set_prazo_atividade_regras_tipo_atividade_to_string($prazo_atividade_regras_tipo_atividade_to_string)
+    {
+        if(is_array($prazo_atividade_regras_tipo_atividade_to_string))
+        {
+            $values = RegrasTipoAtividade::where('id', 'in', $prazo_atividade_regras_tipo_atividade_to_string)->getIndexedArray('id', 'id');
+            $this->prazo_atividade_regras_tipo_atividade_to_string = implode(', ', $values);
+        }
+        else
+        {
+            $this->prazo_atividade_regras_tipo_atividade_to_string = $prazo_atividade_regras_tipo_atividade_to_string;
+        }
+
+        $this->vdata['prazo_atividade_regras_tipo_atividade_to_string'] = $this->prazo_atividade_regras_tipo_atividade_to_string;
+    }
+
+    public function get_prazo_atividade_regras_tipo_atividade_to_string()
+    {
+        if(!empty($this->prazo_atividade_regras_tipo_atividade_to_string))
+        {
+            return $this->prazo_atividade_regras_tipo_atividade_to_string;
+        }
+    
+        $values = PrazoAtividade::where('categoria_cliente_id', '=', $this->id)->getIndexedArray('regras_tipo_atividade_id','{regras_tipo_atividade->id}');
+        return implode(', ', $values);
+    }
+
+    public function set_prazo_atividade_categoria_cliente_to_string($prazo_atividade_categoria_cliente_to_string)
+    {
+        if(is_array($prazo_atividade_categoria_cliente_to_string))
+        {
+            $values = CategoriaCliente::where('id', 'in', $prazo_atividade_categoria_cliente_to_string)->getIndexedArray('nome', 'nome');
+            $this->prazo_atividade_categoria_cliente_to_string = implode(', ', $values);
+        }
+        else
+        {
+            $this->prazo_atividade_categoria_cliente_to_string = $prazo_atividade_categoria_cliente_to_string;
+        }
+
+        $this->vdata['prazo_atividade_categoria_cliente_to_string'] = $this->prazo_atividade_categoria_cliente_to_string;
+    }
+
+    public function get_prazo_atividade_categoria_cliente_to_string()
+    {
+        if(!empty($this->prazo_atividade_categoria_cliente_to_string))
+        {
+            return $this->prazo_atividade_categoria_cliente_to_string;
+        }
+    
+        $values = PrazoAtividade::where('categoria_cliente_id', '=', $this->id)->getIndexedArray('categoria_cliente_id','{categoria_cliente->nome}');
         return implode(', ', $values);
     }
 

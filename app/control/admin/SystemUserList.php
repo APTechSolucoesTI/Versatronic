@@ -160,6 +160,14 @@ class SystemUserList extends TPage
         $action_del->setField('id');
         $this->datagrid->addAction($action_del);
         
+        // create Configuração de E-mail action
+        $action_email = new TDataGridAction(array('ConfiguracaoEmailFormList', 'onShow'));
+        $action_email->setButtonClass('btn btn-default');
+        $action_email->setLabel('Configuração de E-mail');
+        $action_email->setImage('far:envelope fa-fw');
+        $action_email->setField('id');
+        $this->datagrid->addAction($action_email);
+
         // create CLONE action
         $action_clone = new TDataGridAction(array($this, 'onClone'));
         $action_clone->setButtonClass('btn btn-default');

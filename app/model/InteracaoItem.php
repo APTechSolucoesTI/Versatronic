@@ -25,6 +25,7 @@ class InteracaoItem extends TRecord
         parent::addAttribute('valor');
         parent::addAttribute('valor_total');
         parent::addAttribute('dt_item');
+        parent::addAttribute('deleted_at');
             
     }
 

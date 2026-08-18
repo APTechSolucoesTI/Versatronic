@@ -28,22 +28,27 @@ class TipoAtividadeForm extends TPage
         $this->form->setFormTitle("Cadastro de tipo de atividade");
 
         $criteria_tipo_interacao = new TCriteria();
+        $criteria_regras_tipo_atividade_id = new TCriteria();
 
         $id = new TEntry('id');
         $nome = new TEntry('nome');
         $cor = new TColor('cor');
         $icone = new TIcon('icone');
         $tipo_interacao = new TDBCheckGroup('tipo_interacao', 'minicrm', 'TipoInteracao', 'id', '{nome}','nome asc' , $criteria_tipo_interacao );
+        $regras_tipo_atividade_id = new TDBCombo('regras_tipo_atividade_id', 'minicrm', 'RegrasTipoAtividade', 'id', '{nome}','id asc' , $criteria_regras_tipo_atividade_id );
 
+        $regras_tipo_atividade_id->addValidation("Tipo de Atividade", new TRequiredValidator()); 
 
         $id->setEditable(false);
         $tipo_interacao->setLayout('horizontal');
         $tipo_interacao->setUseButton();
+        $regras_tipo_atividade_id->enableSearch();
         $id->setSize(100);
         $cor->setSize('100%');
         $nome->setSize('100%');
         $icone->setSize('100%');
         $tipo_interacao->setSize(80);
+        $regras_tipo_atividade_id->setSize('100%');
 
         $row1 = $this->form->addFields([new TLabel("Id:", null, '14px', null, '100%'),$id]);
         $row1->layout = ['col-sm-6'];
@@ -53,6 +58,9 @@ class TipoAtividadeForm extends TPage
 
         $row3 = $this->form->addFields([new TLabel("Tipo de interação:", null, '14px', null, '100%'),$tipo_interacao]);
         $row3->layout = [' col-sm-12'];
+
+        $row4 = $this->form->addFields([new TLabel("Tipo de Atividade:", '#F12C2C', '14px', null),$regras_tipo_atividade_id]);
+        $row4->layout = [' col-sm-12'];
 
         // create the form actions
         $btn_onsave = $this->form->addAction("Salvar", new TAction([$this, 'onSave']), 'fas:save #ffffff');

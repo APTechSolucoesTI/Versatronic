@@ -6,6 +6,8 @@ class TipoAtividade extends TRecord
     const PRIMARYKEY = 'id';
     const IDPOLICY   =  'serial'; // {max, serial}
 
+    private RegrasTipoAtividade $regras_tipo_atividade;
+
     /**
      * Constructor method
      */
@@ -15,7 +17,35 @@ class TipoAtividade extends TRecord
         parent::addAttribute('nome');
         parent::addAttribute('cor');
         parent::addAttribute('icone');
+        parent::addAttribute('regras_tipo_atividade_id');
     
+    }
+
+    /**
+     * Method set_regras_tipo_atividade
+     * Sample of usage: $var->regras_tipo_atividade = $object;
+     * @param $object Instance of RegrasTipoAtividade
+     */
+    public function set_regras_tipo_atividade(RegrasTipoAtividade $object)
+    {
+        $this->regras_tipo_atividade = $object;
+        $this->regras_tipo_atividade_id = $object->id;
+    }
+
+    /**
+     * Method get_regras_tipo_atividade
+     * Sample of usage: $var->regras_tipo_atividade->attribute;
+     * @returns RegrasTipoAtividade instance
+     */
+    public function get_regras_tipo_atividade()
+    {
+    
+        // loads the associated object
+        if (empty($this->regras_tipo_atividade))
+            $this->regras_tipo_atividade = new RegrasTipoAtividade($this->regras_tipo_atividade_id);
+    
+        // returns the associated object
+        return $this->regras_tipo_atividade;
     }
 
     /**

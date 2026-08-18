@@ -72,7 +72,7 @@ class InteracaoAtividadeGlobalCalendarFormView extends TPage
 
             if (isset($filterVar) AND ( (is_scalar($filterVar) AND $filterVar !== '') OR (is_array($filterVar) AND (!empty($filterVar)))))
             {
-                $criteria->add(new TFilter('interacao_id', 'in', "(SELECT id FROM interacao WHERE  deleted_at is null AND cliente_id = '{$filterVar}')")); 
+                $criteria->add(new TFilter('interacao_id', 'in', "(SELECT id FROM interacao WHERE cliente_id = '{$filterVar}')")); 
             }
             if(!empty($param["vendedor_id"] ?? ""))
         {
@@ -82,7 +82,7 @@ class InteracaoAtividadeGlobalCalendarFormView extends TPage
 
             if (isset($filterVar) AND ( (is_scalar($filterVar) AND $filterVar !== '') OR (is_array($filterVar) AND (!empty($filterVar)))))
             {
-                $criteria->add(new TFilter('interacao_id', 'in', "(SELECT id FROM interacao WHERE  deleted_at is null AND vendedor_id = '{$filterVar}')")); 
+                $criteria->add(new TFilter('interacao_id', 'in', "(SELECT id FROM interacao WHERE vendedor_id = '{$filterVar}')")); 
             }
 
             $representante = Representante::where('system_user_id','=',TSession::getValue('userid'))->load();

@@ -46,6 +46,7 @@ class TipoAtividadeHeaderList extends TPage
 
         $column_id = new TDataGridColumn('id', "Id", 'center' , '70px');
         $column_nome = new TDataGridColumn('nome', "Nome", 'left');
+        $column_regras_tipo_atividade_nome = new TDataGridColumn('regras_tipo_atividade->nome', "Tipo de Atividade:", 'left');
         $column_cor_transformed = new TDataGridColumn('cor', "Cor", 'center');
         $column_icone_transformed = new TDataGridColumn('icone', "Ícone", 'center');
 
@@ -69,6 +70,7 @@ class TipoAtividadeHeaderList extends TPage
 
         $this->datagrid->addColumn($column_id);
         $this->datagrid->addColumn($column_nome);
+        $this->datagrid->addColumn($column_regras_tipo_atividade_nome);
         $this->datagrid->addColumn($column_cor_transformed);
         $this->datagrid->addColumn($column_icone_transformed);
 

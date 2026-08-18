@@ -48,6 +48,7 @@ class InteracaoArquivoHeaderList extends TPage
         $this->datagrid->setHeight(320);
 
         $column_dt_arquivo_transformed = new TDataGridColumn('dt_arquivo', "Data", 'center');
+        $column_interacao_atividade_transformed = new TDataGridColumn('interacao_atividade', "Atividade", 'center');
         $column_conteudo_arquivo = new TDataGridColumn('conteudo_arquivo', "Arquivo", 'center');
 
         $column_dt_arquivo_transformed->setTransformer(function($value, $object, $row, $cell = null, $last_row = null)
@@ -64,9 +65,30 @@ class InteracaoArquivoHeaderList extends TPage
                     return $value;
                 }
             }
+        });
+
+        $column_interacao_atividade_transformed->setTransformer(function($value, $object, $row, $cell = null, $last_row = null)
+        {
+
+            if($value){
+                TTransaction::open('minicrm');
+                $atividade = InteracaoAtividade::find($value);
+                if (!empty($atividade)) {
+                    $tipo_atividade = TipoAtividade::find($atividade->tipo_atividade_id);                
+                }
+                TTransaction::close();        
+            }    
+
+            if(empty($tipo_atividade->nome)){
+                return 'Nenhuma';
+            }
+            else{
+                return $tipo_atividade->nome ?? '';
+            }
         });        
 
         $this->datagrid->addColumn($column_dt_arquivo_transformed);
+        $this->datagrid->addColumn($column_interacao_atividade_transformed);
         $this->datagrid->addColumn($column_conteudo_arquivo);
 
         $action_onBaixar = new TDataGridAction(array('InteracaoArquivoHeaderList', 'onBaixar'));
@@ -176,14 +198,35 @@ class InteracaoArquivoHeaderList extends TPage
 
                 // deletes the object from the database
 
-                $interacaoHistoricoArquivo = new InteracaoHistoricoArquivo;
-                $interacaoHistoricoArquivo->interacao_id = $object->interacao_id;
-                $interacaoHistoricoArquivo->dt_arquivo = date('Y-m-d H:i:s');
-                $interacaoHistoricoArquivo->descricao = $object->conteudo_arquivo;
-                $interacaoHistoricoArquivo->movimentacao_id = Movimentacao::EXCLUIDO;
-                $interacaoHistoricoArquivo->store();
+                if (!empty($object->interacao_atividade)) {
+                    $interacaoAtividade = InteracaoAtividade::where('id', '=', $object->interacao_atividade)->first();
 
-                 $object->delete();
+                    if (!empty($interacaoAtividade)) {
+
+                        if ($interacaoAtividade->tipo_atividade_id == 1 || $interacaoAtividade->tipo_atividade_id == 5 || $interacaoAtividade->tipo_atividade_id == 9) {
+                            TTransaction::close();
+                            new TMessage('info', "Não é permitido deletar arquivos deste tipo de atividade!");
+                            return;
+                        }
+                        else {
+
+                            $caminhoArquivo = trim((string) $object->conteudo_arquivo);
+                            if (!empty($caminhoArquivo) && is_file($caminhoArquivo)) {
+                                @unlink($caminhoArquivo);
+                            }                                                                          
+
+                            $interacaoHistoricoArquivo = new InteracaoHistoricoArquivo;
+                            $interacaoHistoricoArquivo->interacao_id = $object->interacao_id;
+                            $interacaoHistoricoArquivo->dt_arquivo = date('Y-m-d H:i:s');
+                            $interacaoHistoricoArquivo->descricao = $object->conteudo_arquivo;
+                            $interacaoHistoricoArquivo->movimentacao_id = Movimentacao::EXCLUIDO;
+                            $interacaoHistoricoArquivo->interacao_arquivo_id = null;
+                            $interacaoHistoricoArquivo->store();      
+
+                            $object->delete();         
+                        }
+                    }                   
+                }
 
                 // close the transaction
                 TTransaction::close();
@@ -285,7 +328,7 @@ class InteracaoArquivoHeaderList extends TPage
 
             if (empty($param['order']))
             {
-                $param['order'] = 'id';    
+                $param['order'] = 'dt_arquivo';    
             }
             if (empty($param['direction']))
             {

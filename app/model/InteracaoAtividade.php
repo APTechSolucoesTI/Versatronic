@@ -28,6 +28,10 @@ class InteracaoAtividade extends TRecord
         parent::addAttribute('horario_final');
         parent::addAttribute('observacao');
         parent::addAttribute('dt_atividade');
+        parent::addAttribute('conteudo_arquivo');
+        parent::addAttribute('destinatario');
+        parent::addAttribute('copia');
+        parent::addAttribute('assunto');
             
     }
 
@@ -108,6 +112,68 @@ class InteracaoAtividade extends TRecord
     
         // returns the associated object
         return $this->estado_atividade;
+    }
+
+    /**
+     * Method getInteracaoAtividadeRevisaos
+     */
+    public function getInteracaoAtividadeRevisaos()
+    {
+        $criteria = new TCriteria;
+        $criteria->add(new TFilter('interacao_atividade_id', '=', $this->id));
+        return InteracaoAtividadeRevisao::getObjects( $criteria );
+    }
+
+    public function set_interacao_atividade_revisao_system_users_to_string($interacao_atividade_revisao_system_users_to_string)
+    {
+        if(is_array($interacao_atividade_revisao_system_users_to_string))
+        {
+            $values = SystemUsers::where('id', 'in', $interacao_atividade_revisao_system_users_to_string)->getIndexedArray('name', 'name');
+            $this->interacao_atividade_revisao_system_users_to_string = implode(', ', $values);
+        }
+        else
+        {
+            $this->interacao_atividade_revisao_system_users_to_string = $interacao_atividade_revisao_system_users_to_string;
+        }
+
+        $this->vdata['interacao_atividade_revisao_system_users_to_string'] = $this->interacao_atividade_revisao_system_users_to_string;
+    }
+
+    public function get_interacao_atividade_revisao_system_users_to_string()
+    {
+        if(!empty($this->interacao_atividade_revisao_system_users_to_string))
+        {
+            return $this->interacao_atividade_revisao_system_users_to_string;
+        }
+    
+        $values = InteracaoAtividadeRevisao::where('interacao_atividade_id', '=', $this->id)->getIndexedArray('system_users_id','{system_users->name}');
+        return implode(', ', $values);
+    }
+
+    public function set_interacao_atividade_revisao_interacao_atividade_to_string($interacao_atividade_revisao_interacao_atividade_to_string)
+    {
+        if(is_array($interacao_atividade_revisao_interacao_atividade_to_string))
+        {
+            $values = InteracaoAtividade::where('id', 'in', $interacao_atividade_revisao_interacao_atividade_to_string)->getIndexedArray('id', 'id');
+            $this->interacao_atividade_revisao_interacao_atividade_to_string = implode(', ', $values);
+        }
+        else
+        {
+            $this->interacao_atividade_revisao_interacao_atividade_to_string = $interacao_atividade_revisao_interacao_atividade_to_string;
+        }
+
+        $this->vdata['interacao_atividade_revisao_interacao_atividade_to_string'] = $this->interacao_atividade_revisao_interacao_atividade_to_string;
+    }
+
+    public function get_interacao_atividade_revisao_interacao_atividade_to_string()
+    {
+        if(!empty($this->interacao_atividade_revisao_interacao_atividade_to_string))
+        {
+            return $this->interacao_atividade_revisao_interacao_atividade_to_string;
+        }
+    
+        $values = InteracaoAtividadeRevisao::where('interacao_atividade_id', '=', $this->id)->getIndexedArray('interacao_atividade_id','{interacao_atividade->id}');
+        return implode(', ', $values);
     }
 
     

@@ -121,7 +121,7 @@ class InteracaoFormEdit extends TWindow
 
                 }
                 else {
-                    new TMessage('error', "Não é possivel finalizar uma interacao com atividades marcadas!", new TAction(['InteracaoFormView', 'onShow'], ['key'=>TSession::getValue('interacao_id')]));
+                    new TMessage('error', "Não é possivel finalizar uma interacao com atividades em andamento!", new TAction(['InteracaoFormView', 'onShow'], ['key'=>TSession::getValue('interacao_id')]));
                 }
             } else {
                 new TMessage('error', "Não é possivel selecionar uma data maior que a atual!", new TAction(['InteracaoFormView', 'onShow'], ['key'=>TSession::getValue('interacao_id')]));

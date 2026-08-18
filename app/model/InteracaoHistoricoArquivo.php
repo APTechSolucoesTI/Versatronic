@@ -21,6 +21,7 @@ class InteracaoHistoricoArquivo extends TRecord
         parent::addAttribute('dt_arquivo');
         parent::addAttribute('movimentacao_id');
         parent::addAttribute('descricao');
+        parent::addAttribute('interacao_arquivo_id');
             
     }
 

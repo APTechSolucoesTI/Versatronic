@@ -23,6 +23,7 @@ class NotaBaixada extends TRecord
         parent::addAttribute('numero_nf');
         parent::addAttribute('serie_nf');
         parent::addAttribute('data_emissao');
+        parent::addAttribute('data_emissao_os');
         parent::addAttribute('razao_social');
         parent::addAttribute('documento');
         parent::addAttribute('valor_total');
@@ -30,8 +31,10 @@ class NotaBaixada extends TRecord
         parent::addAttribute('totvs_xml');
         parent::addAttribute('rps_xml');
         parent::addAttribute('nfs_xml');
-        parent::addAttribute('nfs_pdf');
         parent::addAttribute('obs');
+        parent::addAttribute('nfs_pdf');
+        parent::addAttribute('tem_comissao');
+        parent::addAttribute('comissao');
             
     }
 
@@ -86,6 +89,122 @@ class NotaBaixada extends TRecord
     
         // returns the associated object
         return $this->coligada;
+    }
+
+    /**
+     * Method getCentroCustoNotas
+     */
+    public function getCentroCustoNotas()
+    {
+        $criteria = new TCriteria;
+        $criteria->add(new TFilter('nota_baixada_id', '=', $this->id));
+        return CentroCustoNota::getObjects( $criteria );
+    }
+    /**
+     * Method getControleNotas
+     */
+    public function getControleNotas()
+    {
+        $criteria = new TCriteria;
+        $criteria->add(new TFilter('nota_baixada_id', '=', $this->id));
+        return ControleNota::getObjects( $criteria );
+    }
+
+    public function set_centro_custo_nota_nota_baixada_to_string($centro_custo_nota_nota_baixada_to_string)
+    {
+        if(is_array($centro_custo_nota_nota_baixada_to_string))
+        {
+            $values = NotaBaixada::where('id', 'in', $centro_custo_nota_nota_baixada_to_string)->getIndexedArray('numero', 'numero');
+            $this->centro_custo_nota_nota_baixada_to_string = implode(', ', $values);
+        }
+        else
+        {
+            $this->centro_custo_nota_nota_baixada_to_string = $centro_custo_nota_nota_baixada_to_string;
+        }
+
+        $this->vdata['centro_custo_nota_nota_baixada_to_string'] = $this->centro_custo_nota_nota_baixada_to_string;
+    }
+
+    public function get_centro_custo_nota_nota_baixada_to_string()
+    {
+        if(!empty($this->centro_custo_nota_nota_baixada_to_string))
+        {
+            return $this->centro_custo_nota_nota_baixada_to_string;
+        }
+    
+        $values = CentroCustoNota::where('nota_baixada_id', '=', $this->id)->getIndexedArray('nota_baixada_id','{nota_baixada->numero}');
+        return implode(', ', $values);
+    }
+
+    public function set_centro_custo_nota_centro_custo_to_string($centro_custo_nota_centro_custo_to_string)
+    {
+        if(is_array($centro_custo_nota_centro_custo_to_string))
+        {
+            $values = CentroCusto::where('id', 'in', $centro_custo_nota_centro_custo_to_string)->getIndexedArray('nome', 'nome');
+            $this->centro_custo_nota_centro_custo_to_string = implode(', ', $values);
+        }
+        else
+        {
+            $this->centro_custo_nota_centro_custo_to_string = $centro_custo_nota_centro_custo_to_string;
+        }
+
+        $this->vdata['centro_custo_nota_centro_custo_to_string'] = $this->centro_custo_nota_centro_custo_to_string;
+    }
+
+    public function get_centro_custo_nota_centro_custo_to_string()
+    {
+        if(!empty($this->centro_custo_nota_centro_custo_to_string))
+        {
+            return $this->centro_custo_nota_centro_custo_to_string;
+        }
+    
+        $values = CentroCustoNota::where('nota_baixada_id', '=', $this->id)->getIndexedArray('centro_custo_id','{centro_custo->nome}');
+        return implode(', ', $values);
+    }
+
+    public function set_controle_nota_nota_baixada_to_string($controle_nota_nota_baixada_to_string)
+    {
+        if(is_array($controle_nota_nota_baixada_to_string))
+        {
+            $values = NotaBaixada::where('id', 'in', $controle_nota_nota_baixada_to_string)->getIndexedArray('numero', 'numero');
+            $this->controle_nota_nota_baixada_to_string = implode(', ', $values);
+        }
+        else
+        {
+            $this->controle_nota_nota_baixada_to_string = $controle_nota_nota_baixada_to_string;
+        }
+
+        $this->vdata['controle_nota_nota_baixada_to_string'] = $this->controle_nota_nota_baixada_to_string;
+    }
+
+    public function get_controle_nota_nota_baixada_to_string()
+    {
+        if(!empty($this->controle_nota_nota_baixada_to_string))
+        {
+            return $this->controle_nota_nota_baixada_to_string;
+        }
+    
+        $values = ControleNota::where('nota_baixada_id', '=', $this->id)->getIndexedArray('nota_baixada_id','{nota_baixada->numero}');
+        return implode(', ', $values);
+    }
+
+    /**
+     * Method onBeforeDelete
+     */
+    public function onBeforeDelete()
+    {
+            
+
+        if(CentroCustoNota::where('nota_baixada_id', '=', $this->id)->first())
+        {
+            throw new Exception("Não é possível deletar este registro pois ele está sendo utilizado em outra parte do sistema");
+        }
+    
+        if(ControleNota::where('nota_baixada_id', '=', $this->id)->first())
+        {
+            throw new Exception("Não é possível deletar este registro pois ele está sendo utilizado em outra parte do sistema");
+        }
+    
     }
 
     

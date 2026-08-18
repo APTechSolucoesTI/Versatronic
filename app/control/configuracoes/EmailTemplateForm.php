@@ -32,6 +32,8 @@ class EmailTemplateForm extends TPage
         $titulo = new TEntry('titulo');
         $mensagem = new THtmlEditor('mensagem');
 
+        $titulo->addValidation("Nome do template", new TRequiredValidator()); 
+        $mensagem->addValidation("Corpo da mensagem", new TRequiredValidator()); 
 
         $id->setEditable(false);
         $id->setSize(100);
@@ -41,10 +43,10 @@ class EmailTemplateForm extends TPage
         $row1 = $this->form->addFields([new TLabel("Id:", null, '14px', null, '100%'),$id]);
         $row1->layout = ['col-sm-6'];
 
-        $row2 = $this->form->addFields([new TLabel("Titulo:", null, '14px', null, '100%'),$titulo]);
+        $row2 = $this->form->addFields([new TLabel("Nome do template:", '#F44336', '14px', null, '100%'),$titulo]);
         $row2->layout = [' col-sm-12'];
 
-        $row3 = $this->form->addFields([new TLabel("Mensagem:", null, '14px', null, '100%'),$mensagem]);
+        $row3 = $this->form->addFields([new TLabel("Corpo do E-mail :", '#F44336', '14px', null, '100%'),$mensagem]);
         $row3->layout = [' col-sm-12'];
 
         // create the form actions

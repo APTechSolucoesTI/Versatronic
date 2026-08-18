@@ -33,30 +33,18 @@ class EmailTemplateHeaderList extends TPage
         $id = new TEntry('id');
         $titulo = new TEntry('titulo');
         $mensagem = new TEntry('mensagem');
-        $created_at = new TEntry('created_at');
-        $updated_at = new TEntry('updated_at');
-        $deleted_at = new TEntry('deleted_at');
 
         $id->exitOnEnter();
         $titulo->exitOnEnter();
         $mensagem->exitOnEnter();
-        $created_at->exitOnEnter();
-        $updated_at->exitOnEnter();
-        $deleted_at->exitOnEnter();
 
         $id->setExitAction(new TAction([$this, 'onSearch'], ['static'=>'1', 'target_container' => $param['target_container'] ?? null]));
         $titulo->setExitAction(new TAction([$this, 'onSearch'], ['static'=>'1', 'target_container' => $param['target_container'] ?? null]));
         $mensagem->setExitAction(new TAction([$this, 'onSearch'], ['static'=>'1', 'target_container' => $param['target_container'] ?? null]));
-        $created_at->setExitAction(new TAction([$this, 'onSearch'], ['static'=>'1', 'target_container' => $param['target_container'] ?? null]));
-        $updated_at->setExitAction(new TAction([$this, 'onSearch'], ['static'=>'1', 'target_container' => $param['target_container'] ?? null]));
-        $deleted_at->setExitAction(new TAction([$this, 'onSearch'], ['static'=>'1', 'target_container' => $param['target_container'] ?? null]));
 
         $id->setSize('100%');
         $titulo->setSize('100%');
         $mensagem->setSize('100%');
-        $created_at->setSize('100%');
-        $updated_at->setSize('100%');
-        $deleted_at->setSize('100%');
 
         // creates a Datagrid
         $this->datagrid = new TDataGrid;
@@ -72,11 +60,8 @@ class EmailTemplateHeaderList extends TPage
         $this->datagrid->setHeight(320);
 
         $column_id = new TDataGridColumn('id', "Id", 'center' , '70px');
-        $column_titulo = new TDataGridColumn('titulo', "Titulo", 'left');
-        $column_mensagem = new TDataGridColumn('mensagem', "Mensagem", 'left');
-        $column_created_at = new TDataGridColumn('created_at', "Criado em", 'left');
-        $column_updated_at = new TDataGridColumn('updated_at', "Atualizado em", 'left');
-        $column_deleted_at = new TDataGridColumn('deleted_at', "Excluído em", 'left');
+        $column_titulo = new TDataGridColumn('titulo', "Título", 'left');
+        $column_mensagem = new TDataGridColumn('mensagem', "Corpo do E-mail", 'left');
 
         $order_id = new TAction(array($this, 'onReload'));
         $order_id->setParameter('order', 'id');
@@ -85,9 +70,6 @@ class EmailTemplateHeaderList extends TPage
         $this->datagrid->addColumn($column_id);
         $this->datagrid->addColumn($column_titulo);
         $this->datagrid->addColumn($column_mensagem);
-        $this->datagrid->addColumn($column_created_at);
-        $this->datagrid->addColumn($column_updated_at);
-        $this->datagrid->addColumn($column_deleted_at);
 
         $action_onEdit = new TDataGridAction(array('EmailTemplateForm', 'onEdit'));
         $action_onEdit->setUseButton(false);
@@ -128,19 +110,10 @@ class EmailTemplateHeaderList extends TPage
         $tr->add($td_titulo);
         $td_mensagem = TElement::tag('td', $mensagem);
         $tr->add($td_mensagem);
-        $td_created_at = TElement::tag('td', $created_at);
-        $tr->add($td_created_at);
-        $td_updated_at = TElement::tag('td', $updated_at);
-        $tr->add($td_updated_at);
-        $td_deleted_at = TElement::tag('td', $deleted_at);
-        $tr->add($td_deleted_at);
 
         $this->datagrid_form->addField($id);
         $this->datagrid_form->addField($titulo);
         $this->datagrid_form->addField($mensagem);
-        $this->datagrid_form->addField($created_at);
-        $this->datagrid_form->addField($updated_at);
-        $this->datagrid_form->addField($deleted_at);
 
         $this->datagrid_form->setData( TSession::getValue(__CLASS__.'_filter_data') );
 
@@ -174,7 +147,7 @@ class EmailTemplateHeaderList extends TPage
 
         $button_cadastrar = new TButton('button_button_cadastrar');
         $button_cadastrar->setAction(new TAction(['EmailTemplateForm', 'onShow']), "Cadastrar");
-        $button_cadastrar->addStyleClass('');
+        $button_cadastrar->addStyleClass('btn-default');
         $button_cadastrar->setImage('fas:plus #69aa46');
 
         $this->datagrid_form->addField($button_cadastrar);
@@ -538,24 +511,6 @@ class EmailTemplateHeaderList extends TPage
             $filters[] = new TFilter('mensagem', 'like', "%{$data->mensagem}%");// create the filter 
         }
 
-        if (isset($data->created_at) AND ( (is_scalar($data->created_at) AND $data->created_at !== '') OR (is_array($data->created_at) AND (!empty($data->created_at)) )) )
-        {
-
-            $filters[] = new TFilter('created_at', '=', $data->created_at);// create the filter 
-        }
-
-        if (isset($data->updated_at) AND ( (is_scalar($data->updated_at) AND $data->updated_at !== '') OR (is_array($data->updated_at) AND (!empty($data->updated_at)) )) )
-        {
-
-            $filters[] = new TFilter('updated_at', '=', $data->updated_at);// create the filter 
-        }
-
-        if (isset($data->deleted_at) AND ( (is_scalar($data->deleted_at) AND $data->deleted_at !== '') OR (is_array($data->deleted_at) AND (!empty($data->deleted_at)) )) )
-        {
-
-            $filters[] = new TFilter('deleted_at', '=', $data->deleted_at);// create the filter 
-        }
-
         // fill the form with data again
         $this->datagrid_form->setData($data);
 
@@ -634,6 +589,8 @@ class EmailTemplateHeaderList extends TPage
             $this->pageNavigation->setCount($count); // count of records
             $this->pageNavigation->setProperties($param); // order, page
             $this->pageNavigation->setLimit($this->limit); // limit
+
+            $this->datagrid->initPopoverHeaderFilters();
 
             // close the transaction
             TTransaction::close();

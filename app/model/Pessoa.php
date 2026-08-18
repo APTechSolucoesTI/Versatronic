@@ -159,6 +159,15 @@ class Pessoa extends TRecord
         return Interacao::getObjects( $criteria );
     }
     /**
+     * Method getComissaoRepresExcecaos
+     */
+    public function getComissaoRepresExcecaos()
+    {
+        $criteria = new TCriteria;
+        $criteria->add(new TFilter('pessoa_id', '=', $this->id));
+        return ComissaoRepresExcecao::getObjects( $criteria );
+    }
+    /**
      * Method getPessoaContatos
      */
     public function getPessoaContatos()
@@ -340,6 +349,58 @@ class Pessoa extends TRecord
         }
     
         $values = Interacao::where('cliente_id', '=', $this->id)->getIndexedArray('etapa_interacao_id','{etapa_interacao->nome}');
+        return implode(', ', $values);
+    }
+
+    public function set_comissao_repres_excecao_pessoa_to_string($comissao_repres_excecao_pessoa_to_string)
+    {
+        if(is_array($comissao_repres_excecao_pessoa_to_string))
+        {
+            $values = Pessoa::where('id', 'in', $comissao_repres_excecao_pessoa_to_string)->getIndexedArray('razao_social', 'razao_social');
+            $this->comissao_repres_excecao_pessoa_to_string = implode(', ', $values);
+        }
+        else
+        {
+            $this->comissao_repres_excecao_pessoa_to_string = $comissao_repres_excecao_pessoa_to_string;
+        }
+
+        $this->vdata['comissao_repres_excecao_pessoa_to_string'] = $this->comissao_repres_excecao_pessoa_to_string;
+    }
+
+    public function get_comissao_repres_excecao_pessoa_to_string()
+    {
+        if(!empty($this->comissao_repres_excecao_pessoa_to_string))
+        {
+            return $this->comissao_repres_excecao_pessoa_to_string;
+        }
+    
+        $values = ComissaoRepresExcecao::where('pessoa_id', '=', $this->id)->getIndexedArray('pessoa_id','{pessoa->razao_social}');
+        return implode(', ', $values);
+    }
+
+    public function set_comissao_repres_excecao_representante_to_string($comissao_repres_excecao_representante_to_string)
+    {
+        if(is_array($comissao_repres_excecao_representante_to_string))
+        {
+            $values = Representante::where('id', 'in', $comissao_repres_excecao_representante_to_string)->getIndexedArray('razao_social', 'razao_social');
+            $this->comissao_repres_excecao_representante_to_string = implode(', ', $values);
+        }
+        else
+        {
+            $this->comissao_repres_excecao_representante_to_string = $comissao_repres_excecao_representante_to_string;
+        }
+
+        $this->vdata['comissao_repres_excecao_representante_to_string'] = $this->comissao_repres_excecao_representante_to_string;
+    }
+
+    public function get_comissao_repres_excecao_representante_to_string()
+    {
+        if(!empty($this->comissao_repres_excecao_representante_to_string))
+        {
+            return $this->comissao_repres_excecao_representante_to_string;
+        }
+    
+        $values = ComissaoRepresExcecao::where('pessoa_id', '=', $this->id)->getIndexedArray('representante_id','{representante->razao_social}');
         return implode(', ', $values);
     }
 

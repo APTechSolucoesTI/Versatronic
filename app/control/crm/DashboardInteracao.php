@@ -81,7 +81,6 @@ class DashboardInteracao extends TPage
         $total_em_interacao->setTotal('count');
         $total_em_interacao->setColors('#0984E3', '#ffffff', '#74B9FF', '#ffffff');
         $total_em_interacao->setTitle("interações abertas", '#ffffff', '20', '');
-        $criteria_total_em_interacao->add(new TFilter('interacao.deleted_at', 'is', NULL));
         $total_em_interacao->setCriteria($criteria_total_em_interacao);
         $total_em_interacao->setIcon(new TImage('fas:shopping-basket #ffffff'));
         $total_em_interacao->setValueSize("20");
@@ -95,7 +94,6 @@ class DashboardInteracao extends TPage
         $total_finalizado->setTotal('count');
         $total_finalizado->setColors('#10AC84', '#FFFFFF', '#1DD1A1', '#FFFFFF');
         $total_finalizado->setTitle("interações finalizadas", '#FFFFFF', '20', '');
-        $criteria_total_finalizado->add(new TFilter('interacao.deleted_at', 'is', NULL));
         $total_finalizado->setCriteria($criteria_total_finalizado);
         $total_finalizado->setIcon(new TImage('fas:shopping-basket #FFFFFF'));
         $total_finalizado->setValueSize("20");
@@ -114,7 +112,6 @@ class DashboardInteracao extends TPage
         $interacoes_por_etapa->setTotal('count');
         $interacoes_por_etapa->showLegend(true);
         $interacoes_por_etapa->enableOrderByValue('asc');
-        $criteria_interacoes_por_etapa->add(new TFilter('interacao.deleted_at', 'is', NULL));
         $interacoes_por_etapa->setCriteria($criteria_interacoes_por_etapa);
         $interacoes_por_etapa->setSize('100%', 250);
         $interacoes_por_etapa->disableZoom();
@@ -130,7 +127,6 @@ class DashboardInteracao extends TPage
         $origens_de_contato->setTotal('count');
         $origens_de_contato->showLegend(true);
         $origens_de_contato->enableOrderByValue('asc');
-        $criteria_origens_de_contato->add(new TFilter('interacao.deleted_at', 'is', NULL));
         $origens_de_contato->setCriteria($criteria_origens_de_contato);
         $origens_de_contato->setSize('100%', 250);
         $origens_de_contato->disableZoom();
@@ -146,7 +142,6 @@ class DashboardInteracao extends TPage
         $vendedor->setTotal('count');
         $vendedor->showLegend(true);
         $vendedor->enableOrderByValue('asc');
-        $criteria_vendedor->add(new TFilter('interacao.deleted_at', 'is', NULL));
         $vendedor->setCriteria($criteria_vendedor);
         $vendedor->setSize('100%', 250);
         $vendedor->disableZoom();
@@ -190,7 +185,6 @@ class DashboardInteracao extends TPage
         $total_finalizado_por_mes->setLayout('vertical');
         $total_finalizado_por_mes->setTotal('count');
         $total_finalizado_por_mes->showLegend(true);
-        $criteria_total_finalizado_por_mes->add(new TFilter('interacao.deleted_at', 'is', NULL));
         $total_finalizado_por_mes->setCriteria($criteria_total_finalizado_por_mes);
         $total_finalizado_por_mes->setLabelValue("Quantidade total");
         $total_finalizado_por_mes->setSize('100%', 300);

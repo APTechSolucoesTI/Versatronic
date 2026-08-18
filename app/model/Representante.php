@@ -74,6 +74,24 @@ class Representante extends TRecord
         return Interacao::getObjects( $criteria );
     }
     /**
+     * Method getComissaoRepress
+     */
+    public function getComissaoRepress()
+    {
+        $criteria = new TCriteria;
+        $criteria->add(new TFilter('representante_id', '=', $this->id));
+        return ComissaoRepres::getObjects( $criteria );
+    }
+    /**
+     * Method getComissaoRepresExcecaos
+     */
+    public function getComissaoRepresExcecaos()
+    {
+        $criteria = new TCriteria;
+        $criteria->add(new TFilter('representante_id', '=', $this->id));
+        return ComissaoRepresExcecao::getObjects( $criteria );
+    }
+    /**
      * Method getRepresentanteDivergentes
      */
     public function getRepresentanteDivergentesByRepAps()
@@ -349,6 +367,84 @@ class Representante extends TRecord
         }
     
         $values = Interacao::where('vendedor_id', '=', $this->id)->getIndexedArray('etapa_interacao_id','{etapa_interacao->nome}');
+        return implode(', ', $values);
+    }
+
+    public function set_comissao_repres_representante_to_string($comissao_repres_representante_to_string)
+    {
+        if(is_array($comissao_repres_representante_to_string))
+        {
+            $values = Representante::where('id', 'in', $comissao_repres_representante_to_string)->getIndexedArray('razao_social', 'razao_social');
+            $this->comissao_repres_representante_to_string = implode(', ', $values);
+        }
+        else
+        {
+            $this->comissao_repres_representante_to_string = $comissao_repres_representante_to_string;
+        }
+
+        $this->vdata['comissao_repres_representante_to_string'] = $this->comissao_repres_representante_to_string;
+    }
+
+    public function get_comissao_repres_representante_to_string()
+    {
+        if(!empty($this->comissao_repres_representante_to_string))
+        {
+            return $this->comissao_repres_representante_to_string;
+        }
+    
+        $values = ComissaoRepres::where('representante_id', '=', $this->id)->getIndexedArray('representante_id','{representante->razao_social}');
+        return implode(', ', $values);
+    }
+
+    public function set_comissao_repres_excecao_pessoa_to_string($comissao_repres_excecao_pessoa_to_string)
+    {
+        if(is_array($comissao_repres_excecao_pessoa_to_string))
+        {
+            $values = Pessoa::where('id', 'in', $comissao_repres_excecao_pessoa_to_string)->getIndexedArray('razao_social', 'razao_social');
+            $this->comissao_repres_excecao_pessoa_to_string = implode(', ', $values);
+        }
+        else
+        {
+            $this->comissao_repres_excecao_pessoa_to_string = $comissao_repres_excecao_pessoa_to_string;
+        }
+
+        $this->vdata['comissao_repres_excecao_pessoa_to_string'] = $this->comissao_repres_excecao_pessoa_to_string;
+    }
+
+    public function get_comissao_repres_excecao_pessoa_to_string()
+    {
+        if(!empty($this->comissao_repres_excecao_pessoa_to_string))
+        {
+            return $this->comissao_repres_excecao_pessoa_to_string;
+        }
+    
+        $values = ComissaoRepresExcecao::where('representante_id', '=', $this->id)->getIndexedArray('pessoa_id','{pessoa->razao_social}');
+        return implode(', ', $values);
+    }
+
+    public function set_comissao_repres_excecao_representante_to_string($comissao_repres_excecao_representante_to_string)
+    {
+        if(is_array($comissao_repres_excecao_representante_to_string))
+        {
+            $values = Representante::where('id', 'in', $comissao_repres_excecao_representante_to_string)->getIndexedArray('razao_social', 'razao_social');
+            $this->comissao_repres_excecao_representante_to_string = implode(', ', $values);
+        }
+        else
+        {
+            $this->comissao_repres_excecao_representante_to_string = $comissao_repres_excecao_representante_to_string;
+        }
+
+        $this->vdata['comissao_repres_excecao_representante_to_string'] = $this->comissao_repres_excecao_representante_to_string;
+    }
+
+    public function get_comissao_repres_excecao_representante_to_string()
+    {
+        if(!empty($this->comissao_repres_excecao_representante_to_string))
+        {
+            return $this->comissao_repres_excecao_representante_to_string;
+        }
+    
+        $values = ComissaoRepresExcecao::where('representante_id', '=', $this->id)->getIndexedArray('representante_id','{representante->razao_social}');
         return implode(', ', $values);
     }
 

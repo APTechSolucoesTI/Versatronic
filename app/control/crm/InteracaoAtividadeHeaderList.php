@@ -47,14 +47,11 @@ class InteracaoAtividadeHeaderList extends TPage
 
         $tipo_atividade_id = new TDBCombo('tipo_atividade_id', 'minicrm', 'TipoAtividade', 'id', '{nome}','nome asc' , $criteria_tipo_atividade_id );
         $interacao_vendedor_razao_social = new TDBUniqueSearch('interacao_vendedor_razao_social', 'minicrm', 'Representante', 'id', 'razao_social','razao_social asc' , $criteria_interacao_vendedor_razao_social );
-        $descricao = new TEntry('descricao');
         $observacao = new TEntry('observacao');
         $estado_atividade_id = new TDBCombo('estado_atividade_id', 'minicrm', 'EstadoAtividade', 'id', '{nome}','nome asc' , $criteria_estado_atividade_id );
 
-        $descricao->exitOnEnter();
         $observacao->exitOnEnter();
 
-        $descricao->setExitAction(new TAction([$this, 'onSearch'], ['static'=>'1', 'target_container' => $param['target_container'] ?? null]));
         $observacao->setExitAction(new TAction([$this, 'onSearch'], ['static'=>'1', 'target_container' => $param['target_container'] ?? null]));
 
         $tipo_atividade_id->setChangeAction(new TAction([$this, 'onSearch'], ['static'=>'1', 'target_container' => $param['target_container'] ?? null]));
@@ -66,7 +63,6 @@ class InteracaoAtividadeHeaderList extends TPage
         $tipo_atividade_id->enableSearch();
         $estado_atividade_id->enableSearch();
 
-        $descricao->setSize('100%');
         $observacao->setSize('100%');
         $tipo_atividade_id->setSize('100%');
         $estado_atividade_id->setSize('100%');
@@ -97,7 +93,6 @@ class InteracaoAtividadeHeaderList extends TPage
         $column_horario_final_transformed = new TDataGridColumn('horario_final', "Fim", 'left');
         $column_tipo_atividade_nome_transformed = new TDataGridColumn('tipo_atividade->nome', "Tipo atividade", 'left');
         $column_interacao_vendedor_razao_social = new TDataGridColumn('interacao->vendedor->razao_social', "Representante", 'left');
-        $column_descricao = new TDataGridColumn('descricao', "Descricao", 'left');
         $column_observacao = new TDataGridColumn('observacao', "Observacao", 'left');
         $column_estado_atividade_nome_transformed = new TDataGridColumn('estado_atividade->nome', "Estado", 'left' , '150px');
 
@@ -154,9 +149,6 @@ class InteracaoAtividadeHeaderList extends TPage
         $order_horario_final_transformed = new TAction(array($this, 'onReload'));
         $order_horario_final_transformed->setParameter('order', 'horario_final');
         $column_horario_final_transformed->setAction($order_horario_final_transformed);
-        $order_descricao = new TAction(array($this, 'onReload'));
-        $order_descricao->setParameter('order', 'descricao');
-        $column_descricao->setAction($order_descricao);
         $order_observacao = new TAction(array($this, 'onReload'));
         $order_observacao->setParameter('order', 'observacao');
         $column_observacao->setAction($order_observacao);
@@ -166,7 +158,6 @@ class InteracaoAtividadeHeaderList extends TPage
         $this->datagrid->addColumn($column_horario_final_transformed);
         $this->datagrid->addColumn($column_tipo_atividade_nome_transformed);
         $this->datagrid->addColumn($column_interacao_vendedor_razao_social);
-        $this->datagrid->addColumn($column_descricao);
         $this->datagrid->addColumn($column_observacao);
         $this->datagrid->addColumn($column_estado_atividade_nome_transformed);
 
@@ -203,8 +194,6 @@ class InteracaoAtividadeHeaderList extends TPage
         $tr->add($td_tipo_atividade_id);
         $td_interacao_vendedor_razao_social = TElement::tag('td', $interacao_vendedor_razao_social);
         $tr->add($td_interacao_vendedor_razao_social);
-        $td_descricao = TElement::tag('td', $descricao);
-        $tr->add($td_descricao);
         $td_observacao = TElement::tag('td', $observacao);
         $tr->add($td_observacao);
         $td_estado_atividade_id = TElement::tag('td', $estado_atividade_id);
@@ -212,7 +201,6 @@ class InteracaoAtividadeHeaderList extends TPage
 
         $this->datagrid_form->addField($tipo_atividade_id);
         $this->datagrid_form->addField($interacao_vendedor_razao_social);
-        $this->datagrid_form->addField($descricao);
         $this->datagrid_form->addField($observacao);
         $this->datagrid_form->addField($estado_atividade_id);
 
@@ -475,19 +463,13 @@ class InteracaoAtividadeHeaderList extends TPage
         if (isset($data->interacao_vendedor_razao_social) AND ( (is_scalar($data->interacao_vendedor_razao_social) AND $data->interacao_vendedor_razao_social !== '') OR (is_array($data->interacao_vendedor_razao_social) AND (!empty($data->interacao_vendedor_razao_social)) )) )
         {
 
-            $filters[] = new TFilter('interacao_id', 'in', "(SELECT id FROM interacao WHERE  deleted_at is null AND vendedor_id = '{$data->interacao_vendedor_razao_social}')");// create the filter 
-        }
-
-        if (isset($data->descricao) AND ( (is_scalar($data->descricao) AND $data->descricao !== '') OR (is_array($data->descricao) AND (!empty($data->descricao)) )) )
-        {
-
-            $filters[] = new TFilter('descricao', 'like', "%{$data->descricao}%");// create the filter 
+            $filters[] = new TFilter('interacao_id', 'in', "(SELECT id FROM interacao WHERE vendedor_id = '{$data->interacao_vendedor_razao_social}')");// create the filter 
         }
 
         if (isset($data->observacao) AND ( (is_scalar($data->observacao) AND $data->observacao !== '') OR (is_array($data->observacao) AND (!empty($data->observacao)) )) )
         {
 
-            $filters[] = new TFilter('observacao', 'like', "%{$data->observacao}%");// create the filter 
+            $filters[] = new TFilter('observacao', 'ilike', "%{$data->observacao}%");// create the filter 
         }
 
         if (isset($data->estado_atividade_id) AND ( (is_scalar($data->estado_atividade_id) AND $data->estado_atividade_id !== '') OR (is_array($data->estado_atividade_id) AND (!empty($data->estado_atividade_id)) )) )
@@ -586,6 +568,8 @@ class InteracaoAtividadeHeaderList extends TPage
             $this->pageNavigation->setCount($count); // count of records
             $this->pageNavigation->setProperties($param); // order, page
             $this->pageNavigation->setLimit($this->limit); // limit
+
+            $this->datagrid->initPopoverHeaderFilters();
 
             // close the transaction
             TTransaction::close();

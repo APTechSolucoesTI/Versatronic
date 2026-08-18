@@ -685,7 +685,7 @@ class TransportadoraList extends TPage
         if (isset($data->nome_col) AND ( (is_scalar($data->nome_col) AND $data->nome_col !== '') OR (is_array($data->nome_col) AND (!empty($data->nome_col)) )) )
         {
 
-            $filters[] = new TFilter('nome', 'like', "%{$data->nome_col}%");// create the filter 
+            $filters[] = new TFilter('nome', 'ilike', "%{$data->nome_col}%");// create the filter 
         }
 
         if (isset($data->cgc_col) AND ( (is_scalar($data->cgc_col) AND $data->cgc_col !== '') OR (is_array($data->cgc_col) AND (!empty($data->cgc_col)) )) )
@@ -703,7 +703,7 @@ class TransportadoraList extends TPage
         if (isset($data->email_col) AND ( (is_scalar($data->email_col) AND $data->email_col !== '') OR (is_array($data->email_col) AND (!empty($data->email_col)) )) )
         {
 
-            $filters[] = new TFilter('email', 'like', "%{$data->email_col}%");// create the filter 
+            $filters[] = new TFilter('email', 'ilike', "%{$data->email_col}%");// create the filter 
         }
 
         if (isset($data->ativo) AND ( (is_scalar($data->ativo) AND $data->ativo !== '') OR (is_array($data->ativo) AND (!empty($data->ativo)) )) )
@@ -808,6 +808,8 @@ class TransportadoraList extends TPage
             $this->pageNavigation->setCount($count); // count of records
             $this->pageNavigation->setProperties($param); // order, page
             $this->pageNavigation->setLimit($this->limit); // limit
+
+            $this->datagrid->initPopoverHeaderFilters();
 
             // close the transaction
             TTransaction::close();

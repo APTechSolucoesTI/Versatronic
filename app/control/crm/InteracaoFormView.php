@@ -51,6 +51,18 @@ class InteracaoFormView extends TPage
         $label2 = new TLabel("Cliente:", '', '14px', 'B', '100%');
         $text2 = new TTextDisplay($interacao->cliente->razao_social, '', '16px', '');
         $text10 = new TTextDisplay($interacao->cliente_nome, '', '16px', '');
+        $label22 = new TLabel("Nome Fantasia:", '', '14px', 'B', '100%');
+        $text66 = new TTextDisplay($interacao->cliente->nome_fantasia, '', '16px', '');
+        $label3 = new TLabel("Documento:", '', '14px', 'B', '100%');
+        $cpf_cnpj = new TTextDisplay($interacao->cliente->cpf_cnpj, '', '16px', '');
+        $label44 = new TLabel("Código:", '', '14px', 'B', '100%');
+        $text88 = new TTextDisplay($interacao->cliente->codigo, '', '16px', '');
+        $label66 = new TLabel("Categoria:", '', '14px', 'B', '100%');
+        $text100 = new TTextDisplay($interacao->cliente->categoria_cliente->nome, '', '15px', '');
+        $label5 = new TLabel("Cidade:", '', '14px', 'B', '100%');
+        $text8 = new TTextDisplay($interacao->cidade, '', '16px', '');
+        $label7 = new TLabel("Estado:", '', '14px', 'B', '100%');
+        $estado = new TTextDisplay($interacao->estado, '', '16px', '');
         $label4 = new TLabel("Representante", '', '14px', 'B', '100%');
         $text3 = new TTextDisplay($interacao->vendedor->razao_social, '', '16px', '');
         $label6 = new TLabel("Etapa:", '', '14px', 'B', '100%');
@@ -60,7 +72,7 @@ class InteracaoFormView extends TPage
         $label12 = new TLabel("Data de início:", '', '14px', 'B', '100%');
         $text6 = new TTextDisplay(TDate::convertToMask($interacao->data_inicio, 'yyyy-mm-dd', 'dd/mm/yyyy'), '', '16px', '');
         $label14 = new TLabel("Data esperada de fechamento:", '', '14px', 'B', '100%');
-        $text8 = new TTextDisplay(TDate::convertToMask($interacao->data_fechamento_esperada, 'yyyy-mm-dd', 'dd/mm/yyyy'), '', '16px', '');
+        $dt_fechamento = new TTextDisplay(TDate::convertToMask($interacao->data_fechamento_esperada, 'yyyy-mm-dd', 'dd/mm/yyyy'), '', '16px', '');
         $label16 = new TLabel("Data de fechamento:", '', '14px', 'B', '100%');
         $text7 = new TTextDisplay(TDate::convertToMask($interacao->data_fechamento, 'yyyy-mm-dd', 'dd/mm/yyyy'), '', '16px', '');
         $getLocalizacao = new TButton('getLocalizacao');
@@ -82,7 +94,7 @@ class InteracaoFormView extends TPage
         $etapa_interacao_id->setHeight('60');
         $etapa_interacao_id->setValue($interacao->etapa_interacao_id);
         $tbutton2->addStyleClass('btn-primary');
-        $getLocalizacao->addStyleClass('btn-default');
+        $getLocalizacao->addStyleClass('btn-success');
 
         $getLocalizacao->setImage(' #000000');
         $tbutton2->setImage('fas:plus #FFFFFF');
@@ -162,14 +174,17 @@ class InteracaoFormView extends TPage
         $row1 = $this->form->addFields([$etapa_interacao_id]);
         $row1->layout = [' col-sm-12'];
 
-        $row2 = $this->form->addFields([$label2,$text2,$text10],[$label4,$text3],[$label6,$text5],[$label8,$text4]);
-        $row2->layout = ['col-sm-3','col-sm-3',' col-sm-3',' col-sm-3'];
+        $row2 = $this->form->addFields([$label2,$text2,$text10],[$label22,$text66],[$label3,$cpf_cnpj],[$label44,$text88],[$label66,$text100],[$label5,$text8],[$label7,$estado]);
+        $row2->layout = ['col-sm-3',' col-sm-3',' col-sm-3',' col-sm-2',' col-sm-1',' col-sm-3',' col-sm-3'];
 
-        $row3 = $this->form->addFields([$label12,$text6],[$label14,$text8],[$label16,$text7]);
-        $row3->layout = ['col-sm-3',' col-sm-3',' col-sm-3'];
+        $row3 = $this->form->addFields([$label4,$text3],[$label6,$text5],[$label8,$text4],[$label12,$text6]);
+        $row3->layout = ['col-sm-3','col-sm-3',' col-sm-3',' col-sm-3'];
 
-        $row4 = $this->form->addFields([$getLocalizacao],[],[],[$tbutton2]);
-        $row4->layout = [' col-sm-3',' col-sm-3',' col-sm-3',' col-sm-3'];
+        $row4 = $this->form->addFields([$label14,$dt_fechamento],[$label16,$text7]);
+        $row4->layout = [' col-sm-3',' col-sm-3'];
+
+        $row5 = $this->form->addFields([$getLocalizacao],[],[],[$tbutton2]);
+        $row5->layout = [' col-sm-3',' col-sm-3',' col-sm-3',' col-sm-3'];
 
         $tab_63210fe87cb58 = new BootstrapFormBuilder('tab_63210fe87cb58');
         $this->tab_63210fe87cb58 = $tab_63210fe87cb58;
@@ -180,23 +195,23 @@ class InteracaoFormView extends TPage
         $tab_63210fe87cb58->addFields([new THidden('current_tab_tab_63210fe87cb58')]);
         $tab_63210fe87cb58->setTabFunction("$('[name=current_tab_tab_63210fe87cb58]').val($(this).attr('data-current_page'));");
 
-        $row5 = $tab_63210fe87cb58->addFields([$atividades]);
-        $row5->layout = [' col-sm-12'];
-
-        $tab_63210fe87cb58->appendPage("Arquivos");
-        $row6 = $tab_63210fe87cb58->addFields([$arquivos]);
+        $row6 = $tab_63210fe87cb58->addFields([$atividades]);
         $row6->layout = [' col-sm-12'];
 
-        $tab_63210fe87cb58->appendPage("Observações");
-        $row7 = $tab_63210fe87cb58->addFields([$observacoes]);
+        $tab_63210fe87cb58->appendPage("Arquivos");
+        $row7 = $tab_63210fe87cb58->addFields([$arquivos]);
         $row7->layout = [' col-sm-12'];
 
-        $tab_63210fe87cb58->appendPage("Localizações");
-        $row8 = $tab_63210fe87cb58->addFields([$bpagecontainer2]);
+        $tab_63210fe87cb58->appendPage("Observações");
+        $row8 = $tab_63210fe87cb58->addFields([$observacoes]);
         $row8->layout = [' col-sm-12'];
 
-        $row9 = $this->form->addFields([$timeline],[$tab_63210fe87cb58]);
-        $row9->layout = [' col-sm-4',' col-sm-8'];
+        $tab_63210fe87cb58->appendPage("Localizações");
+        $row9 = $tab_63210fe87cb58->addFields([$bpagecontainer2]);
+        $row9->layout = [' col-sm-12'];
+
+        $row10 = $this->form->addFields([$timeline],[$tab_63210fe87cb58]);
+        $row10->layout = [' col-sm-4',' col-sm-8'];
 
         if(!empty($param['current_tab']))
         {
@@ -215,12 +230,12 @@ class InteracaoFormView extends TPage
         $btn_oncloseLabel->setFontSize('12px'); 
         $btn_oncloseLabel->setFontColor('#333'); 
 
-        $btnInteracaoEmailFormOnShowAction = new TAction(['InteracaoEmailForm', 'onShow'],['interacao_id'=>$interacao->id]);
-        $btnInteracaoEmailFormOnShowLabel = new TLabel("Enviar email");
+        $btnEmailAction = new TAction(['InteracaoFormView', 'onGetLocalizacaoEmailForm'],['interacao_id'=>$interacao->id]);
+        $btnEmailLabel = new TLabel("Enviar e-mail");
 
-        $btnInteracaoEmailFormOnShow = $this->form->addHeaderAction($btnInteracaoEmailFormOnShowLabel, $btnInteracaoEmailFormOnShowAction, 'far:envelope #F44336'); 
-        $btnInteracaoEmailFormOnShowLabel->setFontSize('12px'); 
-        $btnInteracaoEmailFormOnShowLabel->setFontColor('#333'); 
+        $btnEmail = $this->form->addHeaderAction($btnEmailLabel, $btnEmailAction, 'far:envelope #F44336'); 
+        $btnEmailLabel->setFontSize('12px'); 
+        $btnEmailLabel->setFontColor('#333'); 
 
         $btnEditarAction = new TAction(['InteracaoForm', 'onEdit'],['key'=>$interacao->id]);
         $btnEditarLabel = new TLabel("Editar");
@@ -236,12 +251,12 @@ class InteracaoFormView extends TPage
         $btnExcluirLabel->setFontSize('14px'); 
         $btnExcluirLabel->setFontColor('#333'); 
 
-        $btnInteracaoDocumentOnGenerateAction = new TAction(['InteracaoDocument', 'onGenerate'],['key'=>$interacao->id]);
-        $btnInteracaoDocumentOnGenerateLabel = new TLabel("Imprimir");
+        $btn_onimprimirAction = new TAction([$this, 'onImprimir'],['key'=>$interacao->id]);
+        $btn_onimprimirLabel = new TLabel("Gerar Relatório");
 
-        $btnInteracaoDocumentOnGenerate = $this->form->addHeaderAction($btnInteracaoDocumentOnGenerateLabel, $btnInteracaoDocumentOnGenerateAction, 'fas:file-pdf #F44336'); 
-        $btnInteracaoDocumentOnGenerateLabel->setFontSize('12px'); 
-        $btnInteracaoDocumentOnGenerateLabel->setFontColor('#333'); 
+        $btn_onimprimir = $this->form->addHeaderAction($btn_onimprimirLabel, $btn_onimprimirAction, 'fas:file-pdf #FF5722'); 
+        $btn_onimprimirLabel->setFontSize('12px'); 
+        $btn_onimprimirLabel->setFontColor('#333'); 
 
         // vertical box container
         $container = new TVBox;
@@ -264,6 +279,11 @@ class InteracaoFormView extends TPage
             //$btnExcluir->disabled = 1; // desabilita o botão
             $btnExcluir->style = 'display:none';
         }
+        if ($interacao->etapa_interacao_id == 6) {
+            $btnEmail->disabled = 1;
+            $getLocalizacao->disabled = 1;            
+            $tbutton2->disabled = 1;                
+        }
 
         TTransaction::close();
         parent::add($container);
@@ -283,6 +303,21 @@ class InteracaoFormView extends TPage
 
                  if($param['key'] == 6)
                 {
+                    $atividade = InteracaoAtividade::where('interacao_id', '=', $interacao->id)->load();
+                    if (!empty($atividade)) {
+                        $qnt = count($atividade);
+                        for($i = 0; $i < $qnt; $i++){
+                            if($atividade[$i]->tipo_atividade_id == 8){
+                                $loc = InteracaoLocalizacao::where('interacao_id', '=', $interacao->id)->first();
+
+                                if (empty($loc->descricao)) {
+                                    new TMessage('warning', "Esta interação exige localização para ser finalizada!");
+                                    TTransaction::close();
+                                    return;   
+                                }                                
+                            }
+                        }
+                    }
 
                     $pageParam = ['key'=>TSession::getValue('interacao_id')]; // ex.: = ['key' => 10]
 
@@ -399,8 +434,7 @@ class InteracaoFormView extends TPage
                         console.log('Geolocation is not supported by this browser.');
                     }
                 </script>
-
-            ";
+        ";
 
         }
         catch (Exception $e) 
@@ -413,16 +447,7 @@ class InteracaoFormView extends TPage
     {
         try 
         {
-        if(TSession::getValue('key'))
-        { 
-            $loadPageParam = [];
-            $loadPageParam["key"] = TSession::getValue('key');
-            $loadPageParam['voltar'] = true;
-            TApplication::loadPage(TSession::getValue('origem'), TSession::getValue('method'), $loadPageParam);
-        }
-        else {
-             TApplication::loadPage(TSession::getValue('origem'), TSession::getValue('method'));
-        }
+            TApplication::loadPage('InteracaoList', 'onShow');
 
         }
         catch (Exception $e) 
@@ -430,6 +455,7 @@ class InteracaoFormView extends TPage
             new TMessage('error', $e->getMessage());    
         }
     }
+
     public static function onDelete($param = null) 
     {
         try 
@@ -500,6 +526,28 @@ class InteracaoFormView extends TPage
         }
     }
 
+    public function onImprimir($param = null) 
+    {
+        try 
+        {         
+            $id = $param['key'] ?? $param['id'] ?? null;
+
+        if (empty($id))
+        {
+            throw new Exception('ID da interação não informado. Contate a equipe de desenvolvimento');
+        }
+
+        $filePath = RelatorioService::gerarRelatorioInteracao($id);
+
+        TScript::create("window.open('{$filePath}', '_blank');");
+
+        }
+        catch (Exception $e) 
+        {
+            new TMessage('error', $e->getMessage());    
+        }
+    }
+
     public function onShow($param = null)
     {     
 
@@ -514,6 +562,495 @@ class InteracaoFormView extends TPage
         }
         TTransaction::close();
 
+    }
+
+     public static function onGetLocalizacaoAtividade($param = null) 
+    {
+        try 
+        {
+            $interacaoId           = $param['interacao_id'] ?? null;
+            $interacaoAtividade    = $param['interacao_atividade'] ?? null;
+            $historicoAtividadeId  = $param['historico_atividade_id'] ?? null;
+            $interacaoArquivoIds   = $param['interacao_arquivo_ids'] ?? [];
+            $historicoArquivoIds   = $param['historico_arquivo_ids'] ?? [];
+            $historicoEtapaId      = $param['historico_etapa_id'] ?? null;
+
+            if (!is_array($interacaoArquivoIds)) {
+                $interacaoArquivoIds = [];
+            }
+
+            if (!is_array($historicoArquivoIds)) {
+                $historicoArquivoIds = [];
+            }
+
+            echo "
+            <script>
+                (function() {
+                    if (!navigator.geolocation) {
+                        limparAtividadePorFalha('Geolocalização não suportada pelo navegador.');
+                        return;
+                    }
+
+                    if (window.__geo_em_execucao__) {
+                        return;
+                    }
+
+                    window.__geo_em_execucao__ = true;
+
+                    const id = " . json_encode($interacaoId) . ";
+                    const interacaoAtividade = " . json_encode($interacaoAtividade) . ";
+                    const historicoAtividadeId = " . json_encode($historicoAtividadeId) . ";
+                    const interacaoArquivoIds = " . json_encode(array_values($interacaoArquivoIds)) . ";
+                    const historicoArquivoIds = " . json_encode(array_values($historicoArquivoIds)) . ";
+                    const historicoEtapaId = " . json_encode($historicoEtapaId) . ";
+
+                    function finalizarExecucao() {
+                        window.__geo_em_execucao__ = false;
+                    }
+
+                    function limparAtividadePorFalha(mensagem) {
+                        fetch('./Geolocalizacao.php', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                acao: 'delete_atividade',
+                                interacao_id: id,
+                                interacao_atividade: interacaoAtividade,
+                                historico_atividade_id: historicoAtividadeId,
+                                interacao_arquivo_ids: interacaoArquivoIds,
+                                historico_arquivo_ids: historicoArquivoIds,
+                                historico_etapa_id: historicoEtapaId
+                            }),
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log('Resposta delete:', data);
+
+                            const msg = mensagem || (data && data.message) || 'Não foi possível obter a localização.';
+                            alert(msg);
+                            window.location.reload();
+                        })
+                        .catch(error => {
+                            console.error('Erro ao limpar atividade:', error);
+                            alert(mensagem || 'Não foi possível obter a localização.');
+                            window.location.reload();
+                        })
+                        .finally(() => {
+                            finalizarExecucao();
+                        });
+                    }
+
+                    function getAddressFromCoordinates(lat, lng) {
+                        const url = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&addressdetails=1';
+
+                        return fetch(url)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data && data.address) {
+                                    const road = data.address.road || '';
+                                    const city = data.address.city || data.address.town || data.address.village || '';
+                                    const uf = data.address['ISO3166-2-lvl4'] || '';
+                                    const postcode = data.address.postcode || '';
+                                    return road + ' - ' + city + ' - ' + uf + ', ' + postcode;
+                                }
+
+                                return null;
+                            })
+                            .catch(error => {
+                                console.error('Erro ao consultar endereço:', error);
+                                return null;
+                            });
+                    }
+
+                    navigator.geolocation.getCurrentPosition(
+                        function(position) {
+                            const latitude = position.coords.latitude;
+                            const longitude = position.coords.longitude;
+
+                            getAddressFromCoordinates(latitude, longitude).then(address => {
+                                if (!address) {
+                                    limparAtividadePorFalha('Não foi possível obter o endereço da localização.');
+                                    return;
+                                }
+
+                                const dados = {
+                                    acao: 'store',
+                                    id: id,
+                                    interacao_atividade: interacaoAtividade,
+                                    address: address,
+                                    latitude: latitude,
+                                    longitude: longitude
+                                };
+
+                                fetch('./Geolocalizacao.php', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify(dados),
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    console.log('Resposta store:', data);
+
+                                    if (!data || data.error) {
+                                        limparAtividadePorFalha((data && data.message) ? data.message : 'Erro ao salvar localização.');
+                                        return;
+                                    }
+
+                                    finalizarExecucao();
+                                    window.location.reload();
+                                })
+                                .catch(error => {
+                                    console.error('Erro ao salvar localização:', error);
+                                    limparAtividadePorFalha('Erro ao salvar localização.');
+                                });
+                            });
+                        },
+                        function(error) {
+                            console.error('Erro ao obter geolocalização:', error);
+                            limparAtividadePorFalha('Localização obrigatória. Permita o acesso à localização para criar a atividade.');
+                        },
+                        {
+                            enableHighAccuracy: true,
+                            timeout: 15000,
+                            maximumAge: 0
+                        }
+                    );
+                })();
+            </script>
+            ";
+
+            //</autoCode>
+        }
+        catch (Exception $e) 
+        {
+            new TMessage('error', $e->getMessage());    
+        }
+    }
+
+    public static function onGetLocalizacaoAtividadeIntSimples($param = null) 
+    {
+        try 
+        {
+            $interacaoId           = $param['interacao_id'] ?? null;
+            $interacaoAtividade    = $param['interacao_atividade'] ?? null;
+            $historicoAtividadeId  = $param['historico_atividade_id'] ?? null;
+            $interacaoArquivoIds   = $param['interacao_arquivo_ids'] ?? [];
+            $historicoArquivoIds   = $param['historico_arquivo_ids'] ?? [];
+            $historicoEtapaId      = $param['historico_etapa_id'] ?? null;
+
+            if (!is_array($interacaoArquivoIds)) {
+                $interacaoArquivoIds = [];
+            }
+
+            if (!is_array($historicoArquivoIds)) {
+                $historicoArquivoIds = [];
+            }
+
+            echo "
+            <script>
+                (function() {
+                    if (!navigator.geolocation) {
+                        limparAtividadePorFalha('Geolocalização não suportada pelo navegador.');
+                        return;
+                    }
+
+                    if (window.__geo_em_execucao__) {
+                        return;
+                    }
+
+                    window.__geo_em_execucao__ = true;
+
+                    const id = " . json_encode($interacaoId) . ";
+                    const interacaoAtividade = " . json_encode($interacaoAtividade) . ";
+                    const historicoAtividadeId = " . json_encode($historicoAtividadeId) . ";
+                    const interacaoArquivoIds = " . json_encode(array_values($interacaoArquivoIds)) . ";
+                    const historicoArquivoIds = " . json_encode(array_values($historicoArquivoIds)) . ";
+                    const historicoEtapaId = " . json_encode($historicoEtapaId) . ";
+
+                    function finalizarExecucao() {
+                        window.__geo_em_execucao__ = false;
+                    }
+
+                    function limparAtividadePorFalha(mensagem) {
+                        fetch('./Geolocalizacao.php', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                acao: 'delete_atividade',
+                                interacao_id: id,
+                                interacao_atividade: interacaoAtividade,
+                                historico_atividade_id: historicoAtividadeId,
+                                interacao_arquivo_ids: interacaoArquivoIds,
+                                historico_arquivo_ids: historicoArquivoIds,
+                                historico_etapa_id: historicoEtapaId
+                            }),
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log('Resposta delete:', data);
+
+                            const msg = mensagem || (data && data.message) || 'Não foi possível obter a localização.';
+                            alert(msg);
+
+                            window.location.href = 'index.php?class=InteracaoList&method=onShow';
+                        })
+                        .catch(error => {
+                            console.error('Erro ao limpar atividade:', error);
+                            alert(mensagem || 'Não foi possível obter a localização.');
+
+                            window.location.href = 'index.php?class=InteracaoList&method=onShow';
+                        })
+                        .finally(() => {
+                            finalizarExecucao();
+                        });
+                    }
+
+                    function getAddressFromCoordinates(lat, lng) {
+                        const url = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&addressdetails=1';
+
+                        return fetch(url)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data && data.address) {
+                                    const road = data.address.road || '';
+                                    const city = data.address.city || data.address.town || data.address.village || '';
+                                    const uf = data.address['ISO3166-2-lvl4'] || '';
+                                    const postcode = data.address.postcode || '';
+                                    return road + ' - ' + city + ' - ' + uf + ', ' + postcode;
+                                }
+
+                                return null;
+                            })
+                            .catch(error => {
+                                console.error('Erro ao consultar endereço:', error);
+                                return null;
+                            });
+                    }
+
+                    navigator.geolocation.getCurrentPosition(
+                        function(position) {
+                            const latitude = position.coords.latitude;
+                            const longitude = position.coords.longitude;
+
+                            getAddressFromCoordinates(latitude, longitude).then(address => {
+                                if (!address) {
+                                    limparAtividadePorFalha('Não foi possível obter o endereço da localização.');
+                                    return;
+                                }
+
+                                const dados = {
+                                    acao: 'store',
+                                    id: id,
+                                    interacao_atividade: interacaoAtividade,
+                                    address: address,
+                                    latitude: latitude,
+                                    longitude: longitude
+                                };
+
+                                fetch('./Geolocalizacao.php', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify(dados),
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    console.log('Resposta store:', data);
+
+                                    if (!data || data.error) {
+                                        limparAtividadePorFalha((data && data.message) ? data.message : 'Erro ao salvar localização.');
+                                        return;
+                                    }
+
+                                    finalizarExecucao();
+
+                                })
+                                .catch(error => {
+                                    console.error('Erro ao salvar localização:', error);
+                                    limparAtividadePorFalha('Erro ao salvar localização.');
+                                });
+                            });
+                        },
+                        function(error) {
+                            console.error('Erro ao obter geolocalização:', error);
+                            limparAtividadePorFalha('Localização obrigatória. Permita o acesso à localização para criar a atividade.');
+                        },
+                        {
+                            enableHighAccuracy: true,
+                            timeout: 15000,
+                            maximumAge: 0
+                        }
+                    );
+                })();
+            </script>
+            ";
+        }
+        catch (Exception $e) 
+        {
+            new TMessage('error', $e->getMessage());    
+        }
+    }
+
+    public static function onGetLocalizacaoEmailForm($param = null) 
+    {
+        try 
+        {
+            $id = $param['interacao_id'] ?? null;
+
+            if (empty($id)) {
+                throw new Exception('Interação não encontrada para envio de e-mail.');
+            }
+
+            $idJson = json_encode($id);
+
+            echo "
+                <script>
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(function(position) {
+
+                            const latitude = position.coords.latitude;
+                            const longitude = position.coords.longitude;
+                            const id = {$idJson};
+
+                            fetch('./Geolocalizacao.php', {
+                                method: 'POST',
+                                credentials: 'same-origin',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    acao: 'salvar_localizacao',
+                                    latitude: latitude,
+                                    longitude: longitude
+                                }),
+                            })
+                            .then(response => response.text())
+                            .then(text => {
+                                console.log('RESPOSTA BRUTA:', text);
+
+                                try {
+                                    const data = JSON.parse(text);
+
+                                    if (data.status !== 'ok') {
+                                        alert('Não foi possível salvar a localização: ' + data.message);
+                                        return;
+                                    }
+
+                                    __adianti_load_page(
+                                        'index.php?class=InteracaoFormView&method=onGetAdressFromCoord'
+                                        + '&key=' + encodeURIComponent(id)
+                                        + '&lat=' + encodeURIComponent(latitude)
+                                        + '&long=' + encodeURIComponent(longitude)
+                                        + '&interacao_id=' + encodeURIComponent(id)
+                                    );
+                                }
+                                catch (e) {
+                                    alert('Resposta inválida do servidor: ' + text);
+                                }
+                            })
+                            .catch((error) => {
+                                console.log('ERRO FETCH:', error);
+                                alert('Não foi possível capturar localização. Tente novamente mais tarde!');
+                            });
+
+                        },
+                        function(error) {
+                            console.error('Erro ao obter localização:', error.message);
+                            alert('Não foi possível capturar localização. Tente novamente mais tarde!');
+                        },
+                        {
+                            timeout: 8000
+                        });
+
+                    } else { 
+                        console.log('Geolocation não suportada.');
+                        alert('Geolocalização não suportada.');
+                    }
+                </script>
+            ";
+
+            //</autoCode>
+        }
+        catch (Exception $e) 
+        {
+            new TMessage('error', $e->getMessage());    
+        }
+    }
+            //</autoCode>
+
+    public static function onGetAdressFromCoord($param = null)
+    {
+        try
+        {
+            $lat = $param['lat'] ?? null;
+            $long = $param['long'] ?? null;
+            $interacao_id = $param['interacao_id'] ?? ($param['key'] ?? null);
+
+            if (empty($lat) || empty($long) || empty($interacao_id)) {
+                throw new Exception('Dados de localização incompletos.');
+            }
+
+            $lat  = str_replace(',', '.', $lat);
+            $long = str_replace(',', '.', $long);
+
+            $interacaoIdJson = json_encode($interacao_id);
+
+            echo "
+                <script>
+                    (function() {
+                        const lat = {$lat};
+                        const lng = {$long};
+                        const interacaoId = {$interacaoIdJson};
+
+                        fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&addressdetails=1')
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log('RESPOSTA NOMINATIM:', data);
+
+                            let address = null;
+
+                            if (data && data.address) {
+                                address = [
+                                    data.address.road,
+                                    data.address.city || data.address.town || data.address.village,
+                                    data.address.state,
+                                    data.address.postcode
+                                ].filter(Boolean).join(' - ');
+                            }
+
+                            address = address || 'Localização capturada';
+
+                            __adianti_load_page(
+                                'index.php?class=InteracaoEmailForm'
+                                + '&method=onShow'
+                                + '&target_container=adianti_right_panel'
+                                + '&interacao_id=' + encodeURIComponent(interacaoId)
+                                + '&geo_latitude=' + encodeURIComponent(lat)
+                                + '&geo_longitude=' + encodeURIComponent(lng)
+                                + '&geo_endereco=' + encodeURIComponent(address),
+                                'adianti_right_panel'
+                            );
+                        })
+                        .catch(error => {
+                            console.error(error);
+                            alert('Não foi possível obter o endereço da localização. Tente novamente.');
+                        });
+
+                    })();
+                </script>
+            ";
+        }
+        catch (Exception $e)
+        {
+            new TMessage('error', $e->getMessage());
+        }
     }
 
 }

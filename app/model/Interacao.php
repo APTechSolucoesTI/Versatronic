@@ -6,7 +6,6 @@ class Interacao extends TRecord
     const PRIMARYKEY = 'id';
     const IDPOLICY   =  'serial'; // {max, serial}
 
-    const DELETEDAT  = 'deleted_at';
     const CREATEDAT  = 'created_at';
     const UPDATEDAT  = 'updated_at';
 
@@ -38,6 +37,8 @@ class Interacao extends TRecord
         parent::addAttribute('updated_at');
         parent::addAttribute('deleted_at');
         parent::addAttribute('cliente_nome');
+        parent::addAttribute('cidade');
+        parent::addAttribute('estado');
     
     }
 

@@ -20,6 +20,8 @@ class InteracaoArquivo extends TRecord
         parent::addAttribute('nome_arquivo');
         parent::addAttribute('conteudo_arquivo');
         parent::addAttribute('dt_arquivo');
+        parent::addAttribute('interacao_atividade');
+        parent::addAttribute('deleted_at');
             
     }
 

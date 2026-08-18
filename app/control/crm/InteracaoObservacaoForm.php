@@ -25,21 +25,20 @@ class InteracaoObservacaoForm extends TPage
         // creates the form
         $this->form = new BootstrapFormBuilder(self::$formName);
         // define the form title
-        $this->form->setFormTitle("Cadastro de observação da Interação");
+        $this->form->setFormTitle("Adicione uma observação a interação");
 
 
-        $id = new TEntry('id');
+        $id = new THidden('id');
         $interacao_id = new THidden('interacao_id');
         $observacao = new THtmlEditor('observacao');
 
 
-        $id->setEditable(false);
         $interacao_id->setValue(TSession::getValue('interacao_id'));
-        $id->setSize(100);
+        $id->setSize(200);
         $interacao_id->setSize(200);
         $observacao->setSize('100%', 200);
 
-        $row1 = $this->form->addFields([new TLabel("Id:", null, '14px', null, '100%'),$id,$interacao_id],[]);
+        $row1 = $this->form->addFields([$id,$interacao_id],[]);
         $row1->layout = ['col-sm-6','col-sm-6'];
 
         $row2 = $this->form->addFields([new TLabel("Observacão:", null, '14px', null, '100%'),$observacao]);
@@ -56,18 +55,17 @@ class InteracaoObservacaoForm extends TPage
         $btn_onshow = $this->form->addAction("Voltar", new TAction(['InteracaoObservacaoHeaderList', 'onShow']), 'fas:arrow-left #000000');
         $this->btn_onshow = $btn_onshow;
 
-        parent::setTargetContainer('adianti_right_panel');
+        // vertical box container
+        $container = new TVBox;
+        $container->style = 'width: 100%';
+        $container->class = 'form-container';
+        if(empty($param['target_container']))
+        {
+            $container->add(TBreadCrumb::create(["CRM","Cadastro de observação da Interação"]));
+        }
+        $container->add($this->form);
 
-        $btnClose = new TButton('closeCurtain');
-        $btnClose->class = 'btn btn-sm btn-default';
-        $btnClose->style = 'margin-right:10px;';
-        $btnClose->onClick = "Template.closeRightPanel();";
-        $btnClose->setLabel("Fechar");
-        $btnClose->setImage('fas:times');
-
-        $this->form->addHeaderWidget($btnClose);
-
-        parent::add($this->form);
+        parent::add($container);
 
     }
 
@@ -121,17 +119,20 @@ class InteracaoObservacaoForm extends TPage
             $this->form->setData($data); // fill form data
             TTransaction::close(); // close the transaction
 
-            TToast::show('success', "Registro salvo", 'topRight', 'far:check-circle');
-            TApplication::loadPage('InteracaoObservacaoHeaderList', 'onShow', $loadPageParam); 
-
             $paramTimeline = [
 
                 'key' => $object->interacao_id
             ];
+            TApplication::loadPage(
+                'ViewInteracaoTimelineTimeLine',
+                'onShow',
+                [
+                    'target_container' => 'container_timeline'
+                ]
+            );
 
-            TApplication::loadPage('InteracaoFormView', 'onShow', $paramTimeline);
-
-                        TScript::create("Template.closeRightPanel();"); 
+            TToast::show('success', "Registro salvo", 'topRight', 'far:check-circle');
+            TApplication::loadPage('InteracaoObservacaoHeaderList', 'onShow', $loadPageParam); 
 
         }
         catch (Exception $e) // in case of exception

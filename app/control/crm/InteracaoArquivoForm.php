@@ -27,26 +27,25 @@ class InteracaoArquivoForm extends TPage
         // creates the form
         $this->form = new BootstrapFormBuilder(self::$formName);
         // define the form title
-        $this->form->setFormTitle("Cadastro de arquivo de Interação");
+        $this->form->setFormTitle("Adicione um arquivo a interação");
 
 
-        $id = new TEntry('id');
+        $id = new THidden('id');
         $interacao_id = new THidden('interacao_id');
         $conteudo_arquivo = new TFile('conteudo_arquivo');
 
         $conteudo_arquivo->addValidation("forneça o arquivo!", new TRequiredValidator()); 
 
-        $id->setEditable(false);
         $interacao_id->setValue(TSession::getValue('interacao_id'));
         $conteudo_arquivo->enableFileHandling();
-        $id->setSize(100);
+        $id->setSize(200);
         $interacao_id->setSize(200);
         $conteudo_arquivo->setSize('100%');
 
-        $row1 = $this->form->addFields([new TLabel("Id:", null, '14px', null, '100%'),$id,$interacao_id]);
+        $row1 = $this->form->addFields([$id,$interacao_id]);
         $row1->layout = ['col-sm-6'];
 
-        $row2 = $this->form->addFields([new TLabel("Conteudo arquivo:", null, '14px', null, '100%'),$conteudo_arquivo]);
+        $row2 = $this->form->addFields([new TLabel("Anexar arquivo:", null, '14px', null, '100%'),$conteudo_arquivo]);
         $row2->layout = [' col-sm-12'];
 
         // create the form actions
@@ -60,18 +59,17 @@ class InteracaoArquivoForm extends TPage
         $btn_onshow = $this->form->addAction("Voltar", new TAction(['InteracaoArquivoHeaderList', 'onShow']), 'fas:arrow-left #000000');
         $this->btn_onshow = $btn_onshow;
 
-        parent::setTargetContainer('adianti_right_panel');
+        // vertical box container
+        $container = new TVBox;
+        $container->style = 'width: 100%';
+        $container->class = 'form-container';
+        if(empty($param['target_container']))
+        {
+            $container->add(TBreadCrumb::create(["CRM","Cadastro de arquivo de Interação"]));
+        }
+        $container->add($this->form);
 
-        $btnClose = new TButton('closeCurtain');
-        $btnClose->class = 'btn btn-sm btn-default';
-        $btnClose->style = 'margin-right:10px;';
-        $btnClose->onClick = "Template.closeRightPanel();";
-        $btnClose->setLabel("Fechar");
-        $btnClose->setImage('fas:times');
-
-        $this->form->addHeaderWidget($btnClose);
-
-        parent::add($this->form);
+        parent::add($container);
 
     }
 
@@ -90,7 +88,21 @@ class InteracaoArquivoForm extends TPage
             $data = $this->form->getData(); // get form data as array
             $object->fromArray( (array) $data); // load the object with data
 
-            $conteudo_arquivo_dir = 'anexos';  
+            if (empty($data->interacao_id)) {
+                throw new Exception('Interação não informada para salvar o arquivo.');
+            }
+
+            $conteudo_arquivo_dir = 'anexos/interacao_' . (int) $data->interacao_id;
+
+            if (!is_dir($conteudo_arquivo_dir)) {
+                if (!mkdir($conteudo_arquivo_dir, 0777, true)) {
+                    throw new Exception('Não foi possível criar a pasta do arquivo: ' . $conteudo_arquivo_dir);
+                }
+            }
+
+            if (!is_writable($conteudo_arquivo_dir)) {
+                throw new Exception('A pasta do arquivo não tem permissão de escrita: ' . $conteudo_arquivo_dir);
+            }
 
             if(!$data->id)
             {
@@ -98,8 +110,8 @@ class InteracaoArquivoForm extends TPage
             }
 
             $object->store(); // save the object 
-
             $this->saveFile($object, $data, 'conteudo_arquivo', $conteudo_arquivo_dir);
+
             $loadPageParam = [];
 
             if(!empty($param['target_container']))
@@ -110,8 +122,9 @@ class InteracaoArquivoForm extends TPage
             $interacaoHistoricoArquivo = new InteracaoHistoricoArquivo;
             $interacaoHistoricoArquivo->interacao_id = $object->interacao_id;
             $interacaoHistoricoArquivo->dt_arquivo = date('Y-m-d H:i:s');
-            $interacaoHistoricoArquivo->descricao = $object->nome_arquivo ?? $object->conteudo_arquivo;
+            $interacaoHistoricoArquivo->descricao = $object->conteudo_arquivo;
             $interacaoHistoricoArquivo->movimentacao_id = Movimentacao::CRIADO;
+            $interacaoHistoricoArquivo->interacao_arquivo_id = $object->id;
             $interacaoHistoricoArquivo->store();
             // get the generated {PRIMARY_KEY}
             $data->id = $object->id; 
@@ -119,17 +132,20 @@ class InteracaoArquivoForm extends TPage
             $this->form->setData($data); // fill form data
             TTransaction::close(); // close the transaction
 
-            TToast::show('success', "Registro salvo", 'topRight', 'far:check-circle');
-            TApplication::loadPage('InteracaoArquivoHeaderList', 'onShow', $loadPageParam); 
-
-             $paramTimeline = [
+            $paramTimeline = [
 
                 'key' => $object->interacao_id
             ];
+            TApplication::loadPage(
+                'ViewInteracaoTimelineTimeLine',
+                'onShow',
+                [
+                    'target_container' => 'container_timeline'
+                ]
+            );
 
-            TApplication::loadPage('InteracaoFormView', 'onShow', $paramTimeline);
-
-                        TScript::create("Template.closeRightPanel();"); 
+            TToast::show('success', "Registro salvo", 'topRight', 'far:check-circle');
+            TApplication::loadPage('InteracaoArquivoHeaderList', 'onShow', $loadPageParam); 
 
         }
         catch (Exception $e) // in case of exception

@@ -14,6 +14,8 @@ class InteracaoList extends TPage
     private $showMethods = ['onReload', 'onSearch', 'onRefresh', 'onClearFilters', 'onGlobalSearch'];
     private $limit = 20;
 
+    use BuilderDatagridTrait;
+
     /**
      * Class constructor
      * Creates the page, the form and the listing
@@ -36,8 +38,14 @@ class InteracaoList extends TPage
 
         $criteria_cliente_id = new TCriteria();
         $criteria_etapa_interacao_id = new TCriteria();
+        $criteria_id = new TCriteria();
+        $criteria_tipo_interacao_nome = new TCriteria();
         $criteria_cliente_razao_social = new TCriteria();
+        $criteria_cidade = new TCriteria();
+        $criteria_estado = new TCriteria();
         $criteria_vendedor_id = new TCriteria();
+        $criteria_origem_contato_nome = new TCriteria();
+        $criteria_attnainteracao = new TCriteria();
         $criteria_etapa_interacao_nome = new TCriteria();
 
         $filterVar = Grupo::CLIENTE;
@@ -55,33 +63,46 @@ class InteracaoList extends TPage
         $criteria_cliente_razao_social->add($filter);
 
         $filter = new TFilter('id', 'in', "(SELECT vendedor_id FROM interacao)");
-        $criteria_vendedor_id->add($filter); 
+        $criteria_vendedor_id->add($filter);
 
         $cliente_id = new TDBUniqueSearch('cliente_id', 'minicrm', 'Pessoa', 'id', 'razao_social','razao_social asc' , $criteria_cliente_id );
         $etapa_interacao_id = new TDBCombo('etapa_interacao_id', 'minicrm', 'EtapaInteracao', 'id', '{nome}','nome asc' , $criteria_etapa_interacao_id );
         $data_inicio = new TDate('data_inicio');
         $data_inicio_final = new TDate('data_inicio_final');
-        $cliente_razao_social = new TDBUniqueSearch('cliente_razao_social', 'minicrm', 'Pessoa', 'id', 'razao_social','razao_social asc' , $criteria_cliente_razao_social );
+        $id = new TDBCombo('id', 'minicrm', 'Interacao', 'id', '{id}','id asc' , $criteria_id );
+        $tipo_interacao_nome = new TDBCombo('tipo_interacao_nome', 'minicrm', 'TipoInteracao', 'id', '{nome}','nome asc' , $criteria_tipo_interacao_nome );
+        $cliente_razao_social = new TDBUniqueSearch('cliente_razao_social', 'minicrm', 'Pessoa', 'id', 'nome_fantasia','nome_fantasia asc' , $criteria_cliente_razao_social );
+        $cliente_cpf_cnpj = new TEntry('cliente_cpf_cnpj');
+        $cidade = new TDBCombo('cidade', 'minicrm', 'Interacao', 'cidade', '{cidade}','id asc' , $criteria_cidade );
+        $estado = new TDBCombo('estado', 'minicrm', 'Interacao', 'estado', '{estado}','id asc' , $criteria_estado );
         $vendedor_id = new TDBUniqueSearch('vendedor_id', 'minicrm', 'Representante', 'id', 'razao_social','razao_social asc' , $criteria_vendedor_id );
         $data_inicio_col = new TDate('data_inicio_col');
         $data_fechamento_esperada = new TDate('data_fechamento_esperada');
         $data_fechamento = new TDate('data_fechamento');
-        $etapa_interacao_nome = new TDBCombo('etapa_interacao_nome', 'minicrm', 'EtapaInteracao', 'id', '{nome}','nome asc' , $criteria_etapa_interacao_nome );
+        $origem_contato_nome = new TDBCombo('origem_contato_nome', 'minicrm', 'OrigemContato', 'id', '{nome}','nome asc' , $criteria_origem_contato_nome );
+        $attnainteracao = new TDBCombo('attnainteracao', 'minicrm', 'TipoAtividade', 'id', '{nome}','id asc' , $criteria_attnainteracao );
+        $etapa_interacao_nome = new TDBCombo('etapa_interacao_nome', 'minicrm', 'EtapaInteracao', 'id', '{nome}','id asc' , $criteria_etapa_interacao_nome );
 
+        $cliente_cpf_cnpj->exitOnEnter();
+
+        $cliente_cpf_cnpj->setExitAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
         $data_inicio_col->setExitAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
         $data_fechamento_esperada->setExitAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
         $data_fechamento->setExitAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
 
+        $id->setChangeAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
+        $tipo_interacao_nome->setChangeAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
         $cliente_razao_social->setChangeAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
+        $cidade->setChangeAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
+        $estado->setChangeAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
         $vendedor_id->setChangeAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
+        $origem_contato_nome->setChangeAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
+        $attnainteracao->setChangeAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
         $etapa_interacao_nome->setChangeAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
 
-        $cliente_razao_social->setFilterColumns(["razao_social"]);
-        $etapa_interacao_id->enableSearch();
-        $etapa_interacao_nome->enableSearch();
-
+        $cliente_razao_social->setFilterColumns(["nome_fantasia"]);
         $cliente_id->setMinLength(0);
-        $vendedor_id->setMinLength(3);
+        $vendedor_id->setMinLength(0);
         $cliente_razao_social->setMinLength(3);
 
         $data_inicio->setDatabaseMask('yyyy-mm-dd');
@@ -96,16 +117,32 @@ class InteracaoList extends TPage
         $data_inicio_col->setMask('dd/mm/yyyy');
         $data_fechamento->setMask('dd/mm/yyyy');
         $data_inicio_final->setMask('dd/mm/yyyy');
-        $cliente_razao_social->setMask('{razao_social}');
         $data_fechamento_esperada->setMask('dd/mm/yyyy');
+        $cliente_razao_social->setMask('{nome_fantasia}  - {cpf_cnpj}');
 
+        $id->enableSearch();
+        $cidade->enableSearch();
+        $estado->enableSearch();
+        $attnainteracao->enableSearch();
+        $etapa_interacao_id->enableSearch();
+        $tipo_interacao_nome->enableSearch();
+        $origem_contato_nome->enableSearch();
+        $etapa_interacao_nome->enableSearch();
+
+        $id->setSize('100%');
+        $cidade->setSize('100%');
+        $estado->setSize('100%');
         $data_inicio->setSize(110);
         $cliente_id->setSize('100%');
         $vendedor_id->setSize('100%');
         $data_inicio_col->setSize(110);
         $data_fechamento->setSize(110);
         $data_inicio_final->setSize(110);
+        $attnainteracao->setSize('100%');
+        $cliente_cpf_cnpj->setSize('100%');
         $etapa_interacao_id->setSize('100%');
+        $tipo_interacao_nome->setSize('100%');
+        $origem_contato_nome->setSize('100%');
         $cliente_razao_social->setSize('100%');
         $etapa_interacao_nome->setSize('100%');
         $data_fechamento_esperada->setSize(110);
@@ -122,6 +159,7 @@ class InteracaoList extends TPage
 
         // creates a Datagrid
         $this->datagrid = new TDataGrid;
+        $this->datagrid->enableUserProperties('fa fa-cog', 'btn btn-default', new TAction([$this, 'setDatagridProperties']));
         $this->datagrid->setId(__CLASS__.'_datagrid');
 
         $this->datagrid_form = new TForm('datagrid_'.self::$formName);
@@ -130,14 +168,22 @@ class InteracaoList extends TPage
         $this->datagrid = new BootstrapDatagridWrapper($this->datagrid);
         $this->filter_criteria = new TCriteria;
 
+        $this->datagrid->disableDefaultClick();
         $this->datagrid->style = 'width: 100%';
         $this->datagrid->setHeight(250);
 
+        $column_id = new TDataGridColumn('id', "Número", 'left');
+        $column_tipo_interacao_nome = new TDataGridColumn('tipo_interacao->nome', "Tipo de Interação", 'left');
         $column_id_transformed = new TDataGridColumn('id', "Cliente", 'left');
+        $column_cliente_cpf_cnpj_transformed = new TDataGridColumn('cliente->cpf_cnpj', "CPF/CNPJ", 'left');
+        $column_cidade = new TDataGridColumn('cidade', "Cidade", 'left');
+        $column_estado = new TDataGridColumn('estado', "Estado", 'left');
         $column_vendedor_razao_social = new TDataGridColumn('vendedor->razao_social', "Representante", 'left');
         $column_data_inicio_transformed = new TDataGridColumn('data_inicio', "Data de início", 'left');
         $column_data_fechamento_esperada_transformed = new TDataGridColumn('data_fechamento_esperada', "Data esperada de fechamento", 'left');
         $column_data_fechamento_transformed = new TDataGridColumn('data_fechamento', "Data de fechamento", 'left');
+        $column_origem_contato_nome = new TDataGridColumn('origem_contato->nome', "Origem do contato", 'left');
+        $column__transformed = new TDataGridColumn('', "Atividades", 'left');
         $column_etapa_interacao_nome_transformed = new TDataGridColumn('etapa_interacao->nome', "Etapa", 'left');
 
         $column_id_transformed->setTransformer(function($value, $object, $row, $cell = null, $last_row = null)
@@ -147,6 +193,20 @@ class InteracaoList extends TPage
             }else{
                 return $object->cliente_nome;
             }
+
+        });
+
+        $column_cliente_cpf_cnpj_transformed->setTransformer(function($value, $object, $row, $cell = null, $last_row = null)
+        {
+            $numero = preg_replace('/\D/', '', $value);
+
+            if (strlen($numero) === 11) {
+                // Formatar CPF: 000.000.000-00
+                return preg_replace('/(\d{3})(\d{3})(\d{3})(\d{2})/', '$1.$2.$3-$4', $numero);
+            } elseif (strlen($numero) === 14) {
+                // Formatar CNPJ: 00.000.000/0000-00
+                return preg_replace('/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/', '$1.$2.$3/$4-$5', $numero);
+            } 
 
         });
 
@@ -198,6 +258,40 @@ class InteracaoList extends TPage
             }
         });
 
+        $column__transformed->setTransformer(function($value, $object, $row, $cell = null, $last_row = null)
+        {
+            TTransaction::open(self::$database);
+            $conn = TTransaction::get();
+
+            $sql = "
+                SELECT ia.tipo_atividade_id,
+                          ta.nome
+                FROM interacao_atividade ia
+                JOIN tipo_atividade ta ON ia.tipo_atividade_id = ta.id
+                    WHERE ia.interacao_id = {$object->id}
+                    GROUP BY ia.tipo_atividade_id,
+        			         ta.nome
+            ";
+
+            $result = $conn->query($sql);
+
+            $list = [];
+
+            while ($item = $result->fetch(PDO::FETCH_OBJ)) {
+                $list[] = $item->nome;
+            }    
+
+            $string = implode("<br>", $list);
+
+            TTransaction::close(); 
+
+            if(empty($list)){
+                return 'Nenhuma';
+            }   
+
+            return $string;
+        });
+
         $column_etapa_interacao_nome_transformed->setTransformer(function($value, $object, $row, $cell = null, $last_row = null)
         {
 
@@ -208,11 +302,18 @@ class InteracaoList extends TPage
 
         });        
 
+        $this->datagrid->addColumn($column_id);
+        $this->datagrid->addColumn($column_tipo_interacao_nome);
         $this->datagrid->addColumn($column_id_transformed);
+        $this->datagrid->addColumn($column_cliente_cpf_cnpj_transformed);
+        $this->datagrid->addColumn($column_cidade);
+        $this->datagrid->addColumn($column_estado);
         $this->datagrid->addColumn($column_vendedor_razao_social);
         $this->datagrid->addColumn($column_data_inicio_transformed);
         $this->datagrid->addColumn($column_data_fechamento_esperada_transformed);
         $this->datagrid->addColumn($column_data_fechamento_transformed);
+        $this->datagrid->addColumn($column_origem_contato_nome);
+        $this->datagrid->addColumn($column__transformed);
         $this->datagrid->addColumn($column_etapa_interacao_nome_transformed);
 
         $action_onShow = new TDataGridAction(array('InteracaoFormView', 'onShow'));
@@ -224,14 +325,16 @@ class InteracaoList extends TPage
 
         $this->datagrid->addAction($action_onShow);
 
-        $action_onEdit = new TDataGridAction(array('InteracaoForm', 'onEdit'));
-        $action_onEdit->setUseButton(false);
-        $action_onEdit->setButtonClass('btn btn-default btn-sm');
-        $action_onEdit->setLabel("Editar");
-        $action_onEdit->setImage('far:edit #478fca');
-        $action_onEdit->setField(self::$primaryKey);
+        $action_onOpenOnEdit = new TDataGridAction(array('InteracaoList', 'onOpenOnEdit'));
+        $action_onOpenOnEdit->setUseButton(false);
+        $action_onOpenOnEdit->setButtonClass('btn btn-default btn-sm');
+        $action_onOpenOnEdit->setLabel("Editar");
+        $action_onOpenOnEdit->setImage('far:edit #478fca');
+        $action_onOpenOnEdit->setField(self::$primaryKey);
 
-        $this->datagrid->addAction($action_onEdit);
+        $action_onOpenOnEdit->setParameter('key', '{id}');
+
+        $this->datagrid->addAction($action_onOpenOnEdit);
 
         $action_onDelete = new TDataGridAction(array('InteracaoList', 'onDelete'));
         $action_onDelete->setUseButton(false);
@@ -242,6 +345,7 @@ class InteracaoList extends TPage
 
         $this->datagrid->addAction($action_onDelete);
 
+        $this->applyDatagridProperties();
         // create the datagrid model
         $this->datagrid->createModel();
 
@@ -253,7 +357,7 @@ class InteracaoList extends TPage
         {
             $tr->add(TElement::tag('td', ''));
         }
-        if(!$action_onEdit->isHidden())
+        if(!$action_onOpenOnEdit->isHidden())
         {
             $tr->add(TElement::tag('td', ''));
         }
@@ -261,8 +365,18 @@ class InteracaoList extends TPage
         {
             $tr->add(TElement::tag('td', ''));
         }
+        $td_id = TElement::tag('td', $id);
+        $tr->add($td_id);
+        $td_tipo_interacao_nome = TElement::tag('td', $tipo_interacao_nome);
+        $tr->add($td_tipo_interacao_nome);
         $td_cliente_razao_social = TElement::tag('td', $cliente_razao_social);
         $tr->add($td_cliente_razao_social);
+        $td_cliente_cpf_cnpj = TElement::tag('td', $cliente_cpf_cnpj);
+        $tr->add($td_cliente_cpf_cnpj);
+        $td_cidade = TElement::tag('td', $cidade);
+        $tr->add($td_cidade);
+        $td_estado = TElement::tag('td', $estado);
+        $tr->add($td_estado);
         $td_vendedor_id = TElement::tag('td', $vendedor_id);
         $tr->add($td_vendedor_id);
         $td_data_inicio_col = TElement::tag('td', $data_inicio_col);
@@ -271,14 +385,26 @@ class InteracaoList extends TPage
         $tr->add($td_data_fechamento_esperada);
         $td_data_fechamento = TElement::tag('td', $data_fechamento);
         $tr->add($td_data_fechamento);
+        $td_origem_contato_nome = TElement::tag('td', $origem_contato_nome);
+        $tr->add($td_origem_contato_nome);
+        $td_attnainteracao = TElement::tag('td', $attnainteracao);
+        $tr->add($td_attnainteracao);
         $td_etapa_interacao_nome = TElement::tag('td', $etapa_interacao_nome);
         $tr->add($td_etapa_interacao_nome);
+        $tr->add(TElement::tag('td', ''));
 
+        $this->datagrid_form->addField($id);
+        $this->datagrid_form->addField($tipo_interacao_nome);
         $this->datagrid_form->addField($cliente_razao_social);
+        $this->datagrid_form->addField($cliente_cpf_cnpj);
+        $this->datagrid_form->addField($cidade);
+        $this->datagrid_form->addField($estado);
         $this->datagrid_form->addField($vendedor_id);
         $this->datagrid_form->addField($data_inicio_col);
         $this->datagrid_form->addField($data_fechamento_esperada);
         $this->datagrid_form->addField($data_fechamento);
+        $this->datagrid_form->addField($origem_contato_nome);
+        $this->datagrid_form->addField($attnainteracao);
         $this->datagrid_form->addField($etapa_interacao_nome);
 
         $this->datagrid_form->setData( TSession::getValue(__CLASS__.'_filter_data') );
@@ -322,7 +448,7 @@ class InteracaoList extends TPage
         $this->datagrid_form->addField($button_cadastrar);
 
         $button_simples = new TButton('button_button_simples');
-        $button_simples->setAction(new TAction(['InteracaoSimplesForm', 'onShow']), "Simples");
+        $button_simples->setAction(new TAction(['InteracaoList', 'onOpenSimplesForm']), "Simples");
         $button_simples->addStyleClass('btn-default');
         $button_simples->setImage('fas:plus #69AA46');
 
@@ -349,13 +475,6 @@ class InteracaoList extends TPage
 
         $this->datagrid_form->addField($button_atualizar);
 
-        $button_enviar_emails = new TButton('button_button_enviar_emails');
-        $button_enviar_emails->setAction(new TAction(['InteracaoEmailForm', 'onShow']), "Enviar Emails");
-        $button_enviar_emails->addStyleClass('btn-default');
-        $button_enviar_emails->setImage('far:envelope #E91E63');
-
-        $this->datagrid_form->addField($button_enviar_emails);
-
         $dropdown_button_exportar = new TDropDown("Exportar", 'fas:file-export #2d3436');
         $dropdown_button_exportar->setPullSide('right');
         $dropdown_button_exportar->setButtonClass('btn btn-default waves-effect dropdown-toggle');
@@ -369,7 +488,6 @@ class InteracaoList extends TPage
         $head_left_actions->add($btnShowCurtainFilters);
         $head_left_actions->add($button_limpar_filtros);
         $head_left_actions->add($button_atualizar);
-        $head_left_actions->add($button_enviar_emails);
 
         $head_right_actions->add($dropdown_button_exportar);
 
@@ -391,6 +509,34 @@ class InteracaoList extends TPage
 
     }
 
+    public function onOpenOnEdit($param = null) 
+    {
+        try 
+        {
+
+            $key = $param['key'];
+
+            TTransaction::open('minicrm');
+
+            $interacao = Interacao::where('id', '=', $key)->first();
+            $tipo_interacao = $interacao->tipo_interacao_id;
+
+            $page_param = ['key'=>$key];
+            TTransaction::close();
+
+            if ($tipo_interacao == 1) {
+                TApplication::loadPage('InteracaoForm', 'onEdit', $page_param);
+            }
+            else if ($tipo_interacao == 2) {
+                TApplication::loadPage('InteracaoSimplesForm', 'onEdit', $page_param);
+            }            
+            //</autoCode>
+        }
+        catch (Exception $e) 
+        {
+            new TMessage('error', $e->getMessage());    
+        }
+    }
     public function onDelete($param = null) 
     { 
         if(isset($param['delete']) && $param['delete'] == 1)
@@ -402,31 +548,91 @@ class InteracaoList extends TPage
                 // open a transaction with database
                 TTransaction::open(self::$database);
 
+                $user_id =TSession::getValue("userid");
+
+                $admin = false;
+
+                if ($user_id == 1 || $user_id == 18) {
+                    $admin = true;
+                }
+
                 $object = new Interacao($key, FALSE); 
-                $timeline = (ViewInteracaoTimeline::where('interacao_id','=',$object->id))->count();
+                $atividades = (InteracaoAtividade::where('interacao_id','=',$object->id))->count();
 
-                if($timeline <= 1)
-                {
-
-                    $atividades = (InteracaoAtividade::where('interacao_id','=',$object->id));
-
-                    $atividades->delete();
-
-                    // deletes the object from the database
-                    $object->delete();
-
-                    // close the transaction
+                if($atividades > 0 && !$admin)
+                {                    
                     TTransaction::close();
+                    new TMessage('info', "Não é possivel deletar interação que contém atividades!");
+                    return;
+                }
 
-                    // reload the listing
-                    $this->onReload( $param );
-                    // shows the success message
-                    new TMessage('info', AdiantiCoreTranslator::translate('Record deleted'));
+                $interacaoArquivos = InteracaoArquivo::where('interacao_id', '=', $object->id)->load();
+                $interacaoArquivosIds = [];
+                if (!empty($interacaoArquivos)) {
+                    foreach ($interacaoArquivos as $interacaoArquivo) {
+                        if (!empty($interacaoArquivo)) {
+                            $interacaoArquivosIds[] = $interacaoArquivo->id;                            
+                        }
+                    }
+                    if (!empty($interacaoArquivosIds)) {                        
+                        foreach ($interacaoArquivosIds as $interacaoArquivosId) {
+                            $interacaoArq = InteracaoArquivo::find($interacaoArquivosId);
+                            $caminhoArquivo = trim((string) $interacaoArq->conteudo_arquivo);
+                            if (!empty($caminhoArquivo) && is_file($caminhoArquivo)) {
+                                @unlink($caminhoArquivo);
+                            }
+
+                            $interacaoArq->delete();                        
+                        }                    
+                    }
                 }
-                else 
+
+                $criteria = new TCriteria;
+                $criteria->add(new TFilter('interacao_id', '=', $object->id));
+
+                $tabelas = [];
+
+                if ($admin) {
+                    $tabelas = [
+                        'InteracaoHistoricoObservacao',
+                        'InteracaoHistoricoAtividade',
+                        'InteracaoHistoricoArquivo',
+                        'InteracaoHistoricoEtapa',
+                        'InteracaoAtividade',
+                        'InteracaoLocalizacao',
+                        'InteracaoObservacao',
+                        'InteracaoArquivo',
+                        'InteracaoItem'
+
+                    ];
+                }else {
+                    $tabelas = [
+                        'InteracaoHistoricoObservacao',
+                        'InteracaoHistoricoAtividade',
+                        'InteracaoHistoricoArquivo',
+                        'InteracaoHistoricoEtapa',
+                        'InteracaoLocalizacao',
+                        'InteracaoObservacao',
+                        'InteracaoArquivo',
+                        'InteracaoItem'
+
+                    ];
+                }                
+
+                foreach ($tabelas as $tabela)
                 {
-                    new TMessage('error', "Não é possivel deletar essa Interação!");
+                    (new TRepository($tabela))->delete($criteria);
                 }
+                // deletes the object from the database
+                $object->delete();
+
+                // close the transaction
+                TTransaction::close();
+
+                // reload the listing
+                $this->onReload( $param );
+                // shows the success message
+                new TMessage('info', AdiantiCoreTranslator::translate('Record deleted'));        
             }
             catch (Exception $e) // in case of exception
             {
@@ -699,6 +905,79 @@ class InteracaoList extends TPage
             TTransaction::rollback(); // undo all pending operations
         }
     }
+    public function onOpenSimplesForm($param = null) 
+    {
+        try 
+        {            
+            echo "
+                <script>
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(function(position) {
+
+                            const latitude = position.coords.latitude;
+                            const longitude = position.coords.longitude;
+
+                            fetch('./Geolocalizacao.php', {
+                                method: 'POST',
+                                credentials: 'same-origin',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    acao: 'salvar_localizacao',
+                                    latitude: latitude,
+                                    longitude: longitude
+                                }),
+                            })
+                            .then(response => response.text())
+                            .then(text => {
+                                console.log('RESPOSTA BRUTA:', text);
+
+                                try {
+                                    const data = JSON.parse(text);
+
+                                    if (data.status !== 'ok') {
+                                        alert('Não foi possível salvar a localização: ' + data.message);
+                                        return;
+                                    }
+
+                                    __adianti_load_page(
+                                        'index.php?class=InteracaoSimplesForm'
+                                        + '&geo_latitude=' + encodeURIComponent(latitude)
+                                        + '&geo_longitude=' + encodeURIComponent(longitude)
+                                    );
+                                }
+                                catch (e) {
+                                    alert('Resposta inválida do servidor: ' + text);
+                                }
+                            })
+                            .catch((error) => {
+                                console.log('ERRO FETCH:', error);
+                                alert('Não foi possível capturar localização. Tente novamente mais tarde!');
+                            });
+
+                        },
+                        function(error) {
+                            console.error('Erro ao obter localização:', error.message);
+                            alert('Não foi possível capturar localização. Tente novamente mais tarde!');
+                        },
+                        {
+                            timeout: 8000
+                        });
+
+                    } else { 
+                        console.log('Geolocation não suportada.');
+                        alert('Geolocalização não suportada.');
+                    }
+                </script>
+            ";
+            //</autoCode>
+        }
+        catch (Exception $e) 
+        {
+            new TMessage('error', $e->getMessage());    
+        }
+    }
     public static function onShowCurtainFilters($param = null) 
     {
         try 
@@ -735,10 +1014,13 @@ class InteracaoList extends TPage
     }
     public function onClearFilters($param = null) 
     {
+        for ($i = 0; $i < 7; $i++) {
+
         TSession::setValue(__CLASS__.'_filter_data', NULL);
         TSession::setValue(__CLASS__.'_filters', NULL);
 
         $this->onReload(['offset' => 0, 'first_page' => 1]);
+        }              
     }
     public function onRefresh($param = null) 
     {
@@ -787,16 +1069,46 @@ class InteracaoList extends TPage
             $filters[] = new TFilter('data_inicio', '<=', $data->data_inicio_final);// create the filter 
         }
 
+        if (isset($data->id) AND ( (is_scalar($data->id) AND $data->id !== '') OR (is_array($data->id) AND (!empty($data->id)) )) )
+        {
+
+            $filters[] = new TFilter('id', '=', $data->id);// create the filter 
+        }
+
+        if (isset($data->tipo_interacao_nome) AND ( (is_scalar($data->tipo_interacao_nome) AND $data->tipo_interacao_nome !== '') OR (is_array($data->tipo_interacao_nome) AND (!empty($data->tipo_interacao_nome)) )) )
+        {
+
+            $filters[] = new TFilter('tipo_interacao_id', '=', $data->tipo_interacao_nome);// create the filter 
+        }
+
         if (isset($data->cliente_razao_social) AND ( (is_scalar($data->cliente_razao_social) AND $data->cliente_razao_social !== '') OR (is_array($data->cliente_razao_social) AND (!empty($data->cliente_razao_social)) )) )
         {
 
             $filters[] = new TFilter('cliente_id', '=', $data->cliente_razao_social);// create the filter 
         }
 
+        if (isset($data->cliente_cpf_cnpj) AND ( (is_scalar($data->cliente_cpf_cnpj) AND $data->cliente_cpf_cnpj !== '') OR (is_array($data->cliente_cpf_cnpj) AND (!empty($data->cliente_cpf_cnpj)) )) )
+        {
+
+            $filters[] = new TFilter('cliente_id', 'in', "(SELECT id FROM pessoa WHERE  deleted_at is null AND cpf_cnpj like '%{$data->cliente_cpf_cnpj}%')");// create the filter 
+        }
+
+        if (isset($data->cidade) AND ( (is_scalar($data->cidade) AND $data->cidade !== '') OR (is_array($data->cidade) AND (!empty($data->cidade)) )) )
+        {
+
+            $filters[] = new TFilter('cidade', 'ilike', "%{$data->cidade}%");// create the filter 
+        }
+
+        if (isset($data->estado) AND ( (is_scalar($data->estado) AND $data->estado !== '') OR (is_array($data->estado) AND (!empty($data->estado)) )) )
+        {
+
+            $filters[] = new TFilter('estado', 'ilike', "%{$data->estado}%");// create the filter 
+        }
+
         if (isset($data->vendedor_id) AND ( (is_scalar($data->vendedor_id) AND $data->vendedor_id !== '') OR (is_array($data->vendedor_id) AND (!empty($data->vendedor_id)) )) )
         {
 
-            $filters[] = new TFilter('vendedor_id', '=', $data->vendedor_id);// create the filter 
+            $filters[] = new TFilter('vendedor_id', 'in', "(SELECT id FROM representante WHERE id = '{$data->vendedor_id}')");// create the filter 
         }
 
         if (isset($data->data_inicio_col) AND ( (is_scalar($data->data_inicio_col) AND $data->data_inicio_col !== '') OR (is_array($data->data_inicio_col) AND (!empty($data->data_inicio_col)) )) )
@@ -817,10 +1129,21 @@ class InteracaoList extends TPage
             $filters[] = new TFilter('data_fechamento', '=', $data->data_fechamento);// create the filter 
         }
 
+        if (isset($data->origem_contato_nome) AND ( (is_scalar($data->origem_contato_nome) AND $data->origem_contato_nome !== '') OR (is_array($data->origem_contato_nome) AND (!empty($data->origem_contato_nome)) )) )
+        {
+
+            $filters[] = new TFilter('origem_contato_id', '=', $data->origem_contato_nome);// create the filter 
+        }
+
         if (isset($data->etapa_interacao_nome) AND ( (is_scalar($data->etapa_interacao_nome) AND $data->etapa_interacao_nome !== '') OR (is_array($data->etapa_interacao_nome) AND (!empty($data->etapa_interacao_nome)) )) )
         {
 
             $filters[] = new TFilter('etapa_interacao_id', '=', $data->etapa_interacao_nome);// create the filter 
+        }
+
+         if (isset($data->attnainteracao) AND ( (is_scalar($data->attnainteracao) AND $data->attnainteracao !== '') OR (is_array($data->attnainteracao) AND (!empty($data->attnainteracao)) )) )
+        {
+            $filters[] = new TFilter('id', 'in', "(SELECT interacao_id FROM interacao_atividade WHERE tipo_atividade_id = '{$data->attnainteracao}')");// create the filter 
         }
 
         // fill the form with data again
@@ -886,6 +1209,7 @@ class InteracaoList extends TPage
                 }
             }
 
+            /*
             //</blockLine><btnShowCurtainFiltersAutoCode>
             // if($param['cliente'])
             // {
@@ -920,6 +1244,27 @@ class InteracaoList extends TPage
             TTransaction::close();
 
             //</blockLine></btnShowCurtainFiltersAutoCode>
+            */
+            if(!empty($this->btnShowCurtainFilters) && empty($this->btnShowCurtainFiltersAdjusted))
+            {
+                $this->btnShowCurtainFiltersAdjusted = true;
+                $this->btnShowCurtainFilters->style = 'position: relative';
+                $countFilters = count($filters ?? []);
+                $this->btnShowCurtainFilters->setLabel($this->btnShowCurtainFilters->getLabel(). "<span class='badge badge-success' style='position: absolute'>{$countFilters}<span>");
+            }
+
+            TTransaction::open(self::$database);
+            $representante = Representante::where('system_user_id','=',TSession::getValue('userid'))->first();
+            if($representante){
+
+                $filter = new TFilter('id', 'in', "(SELECT id FROM interacao WHERE deleted_at is null AND vendedor_id in (SELECT id FROM representante WHERE system_user_id = ".TSession::getValue('userid')."))");
+                $criteria->add($filter);  
+
+                 $object = new stdClass();
+                $object->vendedor_id = $representante->id;
+                TForm::sendData(self::$formName, $object);
+            }
+            TTransaction::close();                
 
             // load the objects according to criteria
             $objects = $repository->load($criteria, FALSE);
@@ -944,6 +1289,8 @@ class InteracaoList extends TPage
             $this->pageNavigation->setCount($count); // count of records
             $this->pageNavigation->setProperties($param); // order, page
             $this->pageNavigation->setLimit($this->limit); // limit
+
+            $this->datagrid->initPopoverHeaderFilters();
 
             // close the transaction
             TTransaction::close();
@@ -1008,13 +1355,6 @@ class InteracaoList extends TPage
         }
 
         TDataGrid::replaceRowById(__CLASS__.'_datagrid', $row->id, $row);
-    }
-
-     public function onShowReload($param = null)
-    {
-        //<onShow>
-
-        //</onShow>
     }
 
 }

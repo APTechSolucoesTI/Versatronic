@@ -7,8 +7,9 @@ class SigissWebService
     private static $url = 'https://wssantabarbara.sigissweb.com/rest/';
 
     // --------------------- SERVIDOR DE HOMOLOGAÇÃO ---------------------
-    //private static $url = 'https://wshml2.sigissweb.com/rest/';
-    //private static $senha = '5CLZMwkb7';
+    //private static $url = 'https://wshml.sigissweb.com/rest/';
+    //private static $senhaReforma = 'FTKf97Xsd';
+    //private static $senhaVersatronic ='d4wQkK@KG';
 
     // Método principal que executa todo o fluxo
     public static function buscarNota($numero, $coligada_id){
@@ -39,6 +40,51 @@ class SigissWebService
                 return $resultPdf;
             }
 
+            // Atualiza a data de emissão da OS das notas pendentes
+            $resultDataEmissaoOs = self::atualizarDataEmissaoOsNotaBaixada();
+
+            if ($resultDataEmissaoOs['status'] === 'error') {
+                LogCrontab::registrarLog(
+                    __CLASS__,
+                    __METHOD__,
+                    1,
+                    'Nota emitida, mas houve erro ao atualizar a data de emissão da OS: ' .
+                    $resultDataEmissaoOs['mensagem'],
+                    "Arquivo: SigissWeb.<br/>Linha: " . __LINE__ . "."
+                );
+            }
+
+            // Busca a data de emissão da nota recém-gerada
+            $numeroNormalizado = self::normalizarNumeroNota($numero);
+
+            TTransaction::open(self::$dbAp);
+
+            $notaGerada = NotaBaixada::where('numero', '=', $numeroNormalizado)
+                ->where('coligada_id', '=', $coligada_id)
+                ->first();
+
+            TTransaction::close();
+
+            if ($notaGerada && !empty($notaGerada->data_emissao)) {
+                $dataEmissao = date('Y-m-d', strtotime($notaGerada->data_emissao));
+
+                $resultComissao = self::atualizarComissaoNotasBaixadasPorPeriodo(
+                    $dataEmissao,
+                    $dataEmissao
+                );
+
+                if ($resultComissao['status'] === 'error') {
+                    LogCrontab::registrarLog(
+                        __CLASS__,
+                        __METHOD__,
+                        1,
+                        'Nota emitida, mas houve erro ao calcular a comissão: ' .
+                        $resultComissao['mensagem'],
+                        "Arquivo: SigissWeb.<br/>Linha: " . __LINE__ . "."
+                    );
+                }
+            }
+
             //Registro de log de execução
             LogCrontab::registrarLog(__CLASS__, __METHOD__, 0, "Nota $numero processada com sucesso", "Arquivo: SigissWeb.<br/>Linha: " . __LINE__ . ".");
 
@@ -61,6 +107,7 @@ class SigissWebService
 
     public static function getNota($numero, $coligada_id){
         try {
+            
             $numero = str_pad($numero, 6, '0', STR_PAD_LEFT);
 
             TTransaction::open(self::$dbAp);
@@ -75,8 +122,7 @@ class SigissWebService
             }
             TTransaction::close();
 
-            $sqlNota = "
-                    SELECT
+            $sqlNota ="SELECT
                         m.numeromov as numero,
                         m.dataemissao as data_emissao,
                         f.CGCCFO as cnpj_cpf,
@@ -98,17 +144,53 @@ class SigissWebService
                         f.EMAILPGTO as emailpgto,
                         m.VALORLIQUIDO as valor_total,
                         p.nome as forma_pagamento, 
+						(CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN 0 ELSE 1 END ) as retido, 
                         (CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN m.VALORLIQUIDO ELSE 0 END ) as base_csll,
-                        (CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN m.VALORLIQUIDO ELSE 0 END ) as base_cofins,
-                        (CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN m.VALORLIQUIDO ELSE 0 END ) as base_pis,
-                        (CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN 1.00 ELSE 0 END ) as aliquota_csll,
-                        (CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN 3.00 ELSE 0 END ) as aliquota_cofins,
-                        (CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN 0.65 ELSE 0 END ) as aliquota_pis,
-                        (CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN m.VALORLIQUIDO * 0.01 ELSE 0 END ) as csll, 
-                        (CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN m.VALORLIQUIDO * 0.03 ELSE 0 END ) as cofins, 
-                        (CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN m.VALORLIQUIDO * 0.0065 ELSE 0 END ) as pis,
+                        (CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN m.VALORLIQUIDO ELSE m.VALORLIQUIDO END ) as base_cofins,
+                        (CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN m.VALORLIQUIDO ELSE m.VALORLIQUIDO END ) as base_pis,
+                        (CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN 4.65 ELSE 0 END ) as aliquota_csll,
+                        (CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN 3.00 ELSE 3.00 END ) as aliquota_cofins,
+                        (CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN 0.65 ELSE 0.65 END ) as aliquota_pis,
+                        (CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN m.VALORLIQUIDO * 0.0465 ELSE 0 END ) as csll, 
+                        (CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN m.VALORLIQUIDO * 0.03 ELSE m.VALORLIQUIDO * 0.03 END ) as cofins, 
+                        (CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN m.VALORLIQUIDO * 0.0065 ELSE m.VALORLIQUIDO * 0.0065 END ) as pis,
                         (m.VALORLIQUIDO * 0.02) as iss, 
-                        (SELECT top 1 replace(replace(cast(i.historicolongo as varchar(2000)), CHAR(13), '|' ), char(10), '' ) FROM TITMMOVHISTORICO i (nolock) WHERE i.codcoligada = m.codcoligada AND i.idmov = m.idmov order by i.nseqitmmov desc ) + '|' + ( CASE WHEN ( SELECT string_agg( 'FATURA / DUPLICATA: ' + l.NUMERODOCUMENTO + ' - VALOR : ' + format( ( l.VALORORIGINAL - l.valorop1 - l.valorop2 - l.valorop3 - T.valor ), 'C', 'pt-br' ) + ' - DATA DE VENCIMENTO : ' + CONVERT(varchar(30), l.DATAVENCIMENTO, 103), '|' ) FROM flan l (nolock), FTRBLAN t (nolock) WHERE l.codcoligada = m.codcoligada AND l.idmov = m.idmov AND t.idlan = l.idlan AND t.CODCOLIGADA = l.codcoligada ) is not null THEN ( SELECT string_agg( 'FATURA / DUPLICATA: ' + l.NUMERODOCUMENTO + ' - VALOR : ' + format( ( l.VALORORIGINAL - l.valorop1 - l.valorop2 - l.valorop3 - T.valor ), 'C', 'pt-br' ) + ' - DATA DE VENCIMENTO : ' + CONVERT(varchar(30), l.DATAVENCIMENTO, 103), '|' ) FROM flan l (nolock), FTRBLAN t (nolock) WHERE l.codcoligada = m.codcoligada AND l.idmov = m.idmov AND t.idlan = l.idlan AND t.CODCOLIGADA = l.codcoligada ) ELSE ( SELECT string_agg( 'FATURA / DUPLICATA: ' + l.NUMERODOCUMENTO + ' - VALOR : ' + format( ( l.VALORORIGINAL - l.valorop1 - l.valorop2 - l.valorop3 ), 'C', 'pt-br' ) + ' - DATA DE VENCIMENTO : ' + CONVERT(varchar(30), l.DATAVENCIMENTO, 103), '|' ) FROM flan l (nolock) WHERE l.codcoligada = m.codcoligada AND l.idmov = m.idmov ) END ) as descricao
+                        (SELECT TOP 1
+                            REPLACE(REPLACE(CAST(i.historicolongo AS varchar(2000)), CHAR(13), '|'), CHAR(10), '')
+                    FROM TITMMOVHISTORICO i (NOLOCK)
+                    WHERE i.codcoligada = m.codcoligada
+                    AND i.idmov      = m.idmov
+                    ORDER BY i.nseqitmmov DESC
+                    )
+                    + '|'
+                    + ISNULL(
+                        (SELECT STRING_AGG(
+                                    'FATURA / DUPLICATA: ' + l.NUMERODOCUMENTO
+                                    + ' - VALOR : ' + FORMAT(
+                                            (l.VALORORIGINAL - l.valorop1 - l.valorop2 - l.valorop3 - ISNULL(tt.valor_retido, 0)),
+                                            'C', 'pt-br'
+                                    )
+                                    + ' - DATA DE VENCIMENTO : ' + CONVERT(varchar(30), l.DATAVENCIMENTO, 103),
+                                    '|'
+                            )
+                        FROM flan l (NOLOCK)
+                        LEFT JOIN (
+                                SELECT
+                                    t.codcoligada,
+                                    t.idlan,
+                                    SUM(CASE WHEN t.CODTRB = 'RET' THEN t.valor ELSE 0 END) AS valor_retido
+                                FROM FTRBLAN t (NOLOCK)
+                                GROUP BY
+                                    t.codcoligada,
+                                    t.idlan
+                            ) tt
+                                ON tt.codcoligada = l.codcoligada
+                            AND tt.idlan       = l.idlan
+                        WHERE l.codcoligada = m.codcoligada
+                        AND l.idmov      = m.idmov
+                        ),
+                        ''
+                    ) AS descricao
                     FROM
                         tmov m (nolock)
                         INNER JOIN fcfo f (nolock) ON f.codcfo = m.codcfo
@@ -167,71 +249,101 @@ class SigissWebService
                     'mensagem' => "Campo cidade de pagamento não informado para nota $numero"
                 ];
             }
-
-            // Criação do DOM
+            
             $xml = new DOMDocument("1.0", "ISO-8859-1");
             $xml->formatOutput = true;
 
-            // Elemento raiz
             $root = $xml->createElement("notafiscal_lote");
-            $nf = $xml->createElement("notafiscal");
+            $nf   = $xml->createElement("notafiscal");
 
-            // Dados convertidos com segurança
+            $docDestinatario = preg_replace('/\D/', '', $dados->cnpj_cpf);
+            $pessoaDestinatario = $dados->pessoa; // J ou F
+
+            
+
             $campos = [
-                "cnpj_cpf_prestador" => $coligada->cnpj,
-                "exterior_dest" => "0",
-                "cnpj_cpf_destinatario" => preg_replace('/\D/', '', $dados->cnpj_cpf),
-                "pessoa_destinatario" => $dados->pessoa,
-                "ie_destinatario" => $dados->inscricao_estadual,
-                "im_destinatario" => $dados->inscricao_municipal,
-                "razao_social_destinatario" => $dados->razao_social,
-                "endereco_destinatario" => $dados->endereco,
-                "numero_ende_destinatario" => $dados->numero_end,
-                "complemento_ende_destinatario" => $dados->complementopgto,
-                "bairro_destinatario" => $dados->bairro,
-                "cep_destinatario" => preg_replace('/\D/', '', $dados->ceppgto),
-                "cidade_destinatario" => $dados->cidadepgto,
-                "uf_destinatario" => $dados->codetdpgto,
-                "pais_destinatario" => $dados->paispagto,
-                "fone_destinatario" => $dados->telefonepgto,
-                "email_destinatario" => $dados->emailpgto,
-                "valor_nf" => number_format((float) $dados->valor_total, 2, ',', ''),
-                "deducao" => "0",
-                "valor_servico" => number_format((float) $dados->valor_total, 2, ',', ''),
-                "data_emissao" => date("d/m/Y", strtotime($dados->data_emissao)),
-                "forma_de_pagamento" => $dados->forma_pagamento,
-                "descricao" => $dados->descricao,
-                "id_codigo_servico" => "14.01.01",
-                "cancelada" => "N",
-                "iss_retido" => "N",
-                "aliq_iss" => "2",
-                "valor_iss" => number_format((float) ($dados->iss ?? 0), 2, ',', ''),
-                "bc_pis" => number_format((float) ($dados->base_pis ?? 0), 2, ',', ''),
-                "aliq_pis" => number_format((float) ($dados->aliquota_pis ?? 0), 2, ',', ''),
-                "valor_pis" => number_format((float) ($dados->pis ?? 0), 2, ',', ''),
-                "bc_cofins" => number_format((float) ($dados->base_cofins ?? 0), 2, ',', ''),
-                "aliq_cofins" => number_format((float) ($dados->aliquota_cofins ?? 0), 2, ',', ''),
-                "valor_cofins" => number_format((float) ($dados->cofins ?? 0), 2, ',', ''),
-                "bc_csll" => number_format((float) ($dados->base_csll ?? 0), 2, ',', ''),
-                "aliq_csll" => number_format((float) ($dados->aliquota_csll ?? 0), 2, ',', ''),
-                "valor_csll" => number_format((float) ($dados->csll ?? 0), 2, ',', ''),
-                "bc_irrf" => "0",
-                "aliq_irrf" => "0",
-                "valor_irrf" => "0",
-                "bc_inss" => "0",
-                "aliq_inss" => "0",
-                "valor_inss" => "0",
-                "sistema_gerador" => "TOTVS RM",
-                "serie_rps" => "NFS",
-                "rps" => (int) ltrim($dados->numero, '0'),
-                "codigo_nbs" => "1.2001.50.00",
-                "exterior_prestacao_servico" => "0",
-                "pais_local_prest" => "Brasil",
-                "cidade_local_prest" => "Santa Barbara D'Oeste",
-                "uf_local_prest" => "SP"
-            ];
 
-            // Adiciona os elementos ao XML
+                "cnpj_cpf_prestador"        => $coligada->cnpj,
+                "exterior_dest"             => "0",
+                "cnpj_cpf_destinatario"     => $docDestinatario,
+                "pessoa_destinatario"       => $dados->pessoa,
+                "ie_destinatario"           => $dados->inscricao_estadual,
+                "im_destinatario"           => $dados->inscricao_municipal,
+                "razao_social_destinatario" => $dados->razao_social,
+                "endereco_destinatario"     => $dados->endereco,
+                "numero_ende_destinatario"  => $dados->numero_end,
+                "complemento_ende_destinatario" => $dados->complementopgto,
+                "bairro_destinatario"       => $dados->bairro,
+                "cep_destinatario"          => preg_replace('/\D/', '', $dados->ceppgto),
+                "cidade_destinatario"       => $dados->cidadepgto,
+                "uf_destinatario"           => $dados->codetdpgto,
+                "pais_destinatario"         => $dados->paispagto,
+                "fone_destinatario"         => $dados->telefonepgto,
+                "email_destinatario"        => $dados->emailpgto,
+                "valor_nf"                  => number_format((float) $dados->valor_total, 2, ',', ''),
+                "deducao"                   => "0",
+                "valor_servico"             => number_format((float) $dados->valor_total, 2, ',', ''),
+                "data_emissao"              => date("d/m/Y", strtotime($dados->data_emissao)),
+                "forma_de_pagamento"        => $dados->forma_pagamento,
+                "descricao"                 => $dados->descricao,
+                "id_codigo_servico"         => "14.01.01",
+                "cancelada"                 => "N",
+                "iss_retido"                => "N",
+                "aliq_iss"                  => "2",
+                "valor_iss"                 => number_format((float) ($dados->iss ?? 0), 2, ',', ''),
+                "bc_pis"                    => number_format((float) ($dados->base_pis ?? 0), 2, ',', ''),
+                "aliq_pis"                  => number_format((float) ($dados->aliquota_pis ?? 0), 2, ',', ''),
+                "valor_pis"                 => number_format((float) ($dados->pis ?? 0), 2, ',', ''),
+                "bc_cofins"                 => number_format((float) ($dados->base_cofins ?? 0), 2, ',', ''),
+                "aliq_cofins"               => number_format((float) ($dados->aliquota_cofins ?? 0), 2, ',', ''),
+                "valor_cofins"              => number_format((float) ($dados->cofins ?? 0), 2, ',', ''),
+                "bc_csll"                   => number_format((float) ($dados->base_csll ?? 0), 2, ',', ''),
+                "aliq_csll"                 => number_format((float) ($dados->aliquota_csll ?? 0), 2, ',', ''),
+                "valor_csll"                => number_format((float) ($dados->csll ?? 0), 2, ',', ''),
+                "bc_irrf"                   => "0",
+                "aliq_irrf"                 => "0",
+                "valor_irrf"                => "0",
+                "bc_inss"                   => "0",
+                "aliq_inss"                 => "0",
+                "valor_inss"                => "0",
+                "sistema_gerador"           => "TOTVS RM",
+                "serie_rps"                 => 1,
+                "rps"                       => (int) ltrim($dados->numero, '0'),
+                "codigo_nbs"                => "1.2001.50.00",
+                "exterior_prestacao_servico"=> "0",
+                "pais_local_prest"          => "Brasil",
+                "cidade_local_prest"        => "Santa Barbara D'Oeste",
+                "uf_local_prest"            => "SP",
+
+                // ----------------------
+                // REFORMA TRIBUTÁRIA CBS/IBS
+                // ----------------------
+                "c_classtrib"               => "000001",
+                "ind_op"                    => "050101",
+                "exterior_op"               => "0",
+                "uf_local_op"               => "SP",
+                "cidade_local_op"           => "Santa Barbara D'Oeste",
+                "consumo_pessoal"           => "0",
+
+                // bloco destinatário CBS/IBS
+                "pessoa_destinatario_cbsibs"       => $pessoaDestinatario,
+                "cnpj_cpf_destinatario_cbsibs"     => $docDestinatario,
+                "ie_destinatario_cbsibs"           => $dados->inscricao_estadual,
+                "im_destinatario_cbsibs"           => $dados->inscricao_municipal,
+                "razao_social_destinatario_cbsibs" => $dados->razao_social,
+                "endereco_destinatario_cbsibs"     => $dados->endereco,
+                "numero_ende_destinatario_cbsibs"  => $dados->numero_end,
+                "complemento_ende_destinatario_cbsibs" => $dados->complementopgto,
+                "bairro_destinatario_cbsibs"       => $dados->bairro,
+                "cep_destinatario_cbsibs"          => preg_replace('/\D/', '', $dados->ceppgto),
+                "cidade_destinatario_cbsibs"       => $dados->cidadepgto,
+                "uf_destinatario_cbsibs"           => $dados->codetdpgto,
+                "pais_destinatario_cbsibs"         => $dados->paispagto,
+                "email_destinatario_cbsibs"        => $dados->emailpgto,
+                "n_retencao_piscofins"             => $dados->retido,
+
+            ];
+            
             foreach ($campos as $tag => $valor) {
                 $el = $xml->createElement($tag, htmlspecialchars($valor));
                 $nf->appendChild($el);
@@ -293,6 +405,8 @@ class SigissWebService
             $data = [
                 "login" => $coligada->cnpj,
                 "senha" => $coligada->senha
+                //"senha" => self::$senhaVersatronic
+                
             ];
 
             $jsonData = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -439,7 +553,7 @@ class SigissWebService
             $coligada = $nota->get_coligada();
             TTransaction::close();
 
-            $endpoint = self::$url . "nfes/pegaxml/{$numero}/serierps/NFS";
+            $endpoint = self::$url . "nfes/pegaxml/{$numero}/serierps/1";
             $headers = ["Authorization: {$token}"];
 
             // Executa requisição cURL
@@ -828,5 +942,1097 @@ class SigissWebService
                 'mensagem' => $e->getMessage()
             ];
         }
+    }
+
+    // ATUALIZAÇÃO DE DATA EMISSAO OS PARA NOTAS FISCAIS
+    
+    private static function normalizarNumeroNota($numero)
+    {
+        $numero = preg_replace('/\D/', '', (string) $numero);
+        return str_pad($numero, 6, '0', STR_PAD_LEFT);
+    }
+
+    private static function normalizarDataBanco($valor)
+    {
+        if (empty($valor)) {
+            return null;
+        }
+
+        if ($valor instanceof DateTimeInterface) {
+            return $valor->format('Y-m-d H:i:s');
+        }
+
+        $time = strtotime((string) $valor);
+
+        if ($time === false) {
+            return $valor;
+        }
+
+        return date('Y-m-d H:i:s', $time);
+    }
+
+    private static function sqlDataEmissaoOs()
+    {
+        return "
+            ;WITH nf AS (
+                SELECT TOP 1
+                    m.CODCOLIGADA,
+                    m.IDMOV
+                FROM [dbo].[TMOV] m WITH (NOLOCK)
+                WHERE m.CODTMV = '2.2.15'
+                AND m.CODCOLIGADA = :codcoligada
+                AND m.NUMEROMOV = :numero
+            ),
+
+            origem_nf AS (
+                SELECT TOP 1
+                    n.CODCOLIGADA,
+                    r.IDMOVORIGEM AS IDMOV
+                FROM nf n
+                INNER JOIN [dbo].[TITMMOVRELAC] r WITH (NOLOCK)
+                    ON r.CODCOLDESTINO = n.CODCOLIGADA
+                AND r.IDMOVDESTINO = n.IDMOV
+            ),
+
+            inicio_fluxo AS (
+                SELECT
+                    o.CODCOLIGADA,
+                    CASE
+                        WHEN t.CODTMV = '2.1.65' THEN o.IDMOV
+                        ELSE rel_anterior.IDMOVORIGEM
+                    END AS IDMOV
+                FROM origem_nf o
+                LEFT JOIN [dbo].[TMOV] t WITH (NOLOCK)
+                    ON t.CODCOLIGADA = o.CODCOLIGADA
+                AND t.IDMOV = o.IDMOV
+                OUTER APPLY (
+                    SELECT TOP 1
+                        r2.IDMOVORIGEM
+                    FROM [dbo].[TITMMOVRELAC] r2 WITH (NOLOCK)
+                    WHERE r2.CODCOLDESTINO = o.CODCOLIGADA
+                    AND r2.IDMOVDESTINO = o.IDMOV
+                ) rel_anterior
+            ),
+
+            passo_1 AS (
+                SELECT TOP 1
+                    i.CODCOLIGADA,
+                    r.IDMOVORIGEM AS IDMOV
+                FROM inicio_fluxo i
+                INNER JOIN [dbo].[TITMMOVRELAC] r WITH (NOLOCK)
+                    ON r.CODCOLDESTINO = i.CODCOLIGADA
+                AND r.IDMOVDESTINO = i.IDMOV
+                WHERE i.IDMOV IS NOT NULL
+            ),
+
+            passo_2 AS (
+                SELECT TOP 1
+                    p.CODCOLIGADA,
+                    r.IDMOVORIGEM AS IDMOV
+                FROM passo_1 p
+                INNER JOIN [dbo].[TITMMOVRELAC] r WITH (NOLOCK)
+                    ON r.CODCOLDESTINO = p.CODCOLIGADA
+                AND r.IDMOVDESTINO = p.IDMOV
+            ),
+
+            passo_3 AS (
+                SELECT TOP 1
+                    p.CODCOLIGADA,
+                    r.IDMOVORIGEM AS IDMOV
+                FROM passo_2 p
+                INNER JOIN [dbo].[TITMMOVRELAC] r WITH (NOLOCK)
+                    ON r.CODCOLDESTINO = p.CODCOLIGADA
+                AND r.IDMOVDESTINO = p.IDMOV
+            )
+
+            SELECT TOP 1
+                mov_os.DATAEMISSAO AS data_emissao_os
+            FROM passo_3 p
+            INNER JOIN [dbo].[OFMOV] ofm WITH (NOLOCK)
+                ON ofm.CODCOLIGADA = p.CODCOLIGADA
+            AND ofm.IDMOV = p.IDMOV
+            INNER JOIN [dbo].[TMOV] mov_os WITH (NOLOCK)
+                ON mov_os.CODCOLIGADA = p.CODCOLIGADA
+            AND mov_os.IDMOV = ofm.IDMOVOS
+        ";
+    }
+
+    private static function executarBuscaDataEmissaoOs($stmt, $numero, $coligada_id)
+    {
+        $numero = self::normalizarNumeroNota($numero);
+
+        $stmt->bindValue(':codcoligada', (int) $coligada_id, PDO::PARAM_INT);
+        $stmt->bindValue(':numero', $numero, PDO::PARAM_STR);
+        $stmt->execute();
+
+        $row = $stmt->fetch(PDO::FETCH_OBJ);
+        $stmt->closeCursor();
+
+        if (!$row || empty($row->data_emissao_os)) {
+            return null;
+        }
+
+        return self::normalizarDataBanco($row->data_emissao_os);
+    }
+
+    public static function buscarDataEmissaoOsTotvs($numero, $coligada_id)
+    {
+        try {
+            TTransaction::open(self::$dbRm);
+
+            $conn = TTransaction::get();
+            $stmt = $conn->prepare(self::sqlDataEmissaoOs());
+
+            $data = self::executarBuscaDataEmissaoOs($stmt, $numero, $coligada_id);
+
+            TTransaction::close();
+
+            return $data;
+
+        } catch (Exception $e) {
+            try {
+                TTransaction::rollback();
+            } catch (Exception $ignore) {}
+
+            LogCrontab::registrarLog(
+                __CLASS__,
+                __METHOD__,
+                1,
+                $e->getMessage(),
+                "Arquivo: " . $e->getFile() . "<br/>Linha: " . $e->getLine()
+            );
+
+            return null;
+        }
+    }
+
+    public static function atualizarDataEmissaoOsNotaBaixada()
+    {
+        $atualizar = [];
+        $comDataTotvs = [];
+        $comExcecao = [];
+        $semData = [];
+        $erros = [];
+
+        try {
+            TTransaction::open(self::$dbAp);
+
+            $connAp = TTransaction::get();
+
+            $sqlLocal = "
+                SELECT
+                    id,
+                    numero,
+                    coligada_id,
+                    data_emissao,
+                    nota_status_id
+                FROM nota_baixada
+                WHERE data_emissao_os IS NULL
+                AND nota_status_id = 1
+                ORDER BY id
+            ";
+
+            $notas = $connAp->query($sqlLocal)->fetchAll(PDO::FETCH_OBJ);
+
+            TTransaction::close();
+
+            if (empty($notas)) {
+                return [
+                    'status' => 'success',
+                    'mensagem' => 'Nenhuma nota pendente para atualizar.'
+                ];
+            }
+
+            TTransaction::open(self::$dbRm);
+
+            $connRm = TTransaction::get();
+            $stmtRm = $connRm->prepare(self::sqlDataEmissaoOs());
+
+            foreach ($notas as $nota) {
+                try {
+                    $dataOs = self::executarBuscaDataEmissaoOs(
+                        $stmtRm,
+                        $nota->numero,
+                        $nota->coligada_id
+                    );
+
+                    if ($dataOs) {
+                        $comDataTotvs[] = "{$nota->coligada_id}/{$nota->numero}";
+                    } else {
+                        $dataOs = self::normalizarDataBanco($nota->data_emissao);
+
+                        if ($dataOs) {
+                            $comExcecao[] = "{$nota->coligada_id}/{$nota->numero}";
+                        } else {
+                            $semData[] = "{$nota->coligada_id}/{$nota->numero}";
+                            continue;
+                        }
+                    }
+
+                    $atualizar[] = [
+                        'id' => (int) $nota->id,
+                        'numero' => $nota->numero,
+                        'coligada_id' => $nota->coligada_id,
+                        'data_emissao_os' => $dataOs
+                    ];
+
+                } catch (Exception $e) {
+                    $erros[] = "{$nota->coligada_id}/{$nota->numero}: " . $e->getMessage();
+                }
+            }
+
+            TTransaction::close();
+
+            if (!empty($atualizar)) {
+                TTransaction::open(self::$dbAp);
+
+                $connAp = TTransaction::get();
+
+                $stmtUpdate = $connAp->prepare("
+                    UPDATE nota_baixada
+                    SET data_emissao_os = :data_emissao_os
+                    WHERE id = :id
+                ");
+
+                foreach ($atualizar as $item) {
+                    $stmtUpdate->bindValue(':data_emissao_os', $item['data_emissao_os']);
+                    $stmtUpdate->bindValue(':id', $item['id'], PDO::PARAM_INT);
+                    $stmtUpdate->execute();
+                }
+
+                TTransaction::close();
+            }
+
+            return [
+                'status' => 'success',
+                'mensagem' =>
+                    'Processadas: ' . count($notas) .
+                    '<br>Atualizadas: ' . count($atualizar) .
+                    '<br>Com data encontrada na TOTVS: ' . count($comDataTotvs) .
+                    '<br>Com exceção usando data_emissao da nota: ' . count($comExcecao) .
+                    '<br>Sem nenhuma data disponível: ' . count($semData) .
+                    '<br>Erros: ' . count($erros)
+            ];
+
+        } catch (Exception $e) {
+            try {
+                TTransaction::rollback();
+            } catch (Exception $ignore) {}
+
+            LogCrontab::registrarLog(
+                __CLASS__,
+                __METHOD__,
+                1,
+                $e->getMessage(),
+                "Arquivo: " . $e->getFile() . "<br/>Linha: " . $e->getLine()
+            );
+
+            return [
+                'status' => 'error',
+                'mensagem' => $e->getMessage()
+            ];
+        }
+    }
+    
+    // Filtra pelo período de emissão da nota,
+    // mas só sincroniza notas que possuem data de emissão da OS preenchida
+    
+    public static function atualizarComissaoNotasBaixadasPorPeriodo($dataInicial, $dataFinal, $zerarCanceladasErro = true)
+    {
+        try {
+            $dataInicial = self::normalizarDataFiltroComissao($dataInicial);
+            $dataFinal   = self::normalizarDataFiltroComissao($dataFinal);
+
+            if ($dataInicial > $dataFinal) {
+                throw new Exception('A data inicial não pode ser maior que a data final.');
+            }
+
+            TTransaction::open(self::$dbAp);
+
+            $conn = TTransaction::get();
+
+            $canceladasZeradas = 0;
+
+            if ($zerarCanceladasErro) {
+                $stmtZerar = $conn->prepare("
+                    UPDATE nota_baixada
+                    SET tem_comissao = 'N',
+                        comissao = 0
+                    WHERE nota_status_id IN (2, 3)
+                    AND data_emissao_os IS NOT NULL
+                    AND tem_comissao IS DISTINCT FROM 'C'
+                    AND tem_comissao IS DISTINCT FROM 'P'
+                    AND data_emissao::date BETWEEN :data_inicial AND :data_final
+                    AND (
+                            tem_comissao IS DISTINCT FROM 'N'
+                            OR comissao IS DISTINCT FROM 0
+                    )
+                ");
+
+                $stmtZerar->bindValue(':data_inicial', $dataInicial);
+                $stmtZerar->bindValue(':data_final', $dataFinal);
+                $stmtZerar->execute();
+
+                $canceladasZeradas = $stmtZerar->rowCount();
+            }
+
+            $sql = "
+            WITH notas AS (
+                SELECT
+                    nb.id AS nota_id,
+                    nb.numero,
+                    nb.documento,
+                    nb.valor_total,
+                    nb.data_emissao_os::date + 2 AS data_base
+                FROM nota_baixada nb
+                WHERE nb.nota_status_id = 1
+                AND nb.data_emissao_os IS NOT NULL
+                AND nb.tem_comissao IS DISTINCT FROM 'C'
+                AND nb.tem_comissao IS DISTINCT FROM 'P'
+                AND nb.data_emissao::date BETWEEN :data_inicial AND :data_final
+            ),
+
+            base AS (
+                SELECT
+                    n.nota_id,
+                    n.numero,
+                    n.documento,
+                    n.valor_total,
+                    n.data_base,
+
+                    p.id AS pessoa_id,
+                    p.categoria_cliente_id,
+                    cc.nome AS categoria,
+
+                    comp.representante_id
+
+                FROM notas n
+
+                LEFT JOIN LATERAL (
+                    SELECT
+                        p.*
+                    FROM pessoa p
+                    WHERE regexp_replace(
+                            COALESCE(p.cpf_cnpj, ''),
+                            '[^0-9]',
+                            '',
+                            'g'
+                        ) = regexp_replace(
+                            COALESCE(n.documento, ''),
+                            '[^0-9]',
+                            '',
+                            'g'
+                        )
+                    AND p.deleted_at IS NULL
+                    ORDER BY p.id DESC
+                    LIMIT 1
+                ) p ON true
+
+                LEFT JOIN categoria_cliente cc
+                    ON cc.id = p.categoria_cliente_id
+
+                LEFT JOIN LATERAL (
+                    SELECT
+                        c.representante_id
+                    FROM complemento c
+                    WHERE c.pessoa_id = p.id
+                    AND c.deleted_at IS NULL
+                    AND c.representante_id IS NOT NULL
+                    ORDER BY
+                        c.created_at DESC NULLS LAST,
+                        c.id DESC
+                    LIMIT 1
+                ) comp ON true
+            ),
+
+            regras AS (
+                SELECT
+                    b.*,
+
+                    pr1.regras_tipo_atividade_id AS regra_tipo1_id,
+                    pr1.dias AS dias_tipo1,
+
+                    pr2.regras_tipo_atividade_id AS regra_tipo2_id,
+                    pr2.dias AS dias_tipo2,
+                    COALESCE(pr2.ambos, 'N') AS ambos_tipo2
+
+                FROM base b
+
+                LEFT JOIN LATERAL (
+                    SELECT
+                        pa.regras_tipo_atividade_id,
+                        pa.dias
+                    FROM prazo_atividade pa
+                    INNER JOIN regras_tipo_atividade rta
+                        ON rta.id = pa.regras_tipo_atividade_id
+                    WHERE pa.categoria_cliente_id = b.categoria_cliente_id
+                    AND rta.tipo = 1
+                    ORDER BY pa.id DESC
+                    LIMIT 1
+                ) pr1 ON true
+
+                LEFT JOIN LATERAL (
+                    SELECT
+                        pa.regras_tipo_atividade_id,
+                        pa.dias,
+                        pa.ambos
+                    FROM prazo_atividade pa
+                    INNER JOIN regras_tipo_atividade rta
+                        ON rta.id = pa.regras_tipo_atividade_id
+                    WHERE pa.categoria_cliente_id = b.categoria_cliente_id
+                    AND rta.tipo = 2
+                    ORDER BY pa.id DESC
+                    LIMIT 1
+                ) pr2 ON true
+            ),
+
+            atividades AS (
+                SELECT
+                    r.*,
+
+                    ult1.ultima_atividade AS ultima_tipo1,
+                    ult2.ultima_atividade AS ultima_tipo2,
+                    ult_tipo1_real.ultima_atividade AS ultima_tipo1_real
+
+                FROM regras r
+
+                LEFT JOIN LATERAL (
+                    SELECT
+                        MAX(ia.horario_final) AS ultima_atividade
+                    FROM interacao i
+                    INNER JOIN interacao_atividade ia
+                        ON ia.interacao_id = i.id
+                    INNER JOIN tipo_atividade ta
+                        ON ta.id = ia.tipo_atividade_id
+                    WHERE i.cliente_id = r.pessoa_id
+                    AND ia.estado_atividade_id = 2
+                    AND ia.horario_final IS NOT NULL
+                    AND ia.horario_final::date <= r.data_base
+                    AND ta.regras_tipo_atividade_id = r.regra_tipo1_id
+                ) ult1 ON true
+
+                LEFT JOIN LATERAL (
+                    SELECT
+                        MAX(ia.horario_final) AS ultima_atividade
+                    FROM interacao i
+                    INNER JOIN interacao_atividade ia
+                        ON ia.interacao_id = i.id
+                    INNER JOIN tipo_atividade ta
+                        ON ta.id = ia.tipo_atividade_id
+                    WHERE i.cliente_id = r.pessoa_id
+                    AND ia.estado_atividade_id = 2
+                    AND ia.horario_final IS NOT NULL
+                    AND ia.horario_final::date <= r.data_base
+                    AND ta.regras_tipo_atividade_id = r.regra_tipo2_id
+                ) ult2 ON true
+
+                LEFT JOIN LATERAL (
+                    SELECT
+                        MAX(ia.horario_final) AS ultima_atividade
+                    FROM interacao i
+                    INNER JOIN interacao_atividade ia
+                        ON ia.interacao_id = i.id
+                    INNER JOIN tipo_atividade ta
+                        ON ta.id = ia.tipo_atividade_id
+                    INNER JOIN regras_tipo_atividade rta
+                        ON rta.id = ta.regras_tipo_atividade_id
+                    WHERE i.cliente_id = r.pessoa_id
+                    AND ia.estado_atividade_id = 2
+                    AND ia.horario_final IS NOT NULL
+                    AND ia.horario_final::date <= r.data_base
+                    AND rta.tipo = 1
+                ) ult_tipo1_real ON true
+            ),
+
+            prazos AS (
+                SELECT
+                    a.*,
+
+                    CASE
+                        WHEN a.pessoa_id IS NULL THEN 0
+                        WHEN a.categoria_cliente_id IS NULL THEN 9999
+
+                        WHEN a.categoria IN ('D', 'E')
+                        AND a.dias_tipo2 IS NULL
+                        THEN 9999
+
+                        WHEN a.categoria IN ('D', 'E')
+                        AND a.ultima_tipo1_real IS NULL
+                        THEN 0
+
+                        WHEN a.categoria IN ('D', 'E') THEN
+                            GREATEST(
+                                a.dias_tipo2
+                                - (
+                                    a.data_base
+                                    - a.ultima_tipo1_real::date
+                                ),
+                                0
+                            )
+
+                        WHEN a.regra_tipo1_id IS NULL THEN 9999
+                        WHEN a.ultima_tipo1 IS NULL THEN 0
+
+                        ELSE
+                            GREATEST(
+                                a.dias_tipo1
+                                - (
+                                    a.data_base
+                                    - a.ultima_tipo1::date
+                                ),
+                                0
+                            )
+                    END AS tipo1,
+
+                    CASE
+                        WHEN a.pessoa_id IS NULL THEN 0
+                        WHEN a.categoria_cliente_id IS NULL THEN 9999
+                        WHEN a.regra_tipo2_id IS NULL THEN 9999
+
+                        /*
+                        * Se o cadastro do Contato estiver com ambos = S,
+                        * usa a atividade mais recente entre Física e Contato.
+                        *
+                        * A atividade Física não precisa possuir um prazo próprio
+                        * cadastrado. Os dias utilizados serão os dias do Contato.
+                        */
+                        WHEN COALESCE(a.ambos_tipo2, 'N') = 'S' THEN
+                            CASE
+                                WHEN a.ultima_tipo1_real IS NULL
+                                AND a.ultima_tipo2 IS NULL
+                                THEN 0
+
+                                ELSE
+                                    GREATEST(
+                                        a.dias_tipo2
+                                        - (
+                                            a.data_base
+                                            - GREATEST(
+                                                a.ultima_tipo1_real,
+                                                a.ultima_tipo2
+                                            )::date
+                                        ),
+                                        0
+                                    )
+                            END
+
+                        /*
+                        * Se ambos = N, somente uma atividade de Contato
+                        * renova o prazo do Contato.
+                        */
+                        WHEN a.ultima_tipo2 IS NULL THEN 0
+
+                        ELSE
+                            GREATEST(
+                                a.dias_tipo2
+                                - (
+                                    a.data_base
+                                    - a.ultima_tipo2::date
+                                ),
+                                0
+                            )
+                    END AS tipo2
+
+                FROM atividades a
+            ),
+
+            status_cliente AS (
+                SELECT
+                    p.*,
+
+                    CASE
+                        WHEN p.pessoa_id IS NULL THEN false
+
+                        WHEN p.categoria IN ('D', 'E')
+                        AND (
+                                p.tipo1 > 0
+                                OR p.tipo2 > 0
+                            )
+                        THEN true
+
+                        WHEN p.tipo1 = 9999
+                        AND p.tipo2 = 9999
+                        THEN false
+
+                        WHEN (
+                                p.tipo1 > 0
+                                OR p.tipo1 = 9999
+                            )
+                        AND (
+                                p.tipo2 > 0
+                                OR p.tipo2 = 9999
+                            )
+                        THEN true
+
+                        ELSE false
+                    END AS cliente_ativo
+
+                FROM prazos p
+            ),
+
+            regras_comissao AS (
+                SELECT
+                    s.*,
+
+                    COALESCE(
+                        exc.tipo_comissao,
+                        cr.tipo_comissao
+                    ) AS tipo_comissao_final,
+
+                    COALESCE(
+                        exc.valor,
+                        cr.valor
+                    ) AS valor_comissao_regra
+
+                FROM status_cliente s
+
+                LEFT JOIN LATERAL (
+                    SELECT
+                        e.id,
+                        e.tipo_comissao,
+                        e.valor
+                    FROM comissao_repres_excecao e
+                    WHERE e.pessoa_id = s.pessoa_id
+                    AND e.representante_id = s.representante_id
+                    AND e.deleted_at IS NULL
+                    AND e.ativo = 'S'
+                    ORDER BY e.id DESC
+                    LIMIT 1
+                ) exc ON true
+
+                LEFT JOIN LATERAL (
+                    SELECT
+                        c.id,
+                        c.tipo_comissao,
+                        c.valor
+                    FROM comissao_repres c
+                    WHERE c.representante_id = s.representante_id
+                    AND c.deleted_at IS NULL
+                    ORDER BY c.id DESC
+                    LIMIT 1
+                ) cr ON true
+            ),
+
+            calculo AS (
+                SELECT
+                    rc.*,
+
+                    CASE
+                        WHEN rc.cliente_ativo = true
+                        AND rc.tipo_comissao_final = 'P'
+                        THEN ROUND(
+                            COALESCE(rc.valor_total, 0)::numeric
+                            * COALESCE(rc.valor_comissao_regra, 0)::numeric
+                            / 100,
+                            2
+                        )
+
+                        WHEN rc.cliente_ativo = true
+                        AND rc.tipo_comissao_final = 'V'
+                        THEN ROUND(
+                            COALESCE(
+                                rc.valor_comissao_regra,
+                                0
+                            )::numeric,
+                            2
+                        )
+
+                        ELSE 0::numeric
+                    END AS comissao_calculada
+
+                FROM regras_comissao rc
+            ),
+
+            atualizado AS (
+                UPDATE nota_baixada nb
+
+                SET tem_comissao =
+                    CASE
+                        WHEN c.cliente_ativo = true
+                        AND c.tipo_comissao_final IS NOT NULL
+                        THEN 'S'
+
+                        ELSE 'N'
+                    END,
+
+                    comissao = c.comissao_calculada
+
+                FROM calculo c
+
+                WHERE nb.id = c.nota_id
+
+                RETURNING
+                    nb.id,
+                    nb.tem_comissao,
+                    nb.comissao,
+                    c.cliente_ativo,
+                    c.pessoa_id,
+                    c.representante_id,
+                    c.tipo_comissao_final
+            )
+
+            SELECT
+                COUNT(*) AS processadas,
+
+                COUNT(*) FILTER (
+                    WHERE tem_comissao = 'S'
+                ) AS com_comissao,
+
+                COUNT(*) FILTER (
+                    WHERE tem_comissao = 'N'
+                ) AS sem_comissao,
+
+                COUNT(*) FILTER (
+                    WHERE pessoa_id IS NULL
+                ) AS cliente_nao_encontrado,
+
+                COUNT(*) FILTER (
+                    WHERE representante_id IS NULL
+                ) AS sem_representante,
+
+                COUNT(*) FILTER (
+                    WHERE cliente_ativo = true
+                    AND tipo_comissao_final IS NULL
+                ) AS ativas_sem_regra_comissao,
+
+                COALESCE(
+                    SUM(comissao),
+                    0
+                ) AS total_comissao
+
+            FROM atualizado
+        ";
+
+            $stmt = $conn->prepare($sql);
+            $stmt->bindValue(':data_inicial', $dataInicial);
+            $stmt->bindValue(':data_final', $dataFinal);
+            $stmt->execute();
+
+            $resumo = $stmt->fetch(PDO::FETCH_OBJ);
+
+            TTransaction::close();
+
+            $centroCusto = self::atualizarCentroCustoNotasBaixadasPorPeriodo($dataInicial, $dataFinal);
+
+            $mensagemCentroCusto = '';
+
+            if ($centroCusto['status'] === 'success') {
+                $mensagemCentroCusto =
+                    '<br><br><b>Centros de custo:</b>' .
+                    $centroCusto['mensagem'];
+            } else {
+                $mensagemCentroCusto =
+                    '<br><br><b>Erro ao atualizar centros de custo:</b> ' .
+                    $centroCusto['mensagem'];
+            }
+
+            return [
+                'status' => 'success',
+                'mensagem' =>
+                    'Comissões atualizadas com sucesso.' .
+                    '<br>Período: ' . date('d/m/Y', strtotime($dataInicial)) . ' até ' . date('d/m/Y', strtotime($dataFinal)) .
+                    '<br>Processadas: ' . (int) $resumo->processadas .
+                    '<br>Com comissão: ' . (int) $resumo->com_comissao .
+                    '<br>Sem comissão: ' . (int) $resumo->sem_comissao .
+                    '<br>Cliente não encontrado: ' . (int) $resumo->cliente_nao_encontrado .
+                    '<br>Sem representante: ' . (int) $resumo->sem_representante .
+                    '<br>Ativas sem regra de comissão: ' . (int) $resumo->ativas_sem_regra_comissao .
+                    '<br>Erro/canceladas zeradas no período: ' . (int) $canceladasZeradas .
+                    '<br>Total comissão: R$ ' . number_format((float) $resumo->total_comissao, 2, ',', '.') .
+                    $mensagemCentroCusto
+            ];
+
+        } catch (Exception $e) {
+            try {
+                TTransaction::rollback();
+            } catch (Exception $ignore) {}
+
+            LogCrontab::registrarLog(
+                __CLASS__,
+                __METHOD__,
+                1,
+                $e->getMessage(),
+                "Arquivo: " . $e->getFile() . "<br/>Linha: " . $e->getLine()
+            );
+
+            return [
+                'status' => 'error',
+                'mensagem' => $e->getMessage()
+            ];
+        }
+    }
+
+    public static function atualizarCentroCustoNotasBaixadasPorPeriodo($dataInicial, $dataFinal)
+    {
+        try {
+            $dataInicial = self::normalizarDataFiltroComissao($dataInicial);
+            $dataFinal   = self::normalizarDataFiltroComissao($dataFinal);
+
+            if ($dataInicial > $dataFinal) {
+                throw new Exception('A data inicial não pode ser maior que a data final.');
+            }
+
+            /*
+            * 1) Busca o rateio na TOTVS
+            */
+            $sqlTotvs = "
+                SELECT
+                    m.CODCOLIGADA AS codcoligada,
+                    CONVERT(VARCHAR(255), m.NUMEROMOV) AS numeromov,
+                    c.CODCCUSTO AS codcusto,
+                    SUM(mr.VALOR) AS valor
+                FROM TMOV m (NOLOCK)
+                INNER JOIN TMOVRATCCU mr (NOLOCK)
+                    ON mr.CODCOLIGADA = m.CODCOLIGADA
+                AND mr.IDMOV = m.IDMOV
+                INNER JOIN GCCUSTO c (NOLOCK)
+                    ON c.CODCOLIGADA = mr.CODCOLIGADA
+                AND c.CODCCUSTO = mr.CODCCUSTO
+                WHERE m.CODTMV = '2.2.15'
+                AND m.CODCOLIGADA IN (1, 2)
+                AND m.DATAEMISSAO >= CAST(:data_inicial AS DATE)
+                AND m.DATAEMISSAO < DATEADD(DAY, 1, CAST(:data_final AS DATE))
+                GROUP BY
+                    m.CODCOLIGADA,
+                    m.NUMEROMOV,
+                    c.CODCCUSTO
+                ORDER BY
+                    m.CODCOLIGADA,
+                    m.NUMEROMOV
+            ";
+
+            TTransaction::open(self::$dbRm);
+            $connRm = TTransaction::get();
+
+            $stmtRm = $connRm->prepare($sqlTotvs);
+            $stmtRm->bindValue(':data_inicial', $dataInicial);
+            $stmtRm->bindValue(':data_final', $dataFinal);
+            $stmtRm->execute();
+
+            $rateios = $stmtRm->fetchAll(PDO::FETCH_OBJ);
+
+            TTransaction::close();
+
+            if (empty($rateios)) {
+                return [
+                    'status' => 'success',
+                    'mensagem' => 'Nenhum rateio de centro de custo encontrado na TOTVS para o período.'
+                ];
+            }
+
+            /*
+            * 2) Joga os dados em uma tabela temporária no MiniCRM
+            */
+            TTransaction::open(self::$dbAp);
+            $connAp = TTransaction::get();
+
+            $connAp->exec("
+                CREATE TEMP TABLE tmp_rateio_cc_totvs (
+                    coligada_id INTEGER,
+                    numero VARCHAR(255),
+                    codcusto VARCHAR(25),
+                    valor NUMERIC(15, 2)
+                ) ON COMMIT DROP
+            ");
+
+            $stmtTmp = $connAp->prepare("
+                INSERT INTO tmp_rateio_cc_totvs
+                    (coligada_id, numero, codcusto, valor)
+                VALUES
+                    (:coligada_id, :numero, :codcusto, :valor)
+            ");
+
+            $totalRateiosTotvs = 0;
+
+            foreach ($rateios as $rateio) {
+                $numeroLimpo = preg_replace('/\D/', '', (string) $rateio->numeromov);
+                $codcusto    = trim((string) $rateio->codcusto);
+
+                if ($numeroLimpo === '' || $codcusto === '') {
+                    continue;
+                }
+
+                // Nota no MiniCRM está no padrão 000000
+                $numero = str_pad($numeroLimpo, 6, '0', STR_PAD_LEFT);
+
+                $stmtTmp->bindValue(':coligada_id', (int) $rateio->codcoligada);
+                $stmtTmp->bindValue(':numero', $numero);
+                $stmtTmp->bindValue(':codcusto', $codcusto);
+                $stmtTmp->bindValue(':valor', (float) $rateio->valor);
+                $stmtTmp->execute();
+
+                $totalRateiosTotvs++;
+            }
+
+            /*
+            * 3) Conta inconsistências antes de inserir
+            */
+            $notasNaoEncontradas = $connAp->query("
+                SELECT COUNT(*) AS total
+                FROM (
+                    SELECT DISTINCT
+                        t.coligada_id,
+                        t.numero
+                    FROM tmp_rateio_cc_totvs t
+                    LEFT JOIN nota_baixada nb
+                        ON nb.coligada_id = t.coligada_id
+                    AND nb.numero = t.numero
+                    WHERE nb.id IS NULL
+                ) x
+            ")->fetch(PDO::FETCH_OBJ)->total ?? 0;
+
+            $centrosNaoEncontrados = $connAp->query("
+                SELECT COUNT(*) AS total
+                FROM (
+                    SELECT DISTINCT
+                        t.codcusto
+                    FROM tmp_rateio_cc_totvs t
+                    LEFT JOIN centro_custo cc
+                        ON TRIM(cc.codcusto) = TRIM(t.codcusto)
+                    AND cc.deleted_at IS NULL
+                    WHERE cc.id IS NULL
+                ) x
+            ")->fetch(PDO::FETCH_OBJ)->total ?? 0;
+
+            /*
+            * 4) Limpa rateios antigos do período
+            * Assim, se mudar o rateio na TOTVS, o MiniCRM fica igual.
+            */
+            $stmtDelete = $connAp->prepare("
+                DELETE FROM centro_custo_nota ccn
+                USING nota_baixada nb
+                WHERE nb.id = ccn.nota_baixada_id
+                AND nb.data_emissao::date BETWEEN :data_inicial AND :data_final
+                AND nb.tem_comissao IS DISTINCT FROM 'C'
+                AND nb.tem_comissao IS DISTINCT FROM 'P'
+                AND nb.coligada_id IN (1, 2)
+            ");
+
+            $stmtDelete->bindValue(':data_inicial', $dataInicial);
+            $stmtDelete->bindValue(':data_final', $dataFinal);
+            $stmtDelete->execute();
+
+            $rateiosApagados = $stmtDelete->rowCount();
+
+            /*
+            * 5) Insere novamente calculando:
+            *
+            * comissao_centro_custo =
+            * valor_centro_custo / valor_total_nf * comissao_nf
+            */
+            $stmtInsert = $connAp->prepare("
+                WITH rateio AS (
+                    SELECT
+                        coligada_id,
+                        numero,
+                        codcusto,
+                        SUM(valor) AS valor
+                    FROM tmp_rateio_cc_totvs
+                    GROUP BY
+                        coligada_id,
+                        numero,
+                        codcusto
+                )
+
+                INSERT INTO centro_custo_nota (
+                    nota_baixada_id,
+                    centro_custo_id,
+                    valor_centro_custo,
+                    comissao_centro_custo
+                )
+                SELECT
+                    nb.id AS nota_baixada_id,
+                    cc.id AS centro_custo_id,
+
+                    ROUND(r.valor::numeric, 2) AS valor_centro_custo,
+
+                    CASE
+                        WHEN COALESCE(nb.valor_total, 0) > 0 THEN
+                            ROUND(
+                                (
+                                    r.valor::numeric
+                                    / nb.valor_total::numeric
+                                )
+                                * COALESCE(nb.comissao, 0)::numeric,
+                                2
+                            )
+                        ELSE 0
+                    END AS comissao_centro_custo
+
+                FROM rateio r
+
+                INNER JOIN nota_baixada nb
+                    ON nb.coligada_id = r.coligada_id
+                AND nb.numero = r.numero
+                AND nb.data_emissao::date BETWEEN :data_inicial AND :data_final
+                AND nb.tem_comissao IS DISTINCT FROM 'C'
+                AND nb.tem_comissao IS DISTINCT FROM 'P'
+
+                INNER JOIN centro_custo cc
+                    ON TRIM(cc.codcusto) = TRIM(r.codcusto)
+                AND cc.deleted_at IS NULL
+            ");
+
+            $stmtInsert->bindValue(':data_inicial', $dataInicial);
+            $stmtInsert->bindValue(':data_final', $dataFinal);
+            $stmtInsert->execute();
+
+            $rateiosInseridos = $stmtInsert->rowCount();
+
+            TTransaction::close();
+
+            return [
+                'status' => 'success',
+                'mensagem' =>
+                    '<br>Rateios encontrados na TOTVS: ' . (int) $totalRateiosTotvs .
+                    '<br>Rateios antigos apagados: ' . (int) $rateiosApagados .
+                    '<br>Rateios inseridos: ' . (int) $rateiosInseridos .
+                    '<br>Notas não encontradas no MiniCRM: ' . (int) $notasNaoEncontradas .
+                    '<br>Centros de custo não encontrados no MiniCRM: ' . (int) $centrosNaoEncontrados
+            ];
+
+        } catch (Exception $e) {
+            try {
+                TTransaction::rollback();
+            } catch (Exception $ignore) {}
+
+            LogCrontab::registrarLog(
+                __CLASS__,
+                __METHOD__,
+                1,
+                $e->getMessage(),
+                "Arquivo: " . $e->getFile() . "<br/>Linha: " . $e->getLine()
+            );
+
+            return [
+                'status' => 'error',
+                'mensagem' => $e->getMessage()
+            ];
+        }
+    }
+
+    private static function normalizarDataFiltroComissao($data)
+    {
+        if (empty($data)) {
+            throw new Exception('Informe a data inicial e a data final.');
+        }
+
+        if ($data instanceof DateTimeInterface) {
+            return $data->format('Y-m-d');
+        }
+
+        $data = trim((string) $data);
+
+        $dt = DateTime::createFromFormat('d/m/Y', $data);
+        if ($dt && $dt->format('d/m/Y') === $data) {
+            return $dt->format('Y-m-d');
+        }
+
+        $dt = DateTime::createFromFormat('Y-m-d', $data);
+        if ($dt && $dt->format('Y-m-d') === $data) {
+            return $dt->format('Y-m-d');
+        }
+
+        throw new Exception("Data inválida: {$data}");
     }
 }

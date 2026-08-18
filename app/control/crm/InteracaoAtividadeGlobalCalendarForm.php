@@ -46,7 +46,6 @@ class InteracaoAtividadeGlobalCalendarForm extends TWindow
         $estado_atividade_id = new TDBCombo('estado_atividade_id', 'minicrm', 'EstadoAtividade', 'id', '{nome}','nome asc' , $criteria_estado_atividade_id );
         $interacao_id = new TDBCombo('interacao_id', 'minicrm', 'Interacao', 'id', '#{id} - {cliente->razao_social} - {etapa_interacao->nome}','id asc' , $criteria_interacao_id );
         $tipo_atividade_id = new TDBCombo('tipo_atividade_id', 'minicrm', 'TipoAtividade', 'id', '{icone_formatado} {nome}','nome asc' , $criteria_tipo_atividade_id );
-        $descricao = new TEntry('descricao');
         $horario_inicial = new TDateTime('horario_inicial');
         $horario_final = new TDateTime('horario_final');
         $observacao = new TText('observacao');
@@ -70,7 +69,6 @@ class InteracaoAtividadeGlobalCalendarForm extends TWindow
         $estado_atividade_id->enableSearch();
 
         $id->setSize('100%');
-        $descricao->setSize('100%');
         $horario_final->setSize(150);
         $interacao_id->setSize('100%');
         $horario_inicial->setSize(150);
@@ -86,14 +84,11 @@ class InteracaoAtividadeGlobalCalendarForm extends TWindow
         $row2 = $this->form->addFields([new TLabel("Interação", '#FF0000', '14px', null, '100%'),$interacao_id],[new TLabel("Tipo atividade:", '#ff0000', '14px', null, '100%'),$tipo_atividade_id]);
         $row2->layout = ['col-sm-6','col-sm-6'];
 
-        $row3 = $this->form->addFields([new TLabel("Descricao:", null, '14px', null, '100%'),$descricao]);
-        $row3->layout = [' col-sm-12'];
+        $row3 = $this->form->addFields([new TLabel("Horario inicial:", null, '14px', null, '100%'),$horario_inicial],[new TLabel("Horario final:", null, '14px', null, '100%'),$horario_final]);
+        $row3->layout = ['col-sm-6','col-sm-6'];
 
-        $row4 = $this->form->addFields([new TLabel("Horario inicial:", null, '14px', null, '100%'),$horario_inicial],[new TLabel("Horario final:", null, '14px', null, '100%'),$horario_final]);
-        $row4->layout = ['col-sm-6','col-sm-6'];
-
-        $row5 = $this->form->addFields([new TLabel("Observacao:", null, '14px', null, '100%'),$observacao]);
-        $row5->layout = [' col-sm-12'];
+        $row4 = $this->form->addFields([new TLabel("Observacao:", null, '14px', null, '100%'),$observacao]);
+        $row4->layout = [' col-sm-12'];
 
         $this->form->addFields([$view]);
 
@@ -157,6 +152,7 @@ class InteracaoAtividadeGlobalCalendarForm extends TWindow
             $interacaoHistoricoAtividade->horario_final = $object->horario_final;
             $interacaoHistoricoAtividade->tipo_atividade_id = $object->tipo_atividade_id;
             $interacaoHistoricoAtividade->estado_atividade_id = $object->estado_atividade_id;
+            $interacaoHistoricoAtividade->interacao_atividade_id = $object->id;
 
             if(!$data->id)
             {
@@ -237,6 +233,7 @@ class InteracaoAtividadeGlobalCalendarForm extends TWindow
                 $interacaoHistoricoAtividade->tipo_atividade_id = $object->tipo_atividade_id;
                 $interacaoHistoricoAtividade->movimentacao_id = Movimentacao::EXCLUIDO;
                 $interacaoHistoricoAtividade->estado_atividade_id = $object->estado_atividade_id;
+                $interacaoHistoricoAtividade->interacao_atividade_id = $object->id;
 
                 $interacaoHistoricoAtividade->store();
 

@@ -23,12 +23,63 @@
             margin-bottom: 50px;
         }
     </style>
+
+    <style>
+        .footer {   
+            position: fixed;
+            left: 0px;
+            bottom: 0px;
+            right: 0px;
+            height: 80px;
+            width: 100%;
+        }
+        .footer .page:after{
+            content: counter(page)
+        }
+    </style>
 </head>
 
 <body>
-<h1 style="text-align: center;">Interação #{$id}</h1>
-<p style="margin: 1px 0;"><strong>Cliente: </strong>{$cliente->razao_social}, {$cliente->cpf_cnpj}<br /><strong>Categoria: </strong>{$cliente->categoria_cliente->nome}<br /><strong>Representante: </strong>{$vendedor->razao_social}<br /><strong>Etapa: </strong><span style="background-color: {$etapa_interacao->nome}; color: white;">{$etapa_interacao->nome}</span><br /><strong>Origem do Contato: </strong>{$origem_contato->nome}<br /><strong>Inicio: </strong>{$data_inicio}<br /><strong>Fechamento Esperado: </strong>{$data_fechamento_esperada}<br /><strong>Fechamento: </strong>{$data_fechamento}</p>
-<h4 style="text-align: center;">Histórico</h4>
-<div>{$timeline}</div>
+<p style="margin: 1px 0;"> </p>
+<div class="header">
+<table style="border-collapse: collapse; width: 23.1266%; height: 106px; border-color: #000000; border-style: solid; float: right;" border="2">
+<tbody>
+<tr style="height: 10px;">
+<td style="width: 100%; height: 10px; text-align: center;"><strong>Número da Interação</strong></td>
+</tr>
+<tr style="height: 66px; background-color: #edecec; border-style: solid;">
+<td style="width: 100%; height: 96px; text-align: center;"><strong>#{$id}</strong></td>
+</tr>
+</tbody>
+</table>
+<p style="margin: 1px 0;"><span style="font-family: Akpdmi-n;"><strong><span style="font-size: 12pt;">VERSATRONIC COM E MANUT. ELETR IND LTDA</span></strong></span></p>
+<p style="margin: 1px 0;"> </p>
+<p style="margin: 1px 0;"><span style="font-size: 10pt; font-family: Akpdmi-n;">RUA HENRIQUE WIEZEL 961 - DISTRITO INDUSTRIAL</span></p>
+</div>
+<p style="margin: 1px 0;"><span style="font-size: 10pt; font-family: Akpdmi-n;">SANTA BÁRBARA D'OESTE - SP   <strong>CEP</strong>: 13456-165</span></p>
+<p style="margin: 1px 0;"><span style="font-family: Akpdmi-n;"><span style="font-size: 10pt;"><strong>CNPJ</strong>: 68.245.877/0001-86                <strong> Inscrição Estadual:</strong> 606.058.761.112</span></span></p>
+<hr />
+<p style="margin: 1px 0;"><span style="font-size: 10pt; font-family: Akpdmi-n;"><strong>Representante: </strong>{$vendedor->razao_social}  </span></p>
+<hr />
+<p style="margin: 1px 0;"><span style="font-family: Akpdmi-n;"><span style="font-size: 10pt;"><strong>Cliente: </strong>{$cliente->razao_social}                                                                  </span><strong style="font-size: 13.3333px;">Email: </strong><span style="font-size: 13.3333px;">{$cliente->email}</span></span></p>
+<p style="margin: 1px 0;"><span style="font-family: Akpdmi-n;"><span style="font-size: 10pt;"><strong>Cidade: </strong>{$cidade} - {$cliente->cidade_uf }                                                 </span><strong style="font-size: 13.3333px;">Telefone: </strong><span style="font-size: 13.3333px;">{$cliente->fone}  </span><span style="font-size: 10pt;">                                                  </span></span></p>
+<p style="margin: 1px 0;"><span style="font-size: 10pt; font-family: Akpdmi-n;"><strong>CNPJ/CPF:</strong> {$cliente->cpf_cnpj}                                                                 </span></p>
+<p style="margin: 1px 0;"><span style="font-size: 10pt; font-family: Akpdmi-n;"><strong style="font-size: 10pt;">Categoria: </strong><span style="font-size: 10pt;">{$cliente->categoria_cliente->nome}</span></span></p>
+<hr />
+<div class="tox-statusbar__path-item" style="box-sizing: content-box; text-rendering: optimizelegibility; -webkit-font-smoothing: antialiased; background: 0px 0px #ffffff; border: 0px; color: rgba(34, 47, 62, 0.7); cursor: inherit; direction: ltr; float: none; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif; font-size: 12px; height: auto; line-height: normal; margin: 0px 4px 0px 0px; max-width: none; outline: 0px; padding: 0px; position: static; -webkit-tap-highlight-color: transparent; text-shadow: none; vertical-align: initial; text-wrap-mode: nowrap; width: auto; display: inline;" tabindex="-1" role="button" data-index="3" aria-level="4">
+<p style="margin: 1px 0;"><span style="font-family: Akpdmi-n;"><strong style="font-size: 13.3333px;">Histórico</strong></span></p>
+<p style="margin: 1px 0;"><span style="font-size: 13.3333px; font-family: Akpdmi-n;">{$timeline}</span></p>
+</div>
+<div class="tox-statusbar__path-item" style="box-sizing: content-box; text-rendering: optimizelegibility; -webkit-font-smoothing: antialiased; background: 0px 0px #ffffff; border: 0px; color: rgba(34, 47, 62, 0.7); cursor: inherit; direction: ltr; float: none; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif; font-size: 12px; height: auto; line-height: normal; margin: 0px 4px 0px 0px; max-width: none; outline: 0px; padding: 0px; position: static; -webkit-tap-highlight-color: transparent; text-shadow: none; vertical-align: initial; text-wrap-mode: nowrap; width: auto; display: inline;" tabindex="-1" role="button" data-index="3" aria-level="4"> </div>
+<div class="tox-statusbar__path-item" style="box-sizing: content-box; text-rendering: optimizelegibility; -webkit-font-smoothing: antialiased; background: 0px 0px #ffffff; border: 0px; color: rgba(34, 47, 62, 0.7); cursor: inherit; direction: ltr; float: none; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif; font-size: 12px; height: auto; line-height: normal; margin: 0px 4px 0px 0px; max-width: none; outline: 0px; padding: 0px; position: static; -webkit-tap-highlight-color: transparent; text-shadow: none; vertical-align: initial; text-wrap-mode: nowrap; width: auto; display: inline;" tabindex="-1" role="button" data-index="3" aria-level="4"> </div>
+<div class="tox-statusbar__path-item" style="box-sizing: content-box; text-rendering: optimizelegibility; -webkit-font-smoothing: antialiased; background: 0px 0px #ffffff; border: 0px; color: rgba(34, 47, 62, 0.7); cursor: inherit; direction: ltr; float: none; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif; font-size: 12px; height: auto; line-height: normal; margin: 0px 4px 0px 0px; max-width: none; outline: 0px; padding: 0px; position: static; -webkit-tap-highlight-color: transparent; text-shadow: none; vertical-align: initial; text-wrap-mode: nowrap; width: auto; display: inline;" tabindex="-1" role="button" data-index="3" aria-level="4"> </div>
+<div class="tox-statusbar__path-item" style="box-sizing: content-box; text-rendering: optimizelegibility; -webkit-font-smoothing: antialiased; background: 0px 0px #ffffff; border: 0px; color: rgba(34, 47, 62, 0.7); cursor: inherit; direction: ltr; float: none; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif; font-size: 12px; height: auto; line-height: normal; margin: 0px 4px 0px 0px; max-width: none; outline: 0px; padding: 0px; position: static; -webkit-tap-highlight-color: transparent; text-shadow: none; vertical-align: initial; text-wrap-mode: nowrap; width: auto; display: inline;" tabindex="-1" role="button" data-index="3" aria-level="4"> </div>
+<div class="tox-statusbar__path-item" style="box-sizing: content-box; text-rendering: optimizelegibility; -webkit-font-smoothing: antialiased; background: 0px 0px #ffffff; border: 0px; color: rgba(34, 47, 62, 0.7); cursor: inherit; direction: ltr; float: none; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif; font-size: 12px; height: auto; line-height: normal; margin: 0px 4px 0px 0px; max-width: none; outline: 0px; padding: 0px; position: static; -webkit-tap-highlight-color: transparent; text-shadow: none; vertical-align: initial; text-wrap-mode: nowrap; width: auto; display: inline;" tabindex="-1" role="button" data-index="3" aria-level="4"> </div>
+<div class="tox-statusbar__path-item" style="box-sizing: content-box; text-rendering: optimizelegibility; -webkit-font-smoothing: antialiased; background: 0px 0px #ffffff; border: 0px; color: rgba(34, 47, 62, 0.7); cursor: inherit; direction: ltr; float: none; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif; font-size: 12px; height: auto; line-height: normal; margin: 0px 4px 0px 0px; max-width: none; outline: 0px; padding: 0px; position: static; -webkit-tap-highlight-color: transparent; text-shadow: none; vertical-align: initial; text-wrap-mode: nowrap; width: auto; display: inline;" tabindex="-1" role="button" data-index="3" aria-level="4"> </div>
+<div class="tox-statusbar__path-item" style="box-sizing: content-box; text-rendering: optimizelegibility; -webkit-font-smoothing: antialiased; background: 0px 0px #ffffff; border: 0px; color: rgba(34, 47, 62, 0.7); cursor: inherit; direction: ltr; float: none; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif; font-size: 12px; height: auto; line-height: normal; margin: 0px 4px 0px 0px; max-width: none; outline: 0px; padding: 0px; position: static; -webkit-tap-highlight-color: transparent; text-shadow: none; vertical-align: initial; text-wrap-mode: nowrap; width: auto; display: inline;" tabindex="-1" role="button" data-index="3" aria-level="4"> </div>
+<div class="tox-statusbar__path-item" style="box-sizing: content-box; text-rendering: optimizelegibility; -webkit-font-smoothing: antialiased; background: 0px 0px #ffffff; border: 0px; color: rgba(34, 47, 62, 0.7); cursor: inherit; direction: ltr; float: none; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif; font-size: 12px; height: auto; line-height: normal; margin: 0px 4px 0px 0px; max-width: none; outline: 0px; padding: 0px; position: static; -webkit-tap-highlight-color: transparent; text-shadow: none; vertical-align: initial; text-wrap-mode: nowrap; width: auto; display: inline;" tabindex="-1" role="button" data-index="3" aria-level="4">
+<p style="margin: 1px 0;"> </p>
+</div>
+<div class="footer"> </div>
 </body>
 </html>

@@ -649,6 +649,8 @@ class RepresentanteDivergenteHeaderList extends TPage
             $this->pageNavigation->setProperties($param); // order, page
             $this->pageNavigation->setLimit($this->limit); // limit
 
+            $this->datagrid->initPopoverHeaderFilters();
+
             // close the transaction
             TTransaction::close();
             $this->loaded = true;

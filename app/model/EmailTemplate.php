@@ -23,6 +23,8 @@ class EmailTemplate extends TRecord
         parent::addAttribute('created_at');
         parent::addAttribute('updated_at');
         parent::addAttribute('deleted_at');
+        parent::addAttribute('assunto');
+        parent::addAttribute('conteudo_arquivo');
             
     }
 

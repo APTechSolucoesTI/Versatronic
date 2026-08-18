@@ -19,7 +19,19 @@
         <icon>fas:chevron-right fa-fw </icon>
         <action>InteracaoAtividadeHeaderList#method=onShow</action>
       </menuitem>
-      <menuitem label="Dashboard">
+      <menuitem label="Controle de Comissão">
+        <icon>fas:chevron-right fa-fw </icon>
+        <action>ViewClassificacaoList#method=onShow</action>
+      </menuitem>
+       <menuitem label="Acompanhamento de OS">
+        <icon>fas:chevron-right fa-fw </icon>
+        <action>ConsultaStatusOrdemServico</action>
+      </menuitem>
+        <menuitem label="Dashboard Orçamento">
+        <icon>fas:tachometer-alt fa-fw </icon>
+        <action>DashboardOrcamento#method=onShow</action>
+      </menuitem>
+      <menuitem label="Dashboard Interação">
         <icon>fas:tachometer-alt fa-fw </icon>
         <action>DashboardInteracao#method=onShow</action>
       </menuitem>
@@ -32,20 +44,20 @@
         <icon>fas:angle-right fa-fw </icon>
         <action>ClienteList#method=onShow</action>
       </menuitem>
+      <!--
       <menuitem label="Representantes">
         <icon>fas:angle-right fa-fw </icon>
         <action>RepresentanteList#method=onShow</action>
       </menuitem>
-      <!--
       <menuitem label="Representantes Totvs">
         <icon>fas:angle-right fa-fw </icon>
         <action>RepresentanteTotvsList#method=onShow</action>
       </menuitem>
-      -->
       <menuitem label="Transportadoras">
         <icon>fas:angle-right fa-fw </icon>
         <action>TransportadoraList#method=onShow</action>
       </menuitem>
+      -->
       
     </menu>
   </menuitem>
@@ -60,9 +72,9 @@
         <icon>fas:file fa-fw </icon>
         <action>NotaBaixadaList#method=onShow</action>
       </menuitem>
-      <menuitem label="Dashboard">
-        <icon>fas:tachometer-alt fa-fw </icon>
-        <action>DashboardOrcamento#method=onShow</action>
+      <menuitem label="Comissão de Representantes">
+        <icon>fas:dollar-sign fa-fw </icon>
+        <action>ViewComissaoRepresHeaderList#method=onShow</action>
       </menuitem>
     </menu>
   </menuitem>
@@ -82,11 +94,11 @@
   </menuitem>
   -->
   <menuitem label="Preferências do Usuário">
-    <icon>fas:eye-dropper fa-fw </icon>
-    <action>PreferenciaSistemaForm#method=onShow</action>
+    <icon>fas:eye-dropper fa-fw</icon>
+    <!-- <action>PreferenciaSistemaForm#method=onShow</action> -->
     <menu>
       <menuitem label="Preferencia do Usuário">
-        <icon>far:circle fa-fw </icon>
+        <icon>fas:eye-dropper fa-fw</icon>
         <action>PreferenciaSistemaForm#method=onShow</action>
       </menuitem>
     </menu>
@@ -98,7 +110,11 @@
       <!--  <icon>fas:database fa-fw </icon>-->
       <!--  <action>GenerateDataControl#method=onShow</action>-->
       <!--</menuitem>-->
-      <menuitem label="Email templates">
+      <!-- <menuitem label="Configurações de e-mail">
+        <icon>far:envelope fa-fw </icon>
+        <action>ConfiguracaoEmailFormList#method=onShow</action>
+      </menuitem> -->
+      <menuitem label="E-mail templates">
         <icon>fas:chevron-right fa-fw </icon>
         <action>EmailTemplateHeaderList#method=onShow</action>
       </menuitem>
@@ -121,6 +137,14 @@
             <icon>far:circle fa-fw </icon>
             <action>TipoAtividadeHeaderList#method=onShow</action>
           </menuitem>
+       <menuitem label="Regras Tipo de Atividade">
+        <icon>far:circle fa-fw  </icon>
+        <action>RegrasTipoAtividadeHeaderList#method=onShow</action>
+      </menuitem>
+       <menuitem label="Prazo de Atividade ">
+        <icon>far:circle fa-fw  </icon>
+        <action>PrazoAtividadeHeaderList#method=onShow</action>
+      </menuitem>
         </menu>
       </menuitem>
       <menuitem label="Pessoas">

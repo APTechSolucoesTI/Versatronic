@@ -701,13 +701,13 @@ class RepresentanteList extends TPage
         if (isset($data->razao_social_col) AND ( (is_scalar($data->razao_social_col) AND $data->razao_social_col !== '') OR (is_array($data->razao_social_col) AND (!empty($data->razao_social_col)) )) )
         {
 
-            $filters[] = new TFilter('razao_social', 'like', "%{$data->razao_social_col}%");// create the filter 
+            $filters[] = new TFilter('razao_social', 'ilike', "%{$data->razao_social_col}%");// create the filter 
         }
 
         if (isset($data->email_col) AND ( (is_scalar($data->email_col) AND $data->email_col !== '') OR (is_array($data->email_col) AND (!empty($data->email_col)) )) )
         {
 
-            $filters[] = new TFilter('email', 'like', "%{$data->email_col}%");// create the filter 
+            $filters[] = new TFilter('email', 'ilike', "%{$data->email_col}%");// create the filter 
         }
 
         if (isset($data->cpf_cnpj_col) AND ( (is_scalar($data->cpf_cnpj_col) AND $data->cpf_cnpj_col !== '') OR (is_array($data->cpf_cnpj_col) AND (!empty($data->cpf_cnpj_col)) )) )
@@ -820,6 +820,8 @@ class RepresentanteList extends TPage
             $this->pageNavigation->setCount($count); // count of records
             $this->pageNavigation->setProperties($param); // order, page
             $this->pageNavigation->setLimit($this->limit); // limit
+
+            $this->datagrid->initPopoverHeaderFilters();
 
             // close the transaction
             TTransaction::close();

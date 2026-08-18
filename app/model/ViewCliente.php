@@ -25,6 +25,8 @@ class ViewCliente extends TRecord
         parent::addAttribute('representante_razao');
         parent::addAttribute('bloqueado');
         parent::addAttribute('cidade_uf');
+        parent::addAttribute('cidade_id');
+        parent::addAttribute('estado_id');
     
     }
 

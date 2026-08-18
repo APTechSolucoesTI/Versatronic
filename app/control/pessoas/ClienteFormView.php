@@ -286,5 +286,12 @@ class ClienteFormView extends TPage
             TSession::setValue('key', $param['key']);
     }
 
+    public function onEdit($param = null)
+    {
+        if (!empty($param['key'])) {
+            $param['target_container'] = 'adianti_right_panel';
+            TApplication::loadPage('ClienteFormView', null, $param);
+        }
+    }
 }
 

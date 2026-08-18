@@ -1,21 +1,3 @@
-SET IDENTITY_INSERT categoria_cliente ON; 
-
-INSERT INTO categoria_cliente (id,codigo,nome) VALUES (1,null,'Supermercado'); 
-
-INSERT INTO categoria_cliente (id,codigo,nome) VALUES (2,null,'Posto de gasolina'); 
-
-INSERT INTO categoria_cliente (id,codigo,nome) VALUES (3,null,'Igreja'); 
-
-INSERT INTO categoria_cliente (id,codigo,nome) VALUES (4,null,'Escola'); 
-
-INSERT INTO categoria_cliente (id,codigo,nome) VALUES (5,null,'Consumidor final'); 
-
-INSERT INTO categoria_cliente (id,codigo,nome) VALUES (6,null,'Fornecedor'); 
-
-INSERT INTO categoria_cliente (id,codigo,nome) VALUES (7,null,'Vendedor'); 
-
-SET IDENTITY_INSERT categoria_cliente OFF; 
-
 SET IDENTITY_INSERT cidade ON; 
 
 INSERT INTO cidade (id,estado_id,cod_municipio,nome,codigo_ibge) VALUES (1,1,null,'Lajeado','123123'); 
@@ -24,7 +6,7 @@ SET IDENTITY_INSERT cidade OFF;
 
 SET IDENTITY_INSERT email_template ON; 
 
-INSERT INTO email_template (id,titulo,mensagem,created_at,updated_at,deleted_at) VALUES (1,'Sua proposta está vencendo','Olá {nome},<br><br>A proposta que lhe enviamos está próxima de vencer.<br><br>Estamos enviando essa mensagem para lhe falar que conseguiremos manter os preços apenas por mais 2 dias. Caso queira confirmar a compra e aproveitar o valor atual, favor entrar em contato para que possamos dar prosseguimento à venda.',null,null,null); 
+INSERT INTO email_template (id,titulo,mensagem,created_at,updated_at,deleted_at,assunto,conteudo_arquivo) VALUES (1,'Sua proposta está vencendo','Olá {nome},<br><br>A proposta que lhe enviamos está próxima de vencer.<br><br>Estamos enviando essa mensagem para lhe falar que conseguiremos manter os preços apenas por mais 2 dias. Caso queira confirmar a compra e aproveitar o valor atual, favor entrar em contato para que possamos dar prosseguimento à venda.',null,null,null,null,null); 
 
 SET IDENTITY_INSERT email_template OFF; 
 
@@ -369,22 +351,6 @@ INSERT INTO system_users (id,name,login,password,email,frontpage_id,system_unit_
 INSERT INTO system_users (id,name,login,password,email,frontpage_id,system_unit_id,active,accepted_term_policy_at,accepted_term_policy,two_factor_enabled,two_factor_type,two_factor_secret) VALUES (2,'User','user','ee11cbb19052e40b07aac0ca060c23ee','user@user.net',7,null,'Y','','',null,null,null); 
 
 INSERT INTO system_user_unit (id,system_user_id,system_unit_id) VALUES (1,1,1); 
-
-SET IDENTITY_INSERT tipo_atividade ON; 
-
-INSERT INTO tipo_atividade (id,nome,cor,icone) VALUES (1,'Ligar','#00d2d3','fas fa-phone'); 
-
-INSERT INTO tipo_atividade (id,nome,cor,icone) VALUES (2,'Reunião','#54a0ff','fas fa-users'); 
-
-INSERT INTO tipo_atividade (id,nome,cor,icone) VALUES (3,'Tarefa','#5f27cd','fas fa-tasks'); 
-
-INSERT INTO tipo_atividade (id,nome,cor,icone) VALUES (4,'Prazo','#341f97','far fa-clock'); 
-
-INSERT INTO tipo_atividade (id,nome,cor,icone) VALUES (5,'Email','#ee5253','far fa-envelope'); 
-
-INSERT INTO tipo_atividade (id,nome,cor,icone) VALUES (6,'Almoço','#feca57','fas fa-utensils'); 
-
-SET IDENTITY_INSERT tipo_atividade OFF; 
 
 SET IDENTITY_INSERT tipo_interacao ON; 
 

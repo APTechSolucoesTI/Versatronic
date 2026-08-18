@@ -2547,22 +2547,6 @@ hr.tseparator-divisor{
 }
 
 
-@media (max-width: 767px) {
-    .login-medium-logo {
-        width: 80% !important;
-        height: 80px !important;
-        margin: 0 10%;
-    }
-}
-
-.login-medium-logo {
-    background: url('../../../app/images/builderLogoLogin.png');
-    width: 100%;
-    height: 150px;
-    background-size: contain;
-    background-position: center;
-    background-repeat: no-repeat;
-}
 
 .user-info .image img { display: none; }
 .user-info .image {

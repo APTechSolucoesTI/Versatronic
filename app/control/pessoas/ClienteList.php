@@ -14,6 +14,8 @@ class ClienteList extends TPage
     private $showMethods = ['onReload', 'onSearch', 'onRefresh', 'onClearFilters', 'onGlobalSearch'];
     private $limit = 20;
 
+    use BuilderDatagridTrait;
+
     /**
      * Class constructor
      * Creates the page, the form and the listing
@@ -35,34 +37,59 @@ class ClienteList extends TPage
         $this->limit = 20;
 
         $criteria_categoria = new TCriteria();
+        $criteria_categoria1 = new TCriteria();
+        $criteria_representante_razao1 = new TCriteria();
+        $criteria_cidade_id = new TCriteria();
+        $criteria_estado_id = new TCriteria();
+
+        TTransaction::open('minicrm');
+        try {
+            $representanteUsuario = Representante::where(
+                'system_user_id',
+                '=',
+                TSession::getValue("userid")
+            )->first();
+
+            if (!empty($representanteUsuario)) {
+                $ids = [(int) $representanteUsuario->id, 0];
+
+                $criteria_representante_razao1->add(
+                    new TFilter('id', 'IN', $ids)
+                );
+            }
+
+            TTransaction::close();
+        } catch (Exception $e) {
+            TTransaction::rollback();
+            throw $e;
+        }
 
         $razao_social = new TEntry('razao_social');
         $cpf_cnpj = new TEntry('cpf_cnpj');
         $representante_razao = new TEntry('representante_razao');
         $categoria = new TDBCombo('categoria', 'minicrm', 'CategoriaCliente', 'nome', '{nome}','nome asc' , $criteria_categoria );
         $codigo = new TEntry('codigo');
-        $categoria_col = new TEntry('categoria_col');
-        $razao_social_col = new TEntry('razao_social_col');
+        $categoria1 = new TDBCombo('categoria1', 'minicrm', 'CategoriaCliente', 'nome', '{nome}','nome asc' , $criteria_categoria1 );
+        $razao_social1 = new TEntry('razao_social1');
         $cpf_cnpj_col = new TEntry('cpf_cnpj_col');
-        $cidade = new TEntry('cidade');
-        $estado = new TEntry('estado');
+        $representante_razao1 = new TDBCombo('representante_razao1', 'minicrm', 'Representante', 'id', '{razao_social}','razao_social asc' , $criteria_representante_razao1 );
+        $cidade_id = new TDBCombo('cidade_id', 'minicrm', 'Cidade', 'id', '{nome}','nome asc' , $criteria_cidade_id );
+        $estado_id = new TDBCombo('estado_id', 'minicrm', 'Estado', 'id', '{nome}','nome asc' , $criteria_estado_id );
         $ativo = new TCombo('ativo');
         $bloqueado = new TCombo('bloqueado');
 
         $codigo->exitOnEnter();
-        $categoria_col->exitOnEnter();
-        $razao_social_col->exitOnEnter();
+        $razao_social1->exitOnEnter();
         $cpf_cnpj_col->exitOnEnter();
-        $cidade->exitOnEnter();
-        $estado->exitOnEnter();
 
         $codigo->setExitAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
-        $categoria_col->setExitAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
-        $razao_social_col->setExitAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
+        $razao_social1->setExitAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
         $cpf_cnpj_col->setExitAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
-        $cidade->setExitAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
-        $estado->setExitAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
 
+        $categoria1->setChangeAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
+        $representante_razao1->setChangeAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
+        $cidade_id->setChangeAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
+        $estado_id->setChangeAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
         $ativo->setChangeAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
         $bloqueado->setChangeAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
 
@@ -71,20 +98,25 @@ class ClienteList extends TPage
 
         $ativo->enableSearch();
         $categoria->enableSearch();
+        $cidade_id->enableSearch();
+        $estado_id->enableSearch();
         $bloqueado->enableSearch();
+        $categoria1->enableSearch();
+        $representante_razao1->enableSearch();
 
         $ativo->setSize('100%');
         $codigo->setSize('100%');
-        $cidade->setSize('100%');
-        $estado->setSize('100%');
         $cpf_cnpj->setSize('100%');
         $categoria->setSize('100%');
+        $cidade_id->setSize('100%');
+        $estado_id->setSize('100%');
         $bloqueado->setSize('100%');
+        $categoria1->setSize('100%');
         $razao_social->setSize('100%');
         $cpf_cnpj_col->setSize('100%');
-        $categoria_col->setSize('100%');
-        $razao_social_col->setSize('100%');
+        $razao_social1->setSize('100%');
         $representante_razao->setSize('100%');
+        $representante_razao1->setSize('100%');
 
         $row1 = $this->form->addFields([new TLabel("Razão Social:", null, '14px', null, '100%'),$razao_social]);
         $row1->layout = [' col-sm-12'];
@@ -107,6 +139,7 @@ class ClienteList extends TPage
 
         // creates a Datagrid
         $this->datagrid = new TDataGrid;
+        $this->datagrid->enableUserProperties('fa fa-cog', 'btn btn-default', new TAction([$this, 'setDatagridProperties']));
         $this->datagrid->setId(__CLASS__.'_datagrid');
 
         $this->datagrid_form = new TForm('datagrid_'.self::$formName);
@@ -122,10 +155,11 @@ class ClienteList extends TPage
         $column_codigo = new TDataGridColumn('codigo', "Codigo", 'left');
         $column_categoria = new TDataGridColumn('categoria', "Categoria", 'left');
         $column_razao_social = new TDataGridColumn('razao_social', "Razão Social", 'left');
-        $column_cpf_cnpj_transformed = new TDataGridColumn('cpf_cnpj', "Documento", 'left');
+        $column_cpf_cnpj_transformed = new TDataGridColumn('cpf_cnpj', "CPF/CNPJ", 'left');
+        $column_representante_razao = new TDataGridColumn('representante_razao', "Representante", 'left');
         $column_data_alteracao_totvs_transformed = new TDataGridColumn('data_alteracao_totvs', "Ultima Atualização TOTVS", 'left');
-        $column_cidade = new TDataGridColumn('cidade', "Cidade", 'left');
-        $column_estado = new TDataGridColumn('estado', "Estado", 'left');
+        $column_cidade_id_transformed = new TDataGridColumn('cidade_id', "Cidade", 'left');
+        $column_estado_id_transformed = new TDataGridColumn('estado_id', "Estado", 'left');
         $column_ativo_transformed = new TDataGridColumn('ativo', "Ativo", 'left');
         $column_bloqueado_transformed = new TDataGridColumn('bloqueado', "Bloqueado", 'left');
 
@@ -160,6 +194,35 @@ class ClienteList extends TPage
             }
         });
 
+        $column_cidade_id_transformed->setTransformer(function($value, $object, $row, $cell = null, $last_row = null)
+        {
+            if (empty($value))
+            {
+                return '';
+            }
+            TTransaction::open(self::$database);
+            $cidade = Cidade::find($value);
+            $nome = $cidade ? $cidade->nome : '';
+            TTransaction::close();
+
+            return $nome;
+
+        });
+
+        $column_estado_id_transformed->setTransformer(function($value, $object, $row, $cell = null, $last_row = null)
+        {
+            if (empty($value))
+            {
+                return '';
+            }
+            TTransaction::open(self::$database);
+            $estado = Estado::find($value);
+            $nome = $estado ? $estado->nome : '';
+            TTransaction::close();
+
+            return $nome;
+        });
+
         $column_ativo_transformed->setTransformer(function($value, $object, $row, $cell = null, $last_row = null)
         {
 
@@ -174,13 +237,12 @@ class ClienteList extends TPage
 
         $column_bloqueado_transformed->setTransformer(function($value, $object, $row, $cell = null, $last_row = null)
         {
-
             if($value === 'T' || $value === 't' || $value === true || $value === 'S' || $value === 's' || $value === 1)
             {
-                return '<span class="label label-success">Sim</span>';
+                return '<span class="label label-danger">Sim</span>';
             }
 
-            return '<span class="label label-danger">Não</span>';
+            return '<span class="label label-success">Não</span>';   
 
         });        
 
@@ -188,9 +250,10 @@ class ClienteList extends TPage
         $this->datagrid->addColumn($column_categoria);
         $this->datagrid->addColumn($column_razao_social);
         $this->datagrid->addColumn($column_cpf_cnpj_transformed);
+        $this->datagrid->addColumn($column_representante_razao);
         $this->datagrid->addColumn($column_data_alteracao_totvs_transformed);
-        $this->datagrid->addColumn($column_cidade);
-        $this->datagrid->addColumn($column_estado);
+        $this->datagrid->addColumn($column_cidade_id_transformed);
+        $this->datagrid->addColumn($column_estado_id_transformed);
         $this->datagrid->addColumn($column_ativo_transformed);
         $this->datagrid->addColumn($column_bloqueado_transformed);
 
@@ -226,6 +289,7 @@ class ClienteList extends TPage
 
         $this->datagrid->addAction($action_onExcluir);
 
+        $this->applyDatagridProperties();
         // create the datagrid model
         $this->datagrid->createModel();
 
@@ -247,29 +311,33 @@ class ClienteList extends TPage
         }
         $td_codigo = TElement::tag('td', $codigo);
         $tr->add($td_codigo);
-        $td_categoria_col = TElement::tag('td', $categoria_col);
-        $tr->add($td_categoria_col);
-        $td_razao_social_col = TElement::tag('td', $razao_social_col);
-        $tr->add($td_razao_social_col);
+        $td_categoria1 = TElement::tag('td', $categoria1);
+        $tr->add($td_categoria1);
+        $td_razao_social1 = TElement::tag('td', $razao_social1);
+        $tr->add($td_razao_social1);
         $td_cpf_cnpj_col = TElement::tag('td', $cpf_cnpj_col);
         $tr->add($td_cpf_cnpj_col);
+        $td_representante_razao1 = TElement::tag('td', $representante_razao1);
+        $tr->add($td_representante_razao1);
         $td_empty = TElement::tag('td', "");
         $tr->add($td_empty);
-        $td_cidade = TElement::tag('td', $cidade);
-        $tr->add($td_cidade);
-        $td_estado = TElement::tag('td', $estado);
-        $tr->add($td_estado);
+        $td_cidade_id = TElement::tag('td', $cidade_id);
+        $tr->add($td_cidade_id);
+        $td_estado_id = TElement::tag('td', $estado_id);
+        $tr->add($td_estado_id);
         $td_ativo = TElement::tag('td', $ativo);
         $tr->add($td_ativo);
         $td_bloqueado = TElement::tag('td', $bloqueado);
         $tr->add($td_bloqueado);
+        $tr->add(TElement::tag('td', ''));
 
         $this->datagrid_form->addField($codigo);
-        $this->datagrid_form->addField($categoria_col);
-        $this->datagrid_form->addField($razao_social_col);
+        $this->datagrid_form->addField($categoria1);
+        $this->datagrid_form->addField($razao_social1);
         $this->datagrid_form->addField($cpf_cnpj_col);
-        $this->datagrid_form->addField($cidade);
-        $this->datagrid_form->addField($estado);
+        $this->datagrid_form->addField($representante_razao1);
+        $this->datagrid_form->addField($cidade_id);
+        $this->datagrid_form->addField($estado_id);
         $this->datagrid_form->addField($ativo);
         $this->datagrid_form->addField($bloqueado);
 
@@ -730,6 +798,7 @@ class ClienteList extends TPage
             AtualizacaoService::atualizarEndereco();
             AtualizacaoService::atualizarComplemento();
             AtualizacaoService::atualizarContato();
+
             $this->onReload();
             TToast::show("success", "Atualizado", "topRight", "fas:check-circle");
 
@@ -744,7 +813,14 @@ class ClienteList extends TPage
     {
         try 
         {
-            //code here
+
+        $usuariosQueVeemTudo = [1, 16, 13, 20, 4, 11, 12, 17, 10];
+
+        $userId = TSession::getValue('userid');
+
+        if (!in_array($userId, $usuariosQueVeemTudo)) {
+            return;
+        }
 
                         $filter = new self([]);
 
@@ -887,16 +963,16 @@ class ClienteList extends TPage
             $filters[] = new TFilter('codigo', 'ilike', "%{$data->codigo}%");// create the filter 
         }
 
-        if (isset($data->categoria_col) AND ( (is_scalar($data->categoria_col) AND $data->categoria_col !== '') OR (is_array($data->categoria_col) AND (!empty($data->categoria_col)) )) )
+        if (isset($data->categoria1) AND ( (is_scalar($data->categoria1) AND $data->categoria1 !== '') OR (is_array($data->categoria1) AND (!empty($data->categoria1)) )) )
         {
 
-            $filters[] = new TFilter('unaccent(categoria)', 'ilike', "%{$data->categoria_col}%");// create the filter 
+            $filters[] = new TFilter('categoria', '=', $data->categoria1);// create the filter 
         }
 
-        if (isset($data->razao_social_col) AND ( (is_scalar($data->razao_social_col) AND $data->razao_social_col !== '') OR (is_array($data->razao_social_col) AND (!empty($data->razao_social_col)) )) )
+        if (isset($data->razao_social1) AND ( (is_scalar($data->razao_social1) AND $data->razao_social1 !== '') OR (is_array($data->razao_social1) AND (!empty($data->razao_social1)) )) )
         {
 
-            $filters[] = new TFilter('unaccent(razao_social)', 'ilike', "%{$data->razao_social_col}%");// create the filter 
+            $filters[] = new TFilter('razao_social', 'ilike', "%{$data->razao_social1}%");// create the filter 
         }
 
         if (isset($data->cpf_cnpj_col) AND ( (is_scalar($data->cpf_cnpj_col) AND $data->cpf_cnpj_col !== '') OR (is_array($data->cpf_cnpj_col) AND (!empty($data->cpf_cnpj_col)) )) )
@@ -905,16 +981,22 @@ class ClienteList extends TPage
             $filters[] = new TFilter('unaccent(cpf_cnpj)', 'like', "%{$data->cpf_cnpj_col}%");// create the filter 
         }
 
-        if (isset($data->cidade) AND ( (is_scalar($data->cidade) AND $data->cidade !== '') OR (is_array($data->cidade) AND (!empty($data->cidade)) )) )
+        if (isset($data->representante_razao1) AND ( (is_scalar($data->representante_razao1) AND $data->representante_razao1 !== '') OR (is_array($data->representante_razao1) AND (!empty($data->representante_razao1)) )) )
         {
 
-            $filters[] = new TFilter('unaccent(cidade)', 'ilike', "%{$data->cidade}%");// create the filter 
+            $filters[] = new TFilter('representante_id', '=', $data->representante_razao1);// create the filter 
         }
 
-        if (isset($data->estado) AND ( (is_scalar($data->estado) AND $data->estado !== '') OR (is_array($data->estado) AND (!empty($data->estado)) )) )
+        if (isset($data->cidade_id) AND ( (is_scalar($data->cidade_id) AND $data->cidade_id !== '') OR (is_array($data->cidade_id) AND (!empty($data->cidade_id)) )) )
         {
 
-            $filters[] = new TFilter('unaccent(estado)', 'ilike', "%{$data->estado}%");// create the filter 
+            $filters[] = new TFilter('cidade_id', '=', $data->cidade_id);// create the filter 
+        }
+
+        if (isset($data->estado_id) AND ( (is_scalar($data->estado_id) AND $data->estado_id !== '') OR (is_array($data->estado_id) AND (!empty($data->estado_id)) )) )
+        {
+
+            $filters[] = new TFilter('estado_id', '=', $data->estado_id);// create the filter 
         }
 
         if (isset($data->ativo) AND ( (is_scalar($data->ativo) AND $data->ativo !== '') OR (is_array($data->ativo) AND (!empty($data->ativo)) )) )
@@ -1047,17 +1129,27 @@ class ClienteList extends TPage
 
             //</blockLine></btnShowCurtainFiltersAutoCode>
 
-            TTransaction::open(self::$database);
-            $representante = Representante::where('system_user_id','=',TSession::getValue('userid'))->load();
-            if($representante){
-                $criteria->add(new TFilter('representante_id', '=', "(SELECT id FROM representante WHERE system_user_id = ".TSession::getValue('userid')." LIMIT 1)"));
+            $semRep = 0;
+            $userId = TSession::getValue('userid');
+
+             $usuariosQueVeemTudo = [1, 16, 13, 20, 4, 11, 12, 17, 10];
+
+            if (!in_array((int) $userId, $usuariosQueVeemTudo))
+            {
+                $representante = Representante::where('system_user_id', '=', $userId)->first();
+
+                if ($representante)
+                {
+                    $criteria->add(new TFilter('representante_id', 'IN', [$representante->id, $semRep]));
+                }
+                else
+                {
+                    $criteria->add(new TFilter('representante_id', '=', $semRep));
+                }
             }
-            TTransaction::close();
 
             if (isset($param['key']) && isset($param['voltar'])) {
-
-                $pageParam= ['key' => $param['key']];
-
+                $pageParam = ['key' => $param['key']];
                 TApplication::loadPage('ClienteFormView', 'onShow', $pageParam);
             }
 
@@ -1084,6 +1176,8 @@ class ClienteList extends TPage
             $this->pageNavigation->setCount($count); // count of records
             $this->pageNavigation->setProperties($param); // order, page
             $this->pageNavigation->setLimit($this->limit); // limit
+
+            $this->datagrid->initPopoverHeaderFilters();
 
             // close the transaction
             TTransaction::close();

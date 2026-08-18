@@ -45,6 +45,7 @@ class BuscarCNPJForm extends TWindow
         $campo->setSize(200);
         $cnpj->setSize('calc(100% - 100px)');
 
+
         $form->setValue($param['form']);
         $campo->setValue($param['campo']);
 
@@ -87,13 +88,14 @@ class BuscarCNPJForm extends TWindow
             $object = new stdClass();
 
             $object->razao_social = $dados->razao_social;
+            $object->nome_fantasia = $dados->razao_social;
             $object->fone = $dados->ddd_telefone_1 ?? NULL;
             $object->email = $dadosFull->estabelecimento->email ?? NULL;
 
             $object->cpf_cnpj = $dados->cnpj;
             $object->rg_ie = $dadosFull->estabelecimento->inscricoes_estaduais[0]->inscricao_estadual ?? NULL;
 
-// dados relacionados ao endereço
+            // dados relacionados ao endereço
             $object->pessoa_endereco_pessoa_cep = $dados->cep;
             $object->pessoa_endereco_pessoa_rua = $dados->logradouro;
             $object->pessoa_endereco_pessoa_bairro = $dados->bairro;

@@ -36,27 +36,57 @@ class NotaBaixadaList extends TPage
 
         $criteria_coligada_id = new TCriteria();
         $criteria_nota_status_id = new TCriteria();
+        $criteria_razao_social = new TCriteria();
+        $criteria_documento = new TCriteria();
+        $criteria_nota_status_nome = new TCriteria();
 
         $coligada_id = new TDBCombo('coligada_id', 'minicrm', 'Coligada', 'id', '{nome}','nome asc' , $criteria_coligada_id );
         $numero = new TEntry('numero');
         $nota_status_id = new TDBCombo('nota_status_id', 'minicrm', 'NotaStatus', 'id', '{nome}','nome asc' , $criteria_nota_status_id );
         $date_de = new TDate('date_de');
         $date_ate = new TDate('date_ate');
+        $numero1 = new TEntry('numero1');
+        $data_emissao = new TDate('data_emissao');
+        $razao_social = new TDBCombo('razao_social', 'minicrm', 'NotaBaixada', 'razao_social', '{razao_social}','razao_social asc' , $criteria_razao_social );
+        $documento = new TDBCombo('documento', 'minicrm', 'NotaBaixada', 'documento', '{documento}','documento asc' , $criteria_documento );
+        $valor_total = new TEntry('valor_total');
+        $nota_status_nome = new TDBCombo('nota_status_nome', 'minicrm', 'NotaStatus', 'nome', '{nome}','nome asc' , $criteria_nota_status_nome );
 
+        $numero1->exitOnEnter();
+        $valor_total->exitOnEnter();
+
+        $numero1->setExitAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
+        $data_emissao->setExitAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
+        $valor_total->setExitAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
+
+        $razao_social->setChangeAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
+        $documento->setChangeAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
+        $nota_status_nome->setChangeAction(new TAction([$this, 'onSearch'], ['static'=>'1']));
 
         $numero->setMaxLength(255);
-        $coligada_id->enableSearch();
-        $nota_status_id->enableSearch();
-
         $date_de->setMask('dd/mm/yyyy');
         $date_ate->setMask('dd/mm/yyyy');
+        $data_emissao->setMask('dd/mm/yyyy');
 
         $date_de->setDatabaseMask('yyyy-mm-dd');
         $date_ate->setDatabaseMask('yyyy-mm-dd');
+        $data_emissao->setDatabaseMask('yyyy-mm-dd');
+
+        $documento->enableSearch();
+        $coligada_id->enableSearch();
+        $razao_social->enableSearch();
+        $nota_status_id->enableSearch();
+        $nota_status_nome->enableSearch();
 
         $numero->setSize('100%');
+        $numero1->setSize('100%');
+        $data_emissao->setSize(110);
+        $documento->setSize('100%');
         $coligada_id->setSize('100%');
+        $valor_total->setSize('100%');
+        $razao_social->setSize('100%');
         $nota_status_id->setSize('100%');
+        $nota_status_nome->setSize('100%');
         $date_de->setSize('calc(50% - 15px)');
         $date_ate->setSize('calc(50% - 15px)');
 
@@ -262,6 +292,63 @@ class NotaBaixadaList extends TPage
 
         // create the datagrid model
         $this->datagrid->createModel();
+
+        $tr = new TElement('tr');
+        $tr->id = 'datagrid-header-filter-row';
+        $this->datagrid->prependRow($tr);
+
+        if(!$action_onSincronizar->isHidden())
+        {
+            $tr->add(TElement::tag('td', ''));
+        }
+        if(!$action_onBaixarXml->isHidden())
+        {
+            $tr->add(TElement::tag('td', ''));
+        }
+        if(!$action_onBaixarPdf->isHidden())
+        {
+            $tr->add(TElement::tag('td', ''));
+        }
+        if(!$action_onEnviar->isHidden())
+        {
+            $tr->add(TElement::tag('td', ''));
+        }
+        if(!$action_onShow->isHidden())
+        {
+            $tr->add(TElement::tag('td', ''));
+        }
+        if(!$action_onAutorizar->isHidden())
+        {
+            $tr->add(TElement::tag('td', ''));
+        }
+        if(!$action_onDelete->isHidden())
+        {
+            $tr->add(TElement::tag('td', ''));
+        }
+        $tr->add(TElement::tag('td', ''));
+        $td_empty = TElement::tag('td', "");
+        $tr->add($td_empty);
+        $td_numero1 = TElement::tag('td', $numero1);
+        $tr->add($td_numero1);
+        $td_data_emissao = TElement::tag('td', $data_emissao);
+        $tr->add($td_data_emissao);
+        $td_razao_social = TElement::tag('td', $razao_social);
+        $tr->add($td_razao_social);
+        $td_documento = TElement::tag('td', $documento);
+        $tr->add($td_documento);
+        $td_valor_total = TElement::tag('td', $valor_total);
+        $tr->add($td_valor_total);
+        $td_nota_status_nome = TElement::tag('td', $nota_status_nome);
+        $tr->add($td_nota_status_nome);
+
+        $this->datagrid_form->addField($numero1);
+        $this->datagrid_form->addField($data_emissao);
+        $this->datagrid_form->addField($razao_social);
+        $this->datagrid_form->addField($documento);
+        $this->datagrid_form->addField($valor_total);
+        $this->datagrid_form->addField($nota_status_nome);
+
+        $this->datagrid_form->setData( TSession::getValue(__CLASS__.'_filter_data') );
 
         // creates the page navigation
         $this->pageNavigation = new TPageNavigation;
@@ -1217,7 +1304,14 @@ class NotaBaixadaList extends TPage
      */
     public function onSearch($param = null)
     {
-        $data = $this->form->getData();
+        if ((isset($param['static']) && ($param['static'] == '1')) || !empty($param['globalSearch']))
+        {
+            $data = $this->datagrid_form->getData();
+        }
+        else
+        {
+            $data = $this->form->getData();
+        }
         $filters = [];
 
         TSession::setValue(__CLASS__.'_filter_data', NULL);
@@ -1253,14 +1347,67 @@ class NotaBaixadaList extends TPage
             $filters[] = new TFilter('data_emissao', '<=', $data->date_ate);// create the filter 
         }
 
+        if (isset($data->numero1) AND ( (is_scalar($data->numero1) AND $data->numero1 !== '') OR (is_array($data->numero1) AND (!empty($data->numero1)) )) )
+        {
+
+            $filters[] = new TFilter('numero_nf', '=', $data->numero1);// create the filter 
+        }
+
+        if (isset($data->data_emissao) AND ( (is_scalar($data->data_emissao) AND $data->data_emissao !== '') OR (is_array($data->data_emissao) AND (!empty($data->data_emissao)) )) )
+        {
+
+            $filters[] = new TFilter('data_emissao', '=', $data->data_emissao);// create the filter 
+        }
+
+        if (isset($data->razao_social) AND ( (is_scalar($data->razao_social) AND $data->razao_social !== '') OR (is_array($data->razao_social) AND (!empty($data->razao_social)) )) )
+        {
+
+            $filters[] = new TFilter('razao_social', 'ilike', "%{$data->razao_social}%");// create the filter 
+        }
+
+        if (isset($data->documento) AND ( (is_scalar($data->documento) AND $data->documento !== '') OR (is_array($data->documento) AND (!empty($data->documento)) )) )
+        {
+
+            $filters[] = new TFilter('documento', 'ilike', "%{$data->documento}%");// create the filter 
+        }
+
+        if (isset($data->valor_total) AND ( (is_scalar($data->valor_total) AND $data->valor_total !== '') OR (is_array($data->valor_total) AND (!empty($data->valor_total)) )) )
+        {
+
+            $filters[] = new TFilter('valor_total', '=', $data->valor_total);// create the filter 
+        }
+
+        if (isset($data->nota_status_nome) AND ( (is_scalar($data->nota_status_nome) AND $data->nota_status_nome !== '') OR (is_array($data->nota_status_nome) AND (!empty($data->nota_status_nome)) )) )
+        {
+
+            $filters[] = new TFilter('nota_status_id', 'in', "(SELECT id FROM nota_status WHERE nome = '{$data->nota_status_nome}')");// create the filter 
+        }
+
         // fill the form with data again
-        $this->form->setData($data);
+        if ((isset($param['static']) && ($param['static'] == '1')) || !empty($param['globalSearch']))
+        {
+            $this->datagrid_form->setData($data);
+        }
+        else
+        {
+            $this->form->setData($data);
+        }
 
         // keep the search data in the session
         TSession::setValue(__CLASS__.'_filter_data', $data);
         TSession::setValue(__CLASS__.'_filters', $filters);
 
-        $this->onReload(['offset' => 0, 'first_page' => 1]);
+        if (isset($param['static']) && ($param['static'] == '1') )
+        {
+            $class = get_class($this);
+            $onReloadParam = ['offset' => 0, 'first_page' => 1, 'target_container' => $param['target_container'] ?? null];
+            AdiantiCoreApplication::loadPage($class, 'onReload', $onReloadParam);
+            TScript::create('$(".select2").prev().select2("close");');
+        }
+        else
+        {
+            $this->onReload(['offset' => 0, 'first_page' => 1]);
+        }
     }
 
     /**
@@ -1348,6 +1495,8 @@ class NotaBaixadaList extends TPage
             $this->pageNavigation->setCount($count); // count of records
             $this->pageNavigation->setProperties($param); // order, page
             $this->pageNavigation->setLimit($this->limit); // limit
+
+            $this->datagrid->initPopoverHeaderFilters();
 
             // close the transaction
             TTransaction::close();

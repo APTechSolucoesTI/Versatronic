@@ -19,6 +19,7 @@ class InteracaoObservacao extends TRecord
         parent::addAttribute('interacao_id');
         parent::addAttribute('observacao');
         parent::addAttribute('dt_observacao');
+        parent::addAttribute('deleted_at');
             
     }
 
