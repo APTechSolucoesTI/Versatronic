@@ -7,16 +7,22 @@ class AtualizacaoService
         AtualizacaoService::atualizarCategoriaCliente(); 
         AtualizacaoService::atualizarCentroCusto();
         AtualizacaoService::atualizarCondicaoPagamento();
+
+        // Estrutura geográfica primeiro
+        AtualizacaoService::atualizarPais();
+        AtualizacaoService::atualizarEstado(); 
+        AtualizacaoService::atualizarCidade();
+
+        // Cadastros que dependem desses dados
         AtualizacaoService::atualizarTransportadora();
         //AtualizacaoService::atualizarVendedor();
         AtualizacaoService::atualizarRepresentante(); 
         AtualizacaoService::atualizarCliente();
+
+        // Dados dependentes do cliente
         AtualizacaoService::atualizarEndereco();
         AtualizacaoService::atualizarComplemento(); 
         AtualizacaoService::atualizarContato(); 
-        AtualizacaoService::atualizarPais();
-        AtualizacaoService::atualizarEstado(); 
-        AtualizacaoService::atualizarCidade();
         
         TTransaction::open('log');
         SystemSqlLog::where('id','>',0)->delete();
@@ -576,11 +582,12 @@ class AtualizacaoService
           
             TTransaction::open('minicrm');
             foreach ($objects as $object) {
-                $pais = (Pais::where('codigo', 'like', $object->codigo)->where('UPPER(nome)','like',$object->pais))->first() ?? new Pais();
+                $pais = Pais::where('codigo', '=', trim($object->codigo))
+                        ->first() ?? new Pais();
 
-                $pais->codigo = $object->codigo;
-                $pais->nome = $object->pais;
-                $pais->store();
+                    $pais->codigo = trim($object->codigo);
+                    $pais->nome   = trim($object->pais);
+                    $pais->store();
             }
             TTransaction::close();
             
@@ -612,13 +619,16 @@ class AtualizacaoService
             TTransaction::open('minicrm');
             foreach($objects as $object)
             {
-                $estado = ((Estado::where('sigla','like', $object->sigla)->where('nome','like', $object->estado))->first()) ?? new Estado();
-                
-                $estado->pais_id = (Pais::where('codigo','like', $object->codigoPais)->first())->id ?? null;
-                $estado->codigo_ibge = $object->codigo;
-                $estado->nome = $object->estado;
-                $estado->sigla = $object->sigla;
-                $estado->store();
+              $estado = Estado::where('sigla', '=', strtoupper(trim($object->sigla)))
+                ->first() ?? new Estado();
+
+            $estado->pais_id = Pais::where('codigo', '=', trim($object->codigoPais))
+                ->first()?->id;
+
+            $estado->codigo_ibge = $object->codigo;
+            $estado->nome = trim($object->estado);
+            $estado->sigla = strtoupper(trim($object->sigla));
+            $estado->store();
             }
             TTransaction::close();
             

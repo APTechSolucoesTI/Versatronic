@@ -6,6 +6,13 @@ class SigissWebService
     private static $dbRm = 'corporerm';
     private static $url = 'https://wssantabarbara.sigissweb.com/rest/';
 
+    private const CENTROS_CUSTO_COMISSAO = [
+        '002.03.001',
+        '002.03.002',
+        '002.04.001',
+        '002.04.002',
+    ];
+
     // --------------------- SERVIDOR DE HOMOLOGAÇÃO ---------------------
     //private static $url = 'https://wshml.sigissweb.com/rest/';
     //private static $senhaReforma = 'FTKf97Xsd';
@@ -103,6 +110,18 @@ class SigissWebService
                 'mensagem' => $e->getMessage()
             ];
         }
+    }
+
+    private static function configurarSslCurl($ch)
+    {
+        curl_setopt(
+            $ch,
+            CURLOPT_CAINFO,
+            '/etc/ssl/certs/sigiss-ca-bundle.pem'
+        );
+
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
     }
 
     public static function getNota($numero, $coligada_id){
@@ -413,6 +432,7 @@ class SigissWebService
 
             // Inicializa o cURL
             $ch = curl_init($url);
+            self::configurarSslCurl($ch);
 
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
@@ -482,6 +502,7 @@ class SigissWebService
             ];
 
             $ch = curl_init($endpoint);
+            self::configurarSslCurl($ch);
             curl_setopt($ch, CURLOPT_VERBOSE, true);
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
@@ -558,6 +579,7 @@ class SigissWebService
 
             // Executa requisição cURL
             $ch = curl_init($endpoint);
+            self::configurarSslCurl($ch);
             curl_setopt($ch, CURLOPT_VERBOSE, true);
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -669,6 +691,7 @@ class SigissWebService
 
             // Executa requisição cURL
             $ch = curl_init($endpoint);
+            self::configurarSslCurl($ch);
             curl_setopt($ch, CURLOPT_VERBOSE, true);
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -750,6 +773,7 @@ class SigissWebService
 
             // Executa requisição cURL
             $ch = curl_init($endpoint);
+            self::configurarSslCurl($ch);
             curl_setopt($ch, CURLOPT_VERBOSE, true);
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -824,6 +848,7 @@ class SigissWebService
 
             // Executa requisição cURL
             $ch = curl_init($endpoint);
+            self::configurarSslCurl($ch);
             curl_setopt($ch, CURLOPT_VERBOSE, true);
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -906,6 +931,7 @@ class SigissWebService
 
             // Executa requisição cURL
             $ch = curl_init($endpoint);
+            self::configurarSslCurl($ch);
             curl_setopt($ch, CURLOPT_VERBOSE, true);
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -922,9 +948,29 @@ class SigissWebService
                 throw new Exception("Erro ao cancelar NF. Resposta: {$resposta}.{$httpCode}{$curlError}");
             }
             
-            TTransaction::open(self::$dbAp);
+           TTransaction::open(self::$dbAp);
+
             $nota->nota_status_id = NotaStatus::CANCELADA;
+            $nota->tem_comissao   = 'N';
+            $nota->comissao       = 0;
             $nota->store();
+
+            /*
+            * Se já existir rateio de comissão por centro de custo,
+            * também zera para não deixar comissão residual.
+            */
+            $conn = TTransaction::get();
+
+            $stmt = $conn->prepare("
+                UPDATE centro_custo_nota
+                SET comissao_centro_custo = 0
+                WHERE nota_baixada_id = :nota_id
+            ");
+
+            $stmt->execute([
+                ':nota_id' => $nota->id
+            ]);
+
             TTransaction::close();
 
             return [
@@ -1261,6 +1307,8 @@ class SigissWebService
                     WHERE nota_status_id IN (2, 3)
                     AND data_emissao_os IS NOT NULL
                     AND tem_comissao IS DISTINCT FROM 'C'
+                    AND tem_comissao IS DISTINCT FROM 'N'
+                    AND tem_comissao IS DISTINCT FROM 'S'
                     AND tem_comissao IS DISTINCT FROM 'P'
                     AND data_emissao::date BETWEEN :data_inicial AND :data_final
                     AND (
@@ -1289,6 +1337,8 @@ class SigissWebService
                 AND nb.data_emissao_os IS NOT NULL
                 AND nb.tem_comissao IS DISTINCT FROM 'C'
                 AND nb.tem_comissao IS DISTINCT FROM 'P'
+                AND nb.tem_comissao IS DISTINCT FROM 'N'
+                AND nb.tem_comissao IS DISTINCT FROM 'S'
                 AND nb.data_emissao::date BETWEEN :data_inicial AND :data_final
             ),
 
@@ -1775,27 +1825,41 @@ class SigissWebService
             /*
             * 1) Busca o rateio na TOTVS
             */
-            $sqlTotvs = "
+           $sqlTotvs = "
                 SELECT
                     m.CODCOLIGADA AS codcoligada,
                     CONVERT(VARCHAR(255), m.NUMEROMOV) AS numeromov,
                     c.CODCCUSTO AS codcusto,
                     SUM(mr.VALOR) AS valor
                 FROM TMOV m (NOLOCK)
+
                 INNER JOIN TMOVRATCCU mr (NOLOCK)
                     ON mr.CODCOLIGADA = m.CODCOLIGADA
                 AND mr.IDMOV = m.IDMOV
+
                 INNER JOIN GCCUSTO c (NOLOCK)
                     ON c.CODCOLIGADA = mr.CODCOLIGADA
                 AND c.CODCCUSTO = mr.CODCCUSTO
+
                 WHERE m.CODTMV = '2.2.15'
+
                 AND m.CODCOLIGADA IN (1, 2)
+
+                AND c.CODCCUSTO IN (
+                    '002.03.001',
+                    '002.03.002',
+                    '002.04.001',
+                    '002.04.002'
+                )
+
                 AND m.DATAEMISSAO >= CAST(:data_inicial AS DATE)
                 AND m.DATAEMISSAO < DATEADD(DAY, 1, CAST(:data_final AS DATE))
+
                 GROUP BY
                     m.CODCOLIGADA,
                     m.NUMEROMOV,
                     c.CODCCUSTO
+
                 ORDER BY
                     m.CODCOLIGADA,
                     m.NUMEROMOV
@@ -1812,13 +1876,6 @@ class SigissWebService
             $rateios = $stmtRm->fetchAll(PDO::FETCH_OBJ);
 
             TTransaction::close();
-
-            if (empty($rateios)) {
-                return [
-                    'status' => 'success',
-                    'mensagem' => 'Nenhum rateio de centro de custo encontrado na TOTVS para o período.'
-                ];
-            }
 
             /*
             * 2) Joga os dados em uma tabela temporária no MiniCRM
@@ -1844,11 +1901,15 @@ class SigissWebService
 
             $totalRateiosTotvs = 0;
 
-            foreach ($rateios as $rateio) {
+           foreach ($rateios as $rateio) {
                 $numeroLimpo = preg_replace('/\D/', '', (string) $rateio->numeromov);
                 $codcusto    = trim((string) $rateio->codcusto);
 
                 if ($numeroLimpo === '' || $codcusto === '') {
+                    continue;
+                }
+
+                if (!in_array($codcusto, self::CENTROS_CUSTO_COMISSAO, true)) {
                     continue;
                 }
 
@@ -1905,6 +1966,7 @@ class SigissWebService
                 AND nb.data_emissao::date BETWEEN :data_inicial AND :data_final
                 AND nb.tem_comissao IS DISTINCT FROM 'C'
                 AND nb.tem_comissao IS DISTINCT FROM 'P'
+
                 AND nb.coligada_id IN (1, 2)
             ");
 
@@ -1967,6 +2029,7 @@ class SigissWebService
                 AND nb.data_emissao::date BETWEEN :data_inicial AND :data_final
                 AND nb.tem_comissao IS DISTINCT FROM 'C'
                 AND nb.tem_comissao IS DISTINCT FROM 'P'
+                
 
                 INNER JOIN centro_custo cc
                     ON TRIM(cc.codcusto) = TRIM(r.codcusto)
@@ -1978,6 +2041,48 @@ class SigissWebService
             $stmtInsert->execute();
 
             $rateiosInseridos = $stmtInsert->rowCount();
+
+            /*
+            * 6) Notas que não ficaram com nenhum dos CCUs válidos
+            * não recebem comissão.
+            *
+            * Mantém C/P protegidos.
+            */
+            $stmtSemCentroCusto = $connAp->prepare("
+                UPDATE nota_baixada nb
+                SET
+                    tem_comissao = NULL,
+                    comissao = 0
+                WHERE nb.data_emissao::date BETWEEN :data_inicial AND :data_final
+                AND nb.coligada_id IN (1, 2)
+                AND nb.nota_status_id = 1
+
+                AND nb.tem_comissao IS DISTINCT FROM 'C'
+                AND nb.tem_comissao IS DISTINCT FROM 'P'
+
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM centro_custo_nota ccn
+
+                    INNER JOIN centro_custo cc
+                        ON cc.id = ccn.centro_custo_id
+
+                    WHERE ccn.nota_baixada_id = nb.id
+
+                        AND TRIM(cc.codcusto) IN (
+                            '002.03.001',
+                            '002.03.002',
+                            '002.04.001',
+                            '002.04.002'
+                        )
+                )
+            ");
+
+            $stmtSemCentroCusto->bindValue(':data_inicial', $dataInicial);
+            $stmtSemCentroCusto->bindValue(':data_final', $dataFinal);
+            $stmtSemCentroCusto->execute();
+
+            $notasSemCentroCusto = $stmtSemCentroCusto->rowCount();
 
             TTransaction::close();
 
@@ -2006,6 +2111,328 @@ class SigissWebService
 
             return [
                 'status' => 'error',
+                'mensagem' => $e->getMessage()
+            ];
+        }
+    }
+
+    public static function confirmarComissaoManualNota($notaId)
+    {
+        try {
+            /*
+            * 1) Busca nota + pessoa + representante + regra de comissão
+            *
+            * IMPORTANTE:
+            * aqui NÃO verificamos cliente_ativo.
+            * A confirmação manual é justamente um override.
+            */
+            TTransaction::open(self::$dbAp);
+
+            $conn = TTransaction::get();
+
+            $stmt = $conn->prepare("
+                SELECT
+                    nb.id,
+                    nb.numero,
+                    nb.coligada_id,
+                    nb.documento,
+                    nb.valor_total,
+
+                    p.id AS pessoa_id,
+
+                    comp.representante_id,
+
+                    COALESCE(
+                        exc.tipo_comissao,
+                        cr.tipo_comissao
+                    ) AS tipo_comissao,
+
+                    COALESCE(
+                        exc.valor,
+                        cr.valor
+                    ) AS valor_regra
+
+                FROM nota_baixada nb
+
+                LEFT JOIN LATERAL (
+                    SELECT
+                        p.id
+                    FROM pessoa p
+                    WHERE regexp_replace(
+                            COALESCE(p.cpf_cnpj, ''),
+                            '[^0-9]',
+                            '',
+                            'g'
+                        ) = regexp_replace(
+                            COALESCE(nb.documento, ''),
+                            '[^0-9]',
+                            '',
+                            'g'
+                        )
+                    AND p.deleted_at IS NULL
+                    ORDER BY p.id DESC
+                    LIMIT 1
+                ) p ON true
+
+                LEFT JOIN LATERAL (
+                    SELECT
+                        c.representante_id
+                    FROM complemento c
+                    WHERE c.pessoa_id = p.id
+                    AND c.deleted_at IS NULL
+                    AND c.representante_id IS NOT NULL
+                    ORDER BY
+                        c.created_at DESC NULLS LAST,
+                        c.id DESC
+                    LIMIT 1
+                ) comp ON true
+
+                LEFT JOIN LATERAL (
+                    SELECT
+                        e.tipo_comissao,
+                        e.valor
+                    FROM comissao_repres_excecao e
+                    WHERE e.pessoa_id = p.id
+                    AND e.representante_id = comp.representante_id
+                    AND e.deleted_at IS NULL
+                    AND e.ativo = 'S'
+                    ORDER BY e.id DESC
+                    LIMIT 1
+                ) exc ON true
+
+                LEFT JOIN LATERAL (
+                    SELECT
+                        c.tipo_comissao,
+                        c.valor
+                    FROM comissao_repres c
+                    WHERE c.representante_id = comp.representante_id
+                    AND c.deleted_at IS NULL
+                    ORDER BY c.id DESC
+                    LIMIT 1
+                ) cr ON true
+
+                WHERE nb.id = :nota_id
+            ");
+
+            $stmt->execute([
+                ':nota_id' => $notaId
+            ]);
+
+            $nota = $stmt->fetch(PDO::FETCH_OBJ);
+
+            TTransaction::close();
+
+            if (!$nota) {
+                throw new Exception('Nota não encontrada.');
+            }
+
+            if (!$nota->pessoa_id) {
+                throw new Exception('Cliente da nota não encontrado.');
+            }
+
+            if (!$nota->representante_id) {
+                throw new Exception('Cliente não possui representante.');
+            }
+
+            if (!$nota->tipo_comissao || $nota->valor_regra === null) {
+                throw new Exception('Representante não possui regra de comissão.');
+            }
+
+            /*
+            * 2) Calcula comissão SEM validar atividade/prazo.
+            * A confirmação manual é a autorização.
+            */
+            if ($nota->tipo_comissao === 'P') {
+                $comissao = round(
+                    ((float) $nota->valor_total * (float) $nota->valor_regra) / 100,
+                    2
+                );
+            }
+            elseif ($nota->tipo_comissao === 'V') {
+                $comissao = round(
+                    (float) $nota->valor_regra,
+                    2
+                );
+            }
+            else {
+                throw new Exception(
+                    'Tipo de comissão inválido: ' . $nota->tipo_comissao
+                );
+            }
+
+            /*
+            * 3) Busca rateios da SOMENTE ESTA NOTA na TOTVS
+            */
+            TTransaction::open(self::$dbRm);
+
+            $connRm = TTransaction::get();
+
+            $stmtRateio = $connRm->prepare("
+                SELECT
+                    c.CODCCUSTO AS codcusto,
+                    SUM(mr.VALOR) AS valor
+
+                FROM TMOV m WITH (NOLOCK)
+
+                INNER JOIN TMOVRATCCU mr WITH (NOLOCK)
+                    ON mr.CODCOLIGADA = m.CODCOLIGADA
+                AND mr.IDMOV = m.IDMOV
+
+                INNER JOIN GCCUSTO c WITH (NOLOCK)
+                    ON c.CODCOLIGADA = mr.CODCOLIGADA
+                AND c.CODCCUSTO = mr.CODCCUSTO
+
+                WHERE m.CODTMV = '2.2.15'
+
+                AND m.CODCOLIGADA = :coligada_id
+
+                AND m.NUMEROMOV = :numero
+
+                AND c.CODCCUSTO IN (
+                    '002.03.001',
+                    '002.03.002',
+                    '002.04.001',
+                    '002.04.002'
+                )
+
+                GROUP BY
+                    c.CODCCUSTO
+            ");
+
+            $stmtRateio->bindValue(
+                ':coligada_id',
+                (int) $nota->coligada_id,
+                PDO::PARAM_INT
+            );
+
+            $stmtRateio->bindValue(
+                ':numero',
+                $nota->numero
+            );
+
+            $stmtRateio->execute();
+
+            $rateios = $stmtRateio->fetchAll(PDO::FETCH_OBJ);
+
+            TTransaction::close();
+
+            /*
+            * 4) Atualiza comissão e CC dessa nota.
+            */
+            TTransaction::open(self::$dbAp);
+
+            $conn = TTransaction::get();
+
+            $stmtUpdate = $conn->prepare("
+                UPDATE nota_baixada
+                SET tem_comissao = 'S',
+                    comissao = :comissao
+                WHERE id = :nota_id
+            ");
+
+            $stmtUpdate->execute([
+                ':comissao' => $comissao,
+                ':nota_id'  => $notaId
+            ]);
+
+            /*
+            * Limpa somente o rateio desta nota.
+            */
+            $stmtDelete = $conn->prepare("
+                DELETE FROM centro_custo_nota
+                WHERE nota_baixada_id = :nota_id
+            ");
+
+            $stmtDelete->execute([
+                ':nota_id' => $notaId
+            ]);
+
+            /*
+            * Recria rateios.
+            */
+            $stmtCentro = $conn->prepare("
+                SELECT id
+                FROM centro_custo
+                WHERE TRIM(codcusto) = TRIM(:codcusto)
+                AND deleted_at IS NULL
+                LIMIT 1
+            ");
+
+            $stmtInsert = $conn->prepare("
+                INSERT INTO centro_custo_nota (
+                    nota_baixada_id,
+                    centro_custo_id,
+                    valor_centro_custo,
+                    comissao_centro_custo
+                )
+                VALUES (
+                    :nota_id,
+                    :centro_custo_id,
+                    :valor_centro_custo,
+                    :comissao_centro_custo
+                )
+            ");
+
+           foreach ($rateios as $rateio) {
+
+                $codcusto = trim((string) $rateio->codcusto);
+
+                if (!in_array($codcusto, self::CENTROS_CUSTO_COMISSAO, true)) {
+                    continue;
+                }
+
+                $stmtCentro->execute([
+                    ':codcusto' => $codcusto
+                ]);
+
+                $centro = $stmtCentro->fetch(PDO::FETCH_OBJ);
+
+                if (!$centro) {
+                    continue;
+                }
+
+                $valorCentro = round(
+                    (float) $rateio->valor,
+                    2
+                );
+
+                if ((float) $nota->valor_total > 0) {
+
+                    $comissaoCentro = round(
+                        (
+                            $valorCentro
+                            / (float) $nota->valor_total
+                        ) * $comissao,
+                        2
+                    );
+
+                } else {
+                    $comissaoCentro = 0;
+                }
+
+                $stmtInsert->execute([
+                    ':nota_id'               => $notaId,
+                    ':centro_custo_id'       => $centro->id,
+                    ':valor_centro_custo'    => $valorCentro,
+                    ':comissao_centro_custo' => $comissaoCentro
+                ]);
+            }
+
+            TTransaction::close();
+
+            return [
+                'status'   => 'success',
+                'comissao' => $comissao
+            ];
+
+        } catch (Exception $e) {
+
+            try {
+                TTransaction::rollback();
+            } catch (Exception $ignore) {}
+
+            return [
+                'status'   => 'error',
                 'mensagem' => $e->getMessage()
             ];
         }

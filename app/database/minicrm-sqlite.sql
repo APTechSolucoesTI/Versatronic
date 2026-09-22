@@ -1154,6 +1154,7 @@ CREATE VIEW view_comissao_repres AS WITH notas AS (
         regexp_replace(COALESCE(nb.documento, ''), '[^0-9]', '', 'g') AS documento_limpo
     FROM nota_baixada nb
     WHERE nb.coligada_id NOT IN (3)
+      AND nb.nota_status_id = 1
       AND nb.data_emissao_os IS NOT NULL
       AND nb.tem_comissao IS NOT NULL
 ),

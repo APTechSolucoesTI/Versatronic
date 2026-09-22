@@ -104,6 +104,7 @@ class ViewComissaoRepresHeaderList extends TPage
         $this->datagrid = new BootstrapDatagridWrapper($this->datagrid);
         $this->filter_criteria = new TCriteria;
 
+        $this->datagrid->disableDefaultClick();
         $this->datagrid->style = 'width: 100%';
         $this->datagrid->setHeight(320);
 
@@ -347,10 +348,21 @@ class ViewComissaoRepresHeaderList extends TPage
         $action_ControleNotaFormConfirmar_onShow->setLabel("");
         $action_ControleNotaFormConfirmar_onShow->setImage('fas:check-circle #4CAF50');
         $action_ControleNotaFormConfirmar_onShow->setField(self::$primaryKey);
-        $action_ControleNotaFormConfirmar_onShow->setDisplayCondition('ViewComissaoRepresHeaderList::onExibirConfirm');
+
         $action_ControleNotaFormConfirmar_onShow->setParameter('key', '{id}');
 
         $this->datagrid->addAction($action_ControleNotaFormConfirmar_onShow);
+
+        $action_onVisualizarInteracao = new TDataGridAction(array('ViewComissaoRepresHeaderList', 'onVisualizarInteracao'));
+        $action_onVisualizarInteracao->setUseButton(false);
+        $action_onVisualizarInteracao->setButtonClass('btn btn-default btn-sm');
+        $action_onVisualizarInteracao->setLabel("Visualizar Interações");
+        $action_onVisualizarInteracao->setImage('fas:search-plus #000000');
+        $action_onVisualizarInteracao->setField(self::$primaryKey);
+
+        $action_onVisualizarInteracao->setParameter('codigoc', '{codigo_cliente}');
+
+        $this->datagrid->addAction($action_onVisualizarInteracao);
 
         $this->applyDatagridProperties();
 
@@ -366,6 +378,10 @@ class ViewComissaoRepresHeaderList extends TPage
             $tr->add(TElement::tag('td', ''));
         }
         if(!$action_ControleNotaFormConfirmar_onShow->isHidden())
+        {
+            $tr->add(TElement::tag('td', ''));
+        }
+        if(!$action_onVisualizarInteracao->isHidden())
         {
             $tr->add(TElement::tag('td', ''));
         }
@@ -412,6 +428,8 @@ class ViewComissaoRepresHeaderList extends TPage
         $this->pageNavigation->enableCounters();
         $this->pageNavigation->setAction(new TAction(array($this, 'onReload')));
         $this->pageNavigation->setWidth($this->datagrid->getWidth());
+
+        $this->datagrid->disableDefaultClick(); 
 
         $panel = new TPanelGroup();
         $panel->datagrid = 'datagrid-container';
@@ -477,16 +495,598 @@ class ViewComissaoRepresHeaderList extends TPage
             new TMessage('error', $e->getMessage());    
         }
     }
-    public static function onExibirConfirm($object)
+    public static function onVisualizarInteracao($param = null) 
     {
-        try 
-        {
-            if($object->tem_comissao == 'S')
-            {
-                return true;
-            }
+        $transactionOpen = false;
 
-            return false;
+            try 
+            {
+                $codigoCliente = trim((string) ($param['codigoc'] ?? ''));
+
+                if ($codigoCliente === '')
+                {
+                    throw new Exception('Código do cliente não informado.');
+                }
+
+                TTransaction::open('minicrm');
+                $transactionOpen = true;
+
+                /*
+                * Localiza a pessoa pelo mesmo código que aparece
+                * na ViewComissaoRepres.
+                */
+                $cliente = Pessoa::where('codigo', '=', $codigoCliente)->first();
+
+                if (!$cliente)
+                {
+                    throw new Exception(
+                        "Cliente {$codigoCliente} não encontrado no CRM."
+                    );
+                }
+
+                /*
+                * Todas as interações desse cliente.
+                */
+                $interacoes = Interacao::where('cliente_id', '=', $cliente->id)
+                    ->orderBy('id', 'desc')
+                    ->load();
+
+                $nomeCliente =
+                    $cliente->nome_fantasia
+                    ?: $cliente->razao_social
+                    ?: $codigoCliente;
+
+                /*
+                * Resolve nome de registros relacionados sem quebrar caso
+                * determinado model/campo não exista.
+                */
+                $resolverNome = function ($classe, $id, $fallback = '-') 
+                {
+                    if (empty($id) || !class_exists($classe))
+                    {
+                        return $fallback;
+                    }
+
+                    $registro = $classe::find($id);
+
+                    if (!$registro)
+                    {
+                        return $fallback;
+                    }
+
+                    foreach ([
+                        'nome',
+                        'descricao',
+                        'razao_social',
+                        'nome_fantasia'
+                    ] as $campo)
+                    {
+                        if (!empty($registro->$campo))
+                        {
+                            return $registro->$campo;
+                        }
+                    }
+
+                    return $fallback;
+                };
+
+                $cards = '';
+
+                if ($interacoes)
+                {
+                    foreach ($interacoes as $interacao)
+                    {
+                        /*
+                        * Tipo da interação
+                        */
+                        $tipoFallback = !empty($interacao->tipo_interacao_id)
+                            ? 'Tipo #' . $interacao->tipo_interacao_id
+                            : '-';
+
+                        $tipo = $resolverNome(
+                            'TipoInteracao',
+                            $interacao->tipo_interacao_id ?? null,
+                            $tipoFallback
+                        );
+
+                        /*
+                        * Etapa atual
+                        */
+                        $etapaFallback = !empty($interacao->etapa_interacao_id)
+                            ? 'Etapa #' . $interacao->etapa_interacao_id
+                            : '-';
+
+                        $etapa = $resolverNome(
+                            'EtapaInteracao',
+                            $interacao->etapa_interacao_id ?? null,
+                            $etapaFallback
+                        );
+
+                        /*
+                        * No seu sistema vendedor_id é usado nas interações
+                        * junto com representante.
+                        */
+                        $vendedor = $resolverNome(
+                            'Representante',
+                            $interacao->vendedor_id ?? null,
+                            '-'
+                        );
+
+                        /*
+                        * Atividades da interação.
+                        */
+                        $qtdAtividades = InteracaoAtividade::where(
+                            'interacao_id',
+                            '=',
+                            $interacao->id
+                        )->count();
+
+                        $ultimaAtividade = InteracaoAtividade::where(
+                            'interacao_id',
+                            '=',
+                            $interacao->id
+                        )
+                        ->orderBy('id', 'desc')
+                        ->first();
+
+                        /*
+                        * Histórico de etapas também ajuda a determinar
+                        * a última movimentação.
+                        */
+                        $ultimoHistorico = InteracaoHistoricoEtapa::where(
+                            'interacao_id',
+                            '=',
+                            $interacao->id
+                        )
+                        ->orderBy('dt_etapa', 'desc')
+                        ->first();
+
+                        $datas = [];
+
+                        if ($ultimaAtividade)
+                        {
+                            if (!empty($ultimaAtividade->horario_final))
+                            {
+                                $datas[] = $ultimaAtividade->horario_final;
+                            }
+                            elseif (!empty($ultimaAtividade->horario_inicial))
+                            {
+                                $datas[] = $ultimaAtividade->horario_inicial;
+                            }
+                        }
+
+                        if ($ultimoHistorico && !empty($ultimoHistorico->dt_etapa))
+                        {
+                            $datas[] = $ultimoHistorico->dt_etapa;
+                        }
+
+                        $ultimaMovimentacao = '-';
+
+                        if ($datas)
+                        {
+                            $maiorTimestamp = 0;
+                            $ultimaData = null;
+
+                            foreach ($datas as $data)
+                            {
+                                $timestamp = strtotime($data);
+
+                                if ($timestamp && $timestamp > $maiorTimestamp)
+                                {
+                                    $maiorTimestamp = $timestamp;
+                                    $ultimaData = $data;
+                                }
+                            }
+
+                            if ($ultimaData)
+                            {
+                                $ultimaMovimentacao = date(
+                                    'd/m/Y H:i',
+                                    strtotime($ultimaData)
+                                );
+                            }
+                        }
+
+                        /*
+                        * Escapa tudo que vai para HTML.
+                        */
+                        $idHtml = (int) $interacao->id;
+
+                        $tipoHtml = htmlspecialchars(
+                            (string) $tipo,
+                            ENT_QUOTES,
+                            'UTF-8'
+                        );
+
+                        $etapaHtml = htmlspecialchars(
+                            (string) $etapa,
+                            ENT_QUOTES,
+                            'UTF-8'
+                        );
+
+                        $vendedorHtml = htmlspecialchars(
+                            (string) $vendedor,
+                            ENT_QUOTES,
+                            'UTF-8'
+                        );
+
+                        $ultimaHtml = htmlspecialchars(
+                            (string) $ultimaMovimentacao,
+                            ENT_QUOTES,
+                            'UTF-8'
+                        );
+
+                        /*
+                        * IMPORTANTE:
+                        * não usamos generator="adianti" aqui justamente
+                        * porque queremos abrir em uma NOVA GUIA.
+                        */
+                        $urlInteracao =
+                            "index.php?class=InteracaoFormView" .
+                            "&method=onShow" .
+                            "&key={$idHtml}";
+
+                        $cards .= "
+                            <div class='interacao-history-card'>
+
+                                <div class='interacao-history-card-top'>
+
+                                    <div>
+                                        <div class='interacao-history-id'>
+                                            <i class='fas fa-comments'></i>
+                                            Interação #{$idHtml}
+                                        </div>
+
+                                        <div class='interacao-history-type'>
+                                            {$tipoHtml}
+                                        </div>
+                                    </div>
+
+                                    <div class='interacao-history-stage'>
+                                        {$etapaHtml}
+                                    </div>
+
+                                </div>
+
+                                <div class='interacao-history-info'>
+
+                                    <div class='interacao-history-info-item'>
+                                        <span>Última movimentação</span>
+                                        <strong>
+                                            <i class='far fa-clock'></i>
+                                            {$ultimaHtml}
+                                        </strong>
+                                    </div>
+
+                                    <div class='interacao-history-info-item'>
+                                        <span>Atividades</span>
+                                        <strong>
+                                            <i class='fas fa-tasks'></i>
+                                            {$qtdAtividades}
+                                        </strong>
+                                    </div>
+
+                                    <div class='interacao-history-info-item interacao-history-info-full'>
+                                        <span>Responsável</span>
+                                        <strong>
+                                            <i class='fas fa-user'></i>
+                                            {$vendedorHtml}
+                                        </strong>
+                                    </div>
+
+                                </div>
+
+                                <div class='interacao-history-actions'>
+                                    <a
+                                        href='{$urlInteracao}'
+                                        target='_blank'
+                                        rel='noopener noreferrer'
+                                        class='btn btn-primary btn-sm'
+                                    >
+                                        <i class='fas fa-external-link-alt'></i>
+                                        Abrir interação
+                                    </a>
+                                </div>
+
+                            </div>
+                        ";
+                    }
+                }
+                else
+                {
+                    $cards = "
+                        <div class='interacao-history-empty'>
+                            <i class='far fa-comments'></i>
+
+                            <strong>Nenhuma interação encontrada</strong>
+
+                            <span>
+                                Este cliente ainda não possui interações cadastradas.
+                            </span>
+                        </div>
+                    ";
+                }
+
+                $nomeClienteHtml = htmlspecialchars(
+                    (string) $nomeCliente,
+                    ENT_QUOTES,
+                    'UTF-8'
+                );
+
+                $codigoClienteHtml = htmlspecialchars(
+                    (string) $codigoCliente,
+                    ENT_QUOTES,
+                    'UTF-8'
+                );
+
+                $totalInteracoes = count($interacoes ?: []);
+
+                TTransaction::close();
+                $transactionOpen = false;
+
+                /*
+                * Conteúdo do painel.
+                */
+                $container = new TElement('div');
+                $container->class = 'interacao-history-container';
+
+                $container->add("
+                    <style>
+
+                        .interacao-history-container {
+                            padding: 0;
+                            background: #f5f6f8;
+                            min-height: 100vh;
+                        }
+
+                        .interacao-history-header {
+                            background: #fff;
+                            padding: 18px 20px;
+                            border-bottom: 1px solid #e5e7eb;
+                            position: sticky;
+                            top: 0;
+                            z-index: 20;
+                        }
+
+                        .interacao-history-header-top {
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            gap: 15px;
+                        }
+
+                        .interacao-history-title {
+                            font-size: 18px;
+                            font-weight: 700;
+                            color: #1f2937;
+                            margin: 0;
+                        }
+
+                        .interacao-history-subtitle {
+                            margin-top: 5px;
+                            color: #6b7280;
+                            font-size: 13px;
+                        }
+
+                        .interacao-history-count {
+                            display: inline-flex;
+                            align-items: center;
+                            justify-content: center;
+                            background: #eef2ff;
+                            color: #4338ca;
+                            border-radius: 20px;
+                            padding: 4px 10px;
+                            font-size: 12px;
+                            font-weight: 700;
+                            margin-left: 6px;
+                        }
+
+                        .interacao-history-list {
+                            padding: 16px;
+                        }
+
+                        .interacao-history-card {
+                            background: #fff;
+                            border: 1px solid #e5e7eb;
+                            border-radius: 10px;
+                            padding: 16px;
+                            margin-bottom: 12px;
+                            box-shadow: 0 1px 3px rgba(0,0,0,.04);
+                            transition: all .15s ease;
+                        }
+
+                        .interacao-history-card:hover {
+                            border-color: #c7d2fe;
+                            box-shadow: 0 4px 12px rgba(0,0,0,.08);
+                        }
+
+                        .interacao-history-card-top {
+                            display: flex;
+                            align-items: flex-start;
+                            justify-content: space-between;
+                            gap: 12px;
+                            margin-bottom: 14px;
+                        }
+
+                        .interacao-history-id {
+                            font-size: 15px;
+                            font-weight: 700;
+                            color: #111827;
+                        }
+
+                        .interacao-history-id i {
+                            color: #4f46e5;
+                            margin-right: 5px;
+                        }
+
+                        .interacao-history-type {
+                            color: #6b7280;
+                            font-size: 12px;
+                            margin-top: 3px;
+                        }
+
+                        .interacao-history-stage {
+                            background: #ecfdf5;
+                            color: #047857;
+                            border: 1px solid #a7f3d0;
+                            border-radius: 20px;
+                            padding: 4px 9px;
+                            font-size: 11px;
+                            font-weight: 700;
+                            text-align: center;
+                        }
+
+                        .interacao-history-info {
+                            display: grid;
+                            grid-template-columns: 1fr 1fr;
+                            gap: 12px;
+                            padding: 12px;
+                            background: #f9fafb;
+                            border-radius: 8px;
+                        }
+
+                        .interacao-history-info-item {
+                            display: flex;
+                            flex-direction: column;
+                            gap: 3px;
+                        }
+
+                        .interacao-history-info-item span {
+                            color: #9ca3af;
+                            font-size: 10px;
+                            font-weight: 600;
+                            text-transform: uppercase;
+                            letter-spacing: .4px;
+                        }
+
+                        .interacao-history-info-item strong {
+                            color: #374151;
+                            font-size: 12px;
+                            font-weight: 600;
+                        }
+
+                        .interacao-history-info-item strong i {
+                            margin-right: 4px;
+                            color: #6b7280;
+                        }
+
+                        .interacao-history-info-full {
+                            grid-column: 1 / -1;
+                        }
+
+                        .interacao-history-actions {
+                            display: flex;
+                            justify-content: flex-end;
+                            margin-top: 13px;
+                        }
+
+                        .interacao-history-actions a {
+                            text-decoration: none !important;
+                        }
+
+                        .interacao-history-empty {
+                            background: #fff;
+                            border: 1px dashed #d1d5db;
+                            border-radius: 10px;
+                            padding: 45px 20px;
+                            text-align: center;
+                            color: #6b7280;
+                        }
+
+                        .interacao-history-empty i {
+                            display: block;
+                            font-size: 36px;
+                            margin-bottom: 12px;
+                            color: #9ca3af;
+                        }
+
+                        .interacao-history-empty strong {
+                            display: block;
+                            color: #374151;
+                            font-size: 15px;
+                            margin-bottom: 5px;
+                        }
+
+                        .interacao-history-empty span {
+                            font-size: 12px;
+                        }
+
+                    </style>
+
+                    <div class='interacao-history-header'>
+
+                        <div class='interacao-history-header-top'>
+
+                            <div>
+                                <div class='interacao-history-title'>
+                                    Histórico de Interações
+                                </div>
+
+                                <div class='interacao-history-subtitle'>
+                                    {$nomeClienteHtml}
+                                    · Código {$codigoClienteHtml}
+
+                                    <span class='interacao-history-count'>
+                                        {$totalInteracoes}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <button
+                                type='button'
+                                class='btn btn-default btn-sm'
+                                onclick='Template.closeRightPanel();'
+                                title='Fechar'
+                            >
+                                <i class='fas fa-times'></i>
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                    <div class='interacao-history-list'>
+                        {$cards}
+                    </div>
+                ");
+
+                /*
+                * Abre no painel lateral direito.
+                */
+                $page = new TPage();
+
+                $page->setTargetContainer('adianti_right_panel');
+
+                $page->setProperty(
+                    'page-name',
+                    'ViewComissaoRepresInteracoes'
+                );
+
+                $page->setProperty(
+                    'page_name',
+                    'ViewComissaoRepresInteracoes'
+                );
+
+                $page->adianti_target_container = 'adianti_right_panel';
+                $page->target_container = 'adianti_right_panel';
+
+                $page->add($container);
+
+                $page->setIsWrapped(true);
+
+                $page->show();
+
+                /*
+                * Largura do painel.
+                */
+                $style = new TStyle(
+                    'right-panel > .container-part[page-name=ViewComissaoRepresInteracoes]'
+                );
+
+                $style->width = '48% !important';
+                $style->show(true);
+
+            //</autoCode>
         }
         catch (Exception $e) 
         {
@@ -499,7 +1099,7 @@ class ViewComissaoRepresHeaderList extends TPage
         {
             TScript::create("
                 window.open(
-                    'http://194.140.198.97:3001/public/dashboard/a4f8f179-0fbc-49b6-91d0-49d20c569dc7',
+                    'https://metabase.aptechinfo.com.br:94/public/dashboard/e72b25f7-ac46-437c-b11a-da5f03ea94a0',
                     '_blank'
                 );
             ");

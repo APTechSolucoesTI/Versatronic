@@ -138,32 +138,19 @@ class ControleNotaFormConfirmar extends TWindow
                 throw new Exception('A nota baixada informada não foi encontrada.');
             }
 
-            if ($nota['tem_comissao'] === 'C')
-            {
-                throw new Exception('Não é possível confirmar uma comissão cancelada.');
-            }
-
-            if ($nota['tem_comissao'] === 'P')
-            {
-                throw new Exception('A comissão desta nota já foi confirmada.');
-            }
-
-            if ($nota['tem_comissao'] !== 'S')
-            {
-                throw new Exception('Esta nota não possui comissão disponível para confirmação.');
-            }
-
             $object->store(); // save the object 
 
-            $stmtConfirmarNota = $conn->prepare("
-                UPDATE nota_baixada
-                SET tem_comissao = 'P'
-                WHERE id = :nota_id
-            ");
+            TTransaction::close();
 
-            $stmtConfirmarNota->execute([
-                ':nota_id' => $notaId
-            ]);
+            $resultComissao = SigissWebService::confirmarComissaoManualNota($notaId);
+
+            if ($resultComissao['status'] === 'error')
+            {
+                throw new Exception(
+                    'Erro ao confirmar comissão: ' .
+                    $resultComissao['mensagem']
+                );
+            }
 
             // get the generated {PRIMARY_KEY}
             $data->id = $object->id; 

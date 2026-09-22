@@ -730,18 +730,18 @@ ALTER TABLE interacao_arquivo ADD CONSTRAINT fk_interacao_arquivo_1 FOREIGN KEY 
 ALTER TABLE interacao_atividade ADD CONSTRAINT fk_interacao_atividade_1 FOREIGN KEY (interacao_id) references interacao(id); 
 ALTER TABLE interacao_atividade ADD CONSTRAINT fk_interacao_atividade_2 FOREIGN KEY (tipo_atividade_id) references tipo_atividade(id); 
 ALTER TABLE interacao_atividade ADD CONSTRAINT fk_interacao_atividade_3 FOREIGN KEY (estado_atividade_id) references estado_atividade(id); 
-ALTER TABLE interacao_atividade_revisao ADD CONSTRAINT interacao_atividade_revisao_6a8455b4412c4 FOREIGN KEY (interacao_atividade_id) references interacao_atividade(id); 
-ALTER TABLE interacao_atividade_revisao ADD CONSTRAINT interacao_atividade_revisao_6a8455b44134e FOREIGN KEY (system_users_id) references system_users(id); 
-ALTER TABLE interacao_historico_arquivo ADD CONSTRAINT interacao_historico_arquivo_6a8455b44158e FOREIGN KEY (interacao_id) references interacao(id); 
-ALTER TABLE interacao_historico_arquivo ADD CONSTRAINT interacao_historico_arquivo_6a8455b4415da FOREIGN KEY (movimentacao_id) references movimentacao(id); 
-ALTER TABLE interacao_historico_atividade ADD CONSTRAINT interacao_historico_atividade_6a8455b4418a6 FOREIGN KEY (estado_atividade_id) references estado_atividade(id); 
-ALTER TABLE interacao_historico_atividade ADD CONSTRAINT interacao_historico_atividade_6a8455b4418e9 FOREIGN KEY (interacao_id) references interacao(id); 
-ALTER TABLE interacao_historico_atividade ADD CONSTRAINT interacao_historico_atividade_6a8455b44192e FOREIGN KEY (movimentacao_id) references movimentacao(id); 
-ALTER TABLE interacao_historico_atividade ADD CONSTRAINT interacao_historico_atividade_6a8455b44197c FOREIGN KEY (tipo_atividade_id) references tipo_atividade(id); 
+ALTER TABLE interacao_atividade_revisao ADD CONSTRAINT interacao_atividade_revisao_6ab2b33dde662 FOREIGN KEY (interacao_atividade_id) references interacao_atividade(id); 
+ALTER TABLE interacao_atividade_revisao ADD CONSTRAINT interacao_atividade_revisao_6ab2b33dde6e8 FOREIGN KEY (system_users_id) references system_users(id); 
+ALTER TABLE interacao_historico_arquivo ADD CONSTRAINT interacao_historico_arquivo_6ab2b33dde944 FOREIGN KEY (interacao_id) references interacao(id); 
+ALTER TABLE interacao_historico_arquivo ADD CONSTRAINT interacao_historico_arquivo_6ab2b33dde99b FOREIGN KEY (movimentacao_id) references movimentacao(id); 
+ALTER TABLE interacao_historico_atividade ADD CONSTRAINT interacao_historico_atividade_6ab2b33ddec80 FOREIGN KEY (estado_atividade_id) references estado_atividade(id); 
+ALTER TABLE interacao_historico_atividade ADD CONSTRAINT interacao_historico_atividade_6ab2b33ddecc3 FOREIGN KEY (interacao_id) references interacao(id); 
+ALTER TABLE interacao_historico_atividade ADD CONSTRAINT interacao_historico_atividade_6ab2b33dded08 FOREIGN KEY (movimentacao_id) references movimentacao(id); 
+ALTER TABLE interacao_historico_atividade ADD CONSTRAINT interacao_historico_atividade_6ab2b33dded62 FOREIGN KEY (tipo_atividade_id) references tipo_atividade(id); 
 ALTER TABLE interacao_historico_etapa ADD CONSTRAINT fk_interacao_historico_etapa_1 FOREIGN KEY (interacao_id) references interacao(id); 
 ALTER TABLE interacao_historico_etapa ADD CONSTRAINT fk_interacao_historico_etapa_2 FOREIGN KEY (etapa_interacao_id) references etapa_interacao(id); 
-ALTER TABLE interacao_historico_observacao ADD CONSTRAINT interacao_historico_observacao_6a8455b441e01 FOREIGN KEY (interacao_id) references interacao(id); 
-ALTER TABLE interacao_historico_observacao ADD CONSTRAINT interacao_historico_observacao_6a8455b441e3e FOREIGN KEY (movimentacao_id) references movimentacao(id); 
+ALTER TABLE interacao_historico_observacao ADD CONSTRAINT interacao_historico_observacao_6ab2b33ddf3cd FOREIGN KEY (interacao_id) references interacao(id); 
+ALTER TABLE interacao_historico_observacao ADD CONSTRAINT interacao_historico_observacao_6ab2b33ddf444 FOREIGN KEY (movimentacao_id) references movimentacao(id); 
 ALTER TABLE interacao_item ADD CONSTRAINT fk_interacao_item_1 FOREIGN KEY (interacao_id) references interacao(id); 
 ALTER TABLE interacao_item ADD CONSTRAINT fk_interacao_item_2 FOREIGN KEY (produto_id) references produto(id); 
 ALTER TABLE interacao_localizacao ADD CONSTRAINT fk_interacao_localizacao_1 FOREIGN KEY (interacao_id) references interacao(id); 
@@ -1153,6 +1153,7 @@ CREATE VIEW view_comissao_repres AS WITH notas AS (
         regexp_replace(COALESCE(nb.documento, ''), '[^0-9]', '', 'g') AS documento_limpo
     FROM nota_baixada nb
     WHERE nb.coligada_id NOT IN (3)
+      AND nb.nota_status_id = 1
       AND nb.data_emissao_os IS NOT NULL
       AND nb.tem_comissao IS NOT NULL
 ),

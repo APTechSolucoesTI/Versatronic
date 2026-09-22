@@ -87,12 +87,12 @@ class teste extends TPage
 
         $panel->getBody()->insert(0, $headerActions);
 
-        $button_antes_alterar = new TButton('button_button_antes_alterar');
-        $button_antes_alterar->setAction(new TAction(['teste', 'onsync']), "antes alterar");
-        $button_antes_alterar->addStyleClass('btn-default');
-        $button_antes_alterar->setImage('far:circle #000000');
+        $button_atualizar_cliente_especifico = new TButton('button_button_atualizar_cliente_especifico');
+        $button_atualizar_cliente_especifico->setAction(new TAction(['teste', 'onsync']), "ATUALIZAR CLIENTE ESPECIFICO");
+        $button_atualizar_cliente_especifico->addStyleClass('btn-default');
+        $button_atualizar_cliente_especifico->setImage('far:circle #000000');
 
-        $this->datagrid_form->addField($button_antes_alterar);
+        $this->datagrid_form->addField($button_atualizar_cliente_especifico);
 
         $button_depois_d_alterar = new TButton('button_button_depois_d_alterar');
         $button_depois_d_alterar->setAction(new TAction(['teste', 'onAltSync']), "depois d alterar");
@@ -137,7 +137,7 @@ class teste extends TPage
         $dropdown_button_exportar->addPostAction( "PDF", new TAction(['teste', 'onExportPdf'],['static' => 1]), 'datagrid_'.self::$formName, 'far:file-pdf #e74c3c' );
         $dropdown_button_exportar->addPostAction( "XML", new TAction(['teste', 'onExportXml'],['static' => 1]), 'datagrid_'.self::$formName, 'far:file-code #95a5a6' );
 
-        $head_left_actions->add($button_antes_alterar);
+        $head_left_actions->add($button_atualizar_cliente_especifico);
         $head_left_actions->add($button_depois_d_alterar);
         $head_left_actions->add($button_teste_sql);
         $head_left_actions->add($button_atualizar_cpfs);
@@ -419,72 +419,360 @@ class teste extends TPage
 
     public function onsync($param = null) 
     {
-        try 
-        {
-                    $sqlNota =" SELECT
-                        m.numeromov as numero,
-                        m.dataemissao as data_emissao,
-                        f.CGCCFO as cnpj_cpf,
-                        f.INSCRMUNICIPAL as inscricao_municipal,
-                        f.INSCRESTADUAL as inscricao_estadual,
-                        f.PESSOAFISOUJUR as pessoa,
-                        f.NOME as razao_social,
-                        dr.descricao as tiporua,
-                        db.DESCRICAO as tipobairro,
-                        dr.DESCRICAO + ' - ' + f.RUAPGTO as endereco,
-                        db.DESCRICAO + ' - ' + f.BAIRROPGTO as bairro,
-                        f.NUMEROPGTO as numero_end,
-                        f.COMPLEMENTOPGTO as complementopgto,
-                        G.NOMEMUNICIPIO AS cidadepgto,
-                        f.CODETDPGTO as codetdpgto,
-                        f.CEPPGTO as ceppgto,
-                        f.PAISPAGTO as paispagto,
-                        f.TELEFONEPGTO as telefonepgto,
-                        f.EMAILPGTO as emailpgto,
-                        m.VALORLIQUIDO as valor_total,
-                        p.nome as forma_pagamento, 
-						(CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN 0 ELSE 1 END ) as retido, 
-                        (CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN m.VALORLIQUIDO ELSE 0 END ) as base_csll,
-                        (CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN m.VALORLIQUIDO ELSE m.VALORLIQUIDO END ) as base_cofins,
-                        (CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN m.VALORLIQUIDO ELSE m.VALORLIQUIDO END ) as base_pis,
-                        (CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN 4.65 ELSE 0 END ) as aliquota_csll,
-                        (CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN 3.00 ELSE 3.00 END ) as aliquota_cofins,
-                        (CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN 0.65 ELSE 0.65 END ) as aliquota_pis,
-                        (CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN m.VALORLIQUIDO * 0.0465 ELSE 0 END ) as csll, 
-                        (CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN m.VALORLIQUIDO * 0.03 ELSE m.VALORLIQUIDO * 0.03 END ) as cofins, 
-                        (CASE WHEN (SELECT tr.valor FROM ttrbmov tr (nolock) WHERE tr.codcoligada = m.CODCOLIGADA AND tr.idmov = m.idmov AND tr.NSEQITMMOV = 0 AND tr.codtrb = 'RET') > 0 THEN m.VALORLIQUIDO * 0.0065 ELSE m.VALORLIQUIDO * 0.0065 END ) as pis,
-                        (m.VALORLIQUIDO * 0.02) as iss, 
-                        (SELECT top 1 replace(replace(cast(i.historicolongo as varchar(2000)), CHAR(13), '|' ), char(10), '' ) FROM TITMMOVHISTORICO i (nolock) WHERE i.codcoligada = m.codcoligada AND i.idmov = m.idmov order by i.nseqitmmov desc ) + '|' + ( CASE WHEN ( SELECT string_agg( 'FATURA / DUPLICATA: ' + l.NUMERODOCUMENTO + ' - VALOR : ' + format( ( l.VALORORIGINAL - l.valorop1 - l.valorop2 - l.valorop3 - T.valor ), 'C', 'pt-br' ) + ' - DATA DE VENCIMENTO : ' + CONVERT(varchar(30), l.DATAVENCIMENTO, 103), '|' ) FROM flan l (nolock), FTRBLAN t (nolock) WHERE l.codcoligada = m.codcoligada AND l.idmov = m.idmov AND t.idlan = l.idlan AND t.CODCOLIGADA = l.codcoligada ) is not null THEN ( SELECT string_agg( 'FATURA / DUPLICATA: ' + l.NUMERODOCUMENTO + ' - VALOR : ' + format( ( l.VALORORIGINAL - l.valorop1 - l.valorop2 - l.valorop3 - T.valor ), 'C', 'pt-br' ) + ' - DATA DE VENCIMENTO : ' + CONVERT(varchar(30), l.DATAVENCIMENTO, 103), '|' ) FROM flan l (nolock), FTRBLAN t (nolock) WHERE l.codcoligada = m.codcoligada AND l.idmov = m.idmov AND t.idlan = l.idlan AND t.CODCOLIGADA = l.codcoligada ) ELSE ( SELECT string_agg( 'FATURA / DUPLICATA: ' + l.NUMERODOCUMENTO + ' - VALOR : ' + format( ( l.VALORORIGINAL - l.valorop1 - l.valorop2 - l.valorop3 ), 'C', 'pt-br' ) + ' - DATA DE VENCIMENTO : ' + CONVERT(varchar(30), l.DATAVENCIMENTO, 103), '|' ) FROM flan l (nolock) WHERE l.codcoligada = m.codcoligada AND l.idmov = m.idmov ) END ) as descricao
-                    FROM
-                        tmov m (nolock)
-                        INNER JOIN fcfo f (nolock) ON f.codcfo = m.codcfo
-                        LEFT JOIN DTIPORUA dr (nolock) ON dr.codigo = f.TIPORUAPGTO
-                        LEFT JOIN DTIPOBAIRRO db (nolock) ON db.codigo = f.TIPOBAIRROPGTO
-                        LEFT JOIN TCPG P (NOLOCK) ON m.codcpg = p.CODCPG AND p.CODCOLIGADA = m.CODCOLIGADA
-                        LEFT JOIN GMUNICIPIO G (NOLOCK) ON G.CODETDMUNICIPIO = F.CODETDPGTO AND G.CODMUNICIPIO = F.CODMUNICIPIOPGTO
-                    WHERE
-                        m.codtmv = '2.2.15'
-                        AND m.codcoligada = 1
-                        AND m.numeromov = '021488'
-                    ORDER BY
-                        m.numeromov";
+ $codigo = 'C029672';
 
-            TTransaction::open('corporerm');
-            $conn = TTransaction::get();
-            $result = $conn->query($sqlNota);
-            $objects = $result->fetchAll(PDO::FETCH_CLASS, "stdClass");
-            TTransaction::close();
+    try {
 
-            echo "<pre>";
-            var_dump($objects);
-            echo "</pre>";
+        /*
+         * =========================================================
+         * BUSCA CLIENTE + ENDEREÇOS NO TOTVS
+         * =========================================================
+         */
+        TTransaction::open('corporerm');
+        $conn = TTransaction::get();
+
+        $stmt = $conn->prepare("
+            SELECT
+                CODCFO,
+                NOMEFANTASIA AS fantasia,
+                UPPER(NOME) AS razao_social,
+                CGCCFO AS cpf_cnpj,
+                INSCRESTADUAL AS ie,
+
+                CASE
+                    WHEN PESSOAFISOUJUR = 'F' THEN 1
+                    WHEN PESSOAFISOUJUR = 'J' THEN 2
+                END AS tipo_pessoa_id,
+
+                CODTCF,
+                TELEFONE,
+                EMAIL,
+                DATAULTALTERACAO,
+
+                CASE
+                    WHEN ATIVO = 1 THEN 'S'
+                    ELSE 'N'
+                END AS ativo,
+
+                CASE
+                    WHEN CFOIMOB = 1 THEN 'S'
+                    ELSE 'N'
+                END AS bloqueado,
+
+                /* PRINCIPAL */
+                RUA,
+                NUMERO,
+                COMPLEMENTO,
+                BAIRRO,
+                CIDADE,
+                CODMUNICIPIO,
+                CODETD,
+                CEP,
+
+                /* PAGAMENTO */
+                RUAPGTO,
+                NUMEROPGTO,
+                COMPLEMENTOPGTO,
+                BAIRROPGTO,
+                CIDADEPGTO,
+                CODMUNICIPIOPGTO,
+                CODETDPGTO,
+                CEPPGTO,
+
+                /* ENTREGA */
+                RUAENTREGA,
+                NUMEROENTREGA,
+                COMPLEMENTREGA,
+                BAIRROENTREGA,
+                CIDADEENTREGA,
+                CODMUNICIPIOENTREGA,
+                CODETDENTREGA,
+                CEPENTREGA
+
+            FROM FCFO
+            WHERE CODCFO = :codigo
+        ");
+
+        $stmt->execute([
+            ':codigo' => $codigo
+        ]);
+
+        $totvs = $stmt->fetch(PDO::FETCH_OBJ);
+
+        TTransaction::close();
+
+        if (!$totvs) {
+            throw new Exception("CODCFO {$codigo} não encontrado no TOTVS");
+        }
+
+        $cpfCnpj = preg_replace('/[^0-9]/', '', (string) $totvs->cpf_cnpj);
+
+        if (!$cpfCnpj) {
+            throw new Exception("Cliente {$codigo} está sem CPF/CNPJ no TOTVS");
+        }
+
+        /*
+         * =========================================================
+         * ATUALIZA CLIENTE NO MINICRM
+         * =========================================================
+         */
+        TTransaction::open('minicrm');
+
+        /*
+         * Procura primeiro pelo CODCFO.
+         * Se não existir, procura CPF/CNPJ.
+         */
+        $cliente = Pessoa::where('codigo', '=', $codigo)->first();
+
+        if (!$cliente) {
+            $cliente = Pessoa::where('cpf_cnpj', '=', $cpfCnpj)->first();
+        }
+
+        if (!$cliente) {
+            $cliente = new Pessoa();
+        }
+
+        $categoria = CategoriaCliente::where(
+            'codigo',
+            '=',
+            $totvs->CODTCF
+        )->first();
+
+        $cliente->tipo_pessoa_id = $totvs->tipo_pessoa_id;
+        $cliente->codigo = $totvs->CODCFO;
+        $cliente->nome_fantasia = $totvs->fantasia;
+        $cliente->razao_social = $totvs->razao_social;
+        $cliente->cpf_cnpj = $cpfCnpj;
+        $cliente->rg_id = $totvs->ie;
+        $cliente->email = $totvs->EMAIL;
+        $cliente->fone = preg_replace('/[^0-9]/', '', (string) $totvs->TELEFONE);
+        $cliente->ativo = $totvs->ativo;
+        $cliente->bloqueado = $totvs->bloqueado;
+        $cliente->categoria_cliente_id = $categoria->id ?? null;
+        $cliente->data_alteracao_totvs = $totvs->DATAULTALTERACAO;
+        $cliente->updated_at = date('Y-m-d H:i:s');
+        $cliente->origem = null;
+
+        $cliente->store();
+
+        $clienteId = $cliente->id;
+
+        /*
+         * Garante que é CLIENTE
+         */
+        if (!PessoaGrupo::where('pessoa_id', '=', $clienteId)->first()) {
+
+            $grupo = new PessoaGrupo();
+            $grupo->pessoa_id = $clienteId;
+            $grupo->grupo_id = Grupo::CLIENTE;
+            $grupo->store();
+        }
+
+        /*
+         * =========================================================
+         * MONTA OS 3 ENDEREÇOS
+         * =========================================================
+         */
+        $enderecos = [
+            [
+                'tipo'          => 'Principal',
+                'rua'           => $totvs->RUA,
+                'numero'        => $totvs->NUMERO,
+                'complemento'   => $totvs->COMPLEMENTO,
+                'bairro'        => $totvs->BAIRRO,
+                'cidade'        => $totvs->CIDADE,
+                'cod_municipio' => $totvs->CODMUNICIPIO,
+                'uf'            => $totvs->CODETD,
+                'cep'           => $totvs->CEP,
+                'principal'     => 'S',
+            ],
+
+            [
+                'tipo'          => 'Pagamento',
+                'rua'           => $totvs->RUAPGTO,
+                'numero'        => $totvs->NUMEROPGTO,
+                'complemento'   => $totvs->COMPLEMENTOPGTO,
+                'bairro'        => $totvs->BAIRROPGTO,
+                'cidade'        => $totvs->CIDADEPGTO,
+                'cod_municipio' => $totvs->CODMUNICIPIOPGTO,
+                'uf'            => $totvs->CODETDPGTO,
+                'cep'           => $totvs->CEPPGTO,
+                'principal'     => 'N',
+            ],
+
+            [
+                'tipo'          => 'Entrega',
+                'rua'           => $totvs->RUAENTREGA,
+                'numero'        => $totvs->NUMEROENTREGA,
+                'complemento'   => $totvs->COMPLEMENTREGA,
+                'bairro'        => $totvs->BAIRROENTREGA,
+                'cidade'        => $totvs->CIDADEENTREGA,
+                'cod_municipio' => $totvs->CODMUNICIPIOENTREGA,
+                'uf'            => $totvs->CODETDENTREGA,
+                'cep'           => $totvs->CEPENTREGA,
+                'principal'     => 'N',
+            ],
+        ];
+
+        foreach ($enderecos as $dados) {
+
+            $cidadeNome = trim((string) $dados['cidade']);
+            $uf = strtoupper(trim((string) $dados['uf']));
+
+            /*
+             * Igual seu sync:
+             * pagamento/entrega vazio não cria lixo.
+             */
+            if ($cidadeNome === '') {
+                continue;
+            }
+
+            $codMunicipio = preg_replace(
+                '/[^0-9]/',
+                '',
+                (string) $dados['cod_municipio']
+            );
+
+            if ($codMunicipio !== '') {
+                $codMunicipio = str_pad(
+                    $codMunicipio,
+                    5,
+                    '0',
+                    STR_PAD_LEFT
+                );
+            }
+
+            /*
+             * Procura estado
+             */
+            $estado = Estado::where('sigla', '=', $uf)->first();
+
+            if (!$estado) {
+                throw new Exception(
+                    "Estado {$uf} não encontrado no MiniCRM"
+                );
+            }
+
+            /*
+             * Procura cidade pelo código do município primeiro
+             */
+            $cidade = null;
+
+            if ($codMunicipio !== '') {
+                $cidade = Cidade::where(
+                    'cod_municipio',
+                    '=',
+                    $codMunicipio
+                )
+                ->where(
+                    'estado_id',
+                    '=',
+                    $estado->id
+                )
+                ->first();
+            }
+
+            /*
+             * Fallback pelo nome
+             */
+            if (!$cidade) {
+                $cidade = Cidade::where(
+                    'nome',
+                    '=',
+                    strtoupper($cidadeNome)
+                )
+                ->where(
+                    'estado_id',
+                    '=',
+                    $estado->id
+                )
+                ->first();
+            }
+
+            if (!$cidade) {
+                throw new Exception(
+                    "Cidade não encontrada: {$cidadeNome}/{$uf} " .
+                    "(CODMUNICIPIO {$codMunicipio})"
+                );
+            }
+
+            /*
+             * Atualiza/cria endereço daquele tipo
+             */
+            $endereco = PessoaEndereco::where(
+                'pessoa_id',
+                '=',
+                $clienteId
+            )
+            ->where(
+                'nome',
+                '=',
+                $dados['tipo']
+            )
+            ->first();
+
+            if (!$endereco) {
+                $endereco = new PessoaEndereco();
+            }
+
+            $endereco->pessoa_id = $clienteId;
+            $endereco->nome = $dados['tipo'];
+            $endereco->cep = preg_replace(
+                '/[^0-9]/',
+                '',
+                (string) $dados['cep']
+            ) ?: null;
+
+            $endereco->numero = trim(
+                (string) $dados['numero']
+            ) ?: null;
+
+            $endereco->cidade_id = $cidade->id;
+
+            $endereco->complemento = trim(
+                (string) $dados['complemento']
+            ) ?: null;
+
+            $endereco->rua = trim(
+                (string) $dados['rua']
+            ) ?: null;
+
+            $endereco->bairro = trim(
+                (string) $dados['bairro']
+            ) ?: null;
+
+            $endereco->principal = $dados['principal'];
+
+            $endereco->data_alteracao_totvs =
+                $totvs->DATAULTALTERACAO;
+
+            $endereco->store();
+        }
+
+        TTransaction::close();
+
+        new TMessage(
+            'info',
+            "C029672 atualizado.<br>
+             Pessoa ID: {$clienteId}<br>
+             CPF/CNPJ: {$cpfCnpj}<br>
+             {$totvs->razao_social}"
+        );
+
+    } catch (Exception $e) {
+
+        if (TTransaction::get()) {
+            TTransaction::rollback();
+        }
+
+        new TMessage(
+            'error',
+            $e->getMessage()
+        );
+    }
 
             //</autoCode>
-        }
-        catch (Exception $e) 
-        {
-            new TMessage('error', $e->getMessage());    
-        }
+
     }
 
     public function onAltSync($param = null) 

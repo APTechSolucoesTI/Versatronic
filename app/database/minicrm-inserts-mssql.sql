@@ -126,18 +126,6 @@ INSERT INTO pais (id,codigo,nome,created_at,updated_at,deleted_at) VALUES (1,'',
 
 SET IDENTITY_INSERT pais OFF; 
 
-SET IDENTITY_INSERT pessoa ON; 
-
-INSERT INTO pessoa (id,codigo,tipo_pessoa_id,categoria_cliente_id,system_user_id,origem,razao_social,nome_fantasia,cpf_cnpj,rg_ie,nacionalidade_id,fone,email,obs,created_at,updated_at,deleted_at,ativo,data_alteracao_totvs,bloqueado) VALUES (1,null,1,5,null,null,'Cliente 01',null,'111.111.111-11',null,null,'(51) 9 9813-1234','cliente@cliente.com.br','',null,null,null,null,null,null); 
-
-INSERT INTO pessoa (id,codigo,tipo_pessoa_id,categoria_cliente_id,system_user_id,origem,razao_social,nome_fantasia,cpf_cnpj,rg_ie,nacionalidade_id,fone,email,obs,created_at,updated_at,deleted_at,ativo,data_alteracao_totvs,bloqueado) VALUES (2,null,1,7,1,null,'Vendedor 01',null,'1111111',null,null,'','','',null,null,null,null,null,null); 
-
-INSERT INTO pessoa (id,codigo,tipo_pessoa_id,categoria_cliente_id,system_user_id,origem,razao_social,nome_fantasia,cpf_cnpj,rg_ie,nacionalidade_id,fone,email,obs,created_at,updated_at,deleted_at,ativo,data_alteracao_totvs,bloqueado) VALUES (3,null,2,6,null,null,'Fornecedor 01',null,'1111111',null,null,'','','',null,null,null,null,null,null); 
-
-INSERT INTO pessoa (id,codigo,tipo_pessoa_id,categoria_cliente_id,system_user_id,origem,razao_social,nome_fantasia,cpf_cnpj,rg_ie,nacionalidade_id,fone,email,obs,created_at,updated_at,deleted_at,ativo,data_alteracao_totvs,bloqueado) VALUES (4,null,2,null,null,null,'Transportadora',null,'111111111',null,null,'','','',null,null,null,null,null,null); 
-
-SET IDENTITY_INSERT pessoa OFF; 
-
 SET IDENTITY_INSERT pessoa_grupo ON; 
 
 INSERT INTO pessoa_grupo (id,pessoa_id,grupo_id) VALUES (1,1,3); 

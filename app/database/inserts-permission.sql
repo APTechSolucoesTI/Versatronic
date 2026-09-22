@@ -1,9 +1,9 @@
 INSERT INTO system_group (id, name, uuid) VALUES( (SELECT max(g.id) + 1 FROM system_group g) , 'CRM', 'dc29ce5b-bb71-4103-8272-bb9d1fe2763c');
 INSERT INTO system_user_group (id, system_group_id, system_user_id) VALUES((SELECT max(ug.id) + 1 FROM system_user_group ug), (SELECT max(g.id) FROM system_group g), 1);
-INSERT INTO system_program (id, name, controller) VALUES( (SELECT max(p.id) + 1 FROM system_program p) , 'Interações TESTE', 'InteracaoListTeste');
-INSERT INTO system_group_program (id, system_group_id, system_program_id) VALUES( (SELECT max(gp.id) + 1 FROM system_group_program gp), (SELECT max(g.id) FROM system_group g) , (SELECT max(p.id) FROM system_program p where p.controller = 'InteracaoListTeste'));
 INSERT INTO system_program (id, name, controller) VALUES( (SELECT max(p.id) + 1 FROM system_program p) , 'Interações', 'InteracaoList');
 INSERT INTO system_group_program (id, system_group_id, system_program_id) VALUES( (SELECT max(gp.id) + 1 FROM system_group_program gp), (SELECT max(g.id) FROM system_group g) , (SELECT max(p.id) FROM system_program p where p.controller = 'InteracaoList'));
+INSERT INTO system_program (id, name, controller) VALUES( (SELECT max(p.id) + 1 FROM system_program p) , 'Interações TESTE', 'InteracaoListTeste');
+INSERT INTO system_group_program (id, system_group_id, system_program_id) VALUES( (SELECT max(gp.id) + 1 FROM system_group_program gp), (SELECT max(g.id) FROM system_group g) , (SELECT max(p.id) FROM system_program p where p.controller = 'InteracaoListTeste'));
 INSERT INTO system_program (id, name, controller) VALUES( (SELECT max(p.id) + 1 FROM system_program p) , 'Kanban', 'BuscaKanbanInteracaoForm');
 INSERT INTO system_group_program (id, system_group_id, system_program_id) VALUES( (SELECT max(gp.id) + 1 FROM system_group_program gp), (SELECT max(g.id) FROM system_group g) , (SELECT max(p.id) FROM system_program p where p.controller = 'BuscaKanbanInteracaoForm'));
 INSERT INTO system_program (id, name, controller) VALUES( (SELECT max(p.id) + 1 FROM system_program p) , 'Agenda Global', 'BuscaAgendaGlobalAtividadeForm');
@@ -148,8 +148,6 @@ INSERT INTO system_program (id, name, controller) VALUES( (SELECT max(p.id) + 1 
 INSERT INTO system_group_program (id, system_group_id, system_program_id) VALUES( (SELECT max(gp.id) + 1 FROM system_group_program gp), (SELECT max(g.id) FROM system_group g) , (SELECT max(p.id) FROM system_program p where p.controller = 'ProdutoForm'));
 INSERT INTO system_group (id, name, uuid) VALUES( (SELECT max(g.id) + 1 FROM system_group g) , 'Gerencia', '64f37823-4972-466c-b8f1-f963ba06e62c');
 INSERT INTO system_user_group (id, system_group_id, system_user_id) VALUES((SELECT max(ug.id) + 1 FROM system_user_group ug), (SELECT max(g.id) FROM system_group g), 1);
-INSERT INTO system_program (id, name, controller) VALUES( (SELECT max(p.id) + 1 FROM system_program p) , 'Motivo do cancelamento', 'NotaCancelamentoForm');
-INSERT INTO system_group_program (id, system_group_id, system_program_id) VALUES( (SELECT max(gp.id) + 1 FROM system_group_program gp), (SELECT max(g.id) FROM system_group g) , (SELECT max(p.id) FROM system_program p where p.controller = 'NotaCancelamentoForm'));
 INSERT INTO system_program (id, name, controller) VALUES( (SELECT max(p.id) + 1 FROM system_program p) , 'Buscar XML de Nota', 'NotaBaixadaForm');
 INSERT INTO system_group_program (id, system_group_id, system_program_id) VALUES( (SELECT max(gp.id) + 1 FROM system_group_program gp), (SELECT max(g.id) FROM system_group g) , (SELECT max(p.id) FROM system_program p where p.controller = 'NotaBaixadaForm'));
 INSERT INTO system_program (id, name, controller) VALUES( (SELECT max(p.id) + 1 FROM system_program p) , 'XML de Notas', 'NotaBaixadaList');
@@ -162,6 +160,8 @@ INSERT INTO system_program (id, name, controller) VALUES( (SELECT max(p.id) + 1 
 INSERT INTO system_group_program (id, system_group_id, system_program_id) VALUES( (SELECT max(gp.id) + 1 FROM system_group_program gp), (SELECT max(g.id) FROM system_group g) , (SELECT max(p.id) FROM system_program p where p.controller = 'NotaForm'));
 INSERT INTO system_program (id, name, controller) VALUES( (SELECT max(p.id) + 1 FROM system_program p) , 'Comissão de Representante', 'ViewComissaoRepresHeaderList');
 INSERT INTO system_group_program (id, system_group_id, system_program_id) VALUES( (SELECT max(gp.id) + 1 FROM system_group_program gp), (SELECT max(g.id) FROM system_group g) , (SELECT max(p.id) FROM system_program p where p.controller = 'ViewComissaoRepresHeaderList'));
+INSERT INTO system_program (id, name, controller) VALUES( (SELECT max(p.id) + 1 FROM system_program p) , 'Motivo do cancelamento', 'NotaCancelamentoForm');
+INSERT INTO system_group_program (id, system_group_id, system_program_id) VALUES( (SELECT max(gp.id) + 1 FROM system_group_program gp), (SELECT max(g.id) FROM system_group g) , (SELECT max(p.id) FROM system_program p where p.controller = 'NotaCancelamentoForm'));
 INSERT INTO system_program (id, name, controller) VALUES( (SELECT max(p.id) + 1 FROM system_program p) , 'Divergência de representante', 'RepresentanteDivergenteHeaderList');
 INSERT INTO system_group_program (id, system_group_id, system_program_id) VALUES( (SELECT max(gp.id) + 1 FROM system_group_program gp), (SELECT max(g.id) FROM system_group g) , (SELECT max(p.id) FROM system_program p where p.controller = 'RepresentanteDivergenteHeaderList'));
 INSERT INTO system_group (id, name, uuid) VALUES( (SELECT max(g.id) + 1 FROM system_group g) , 'Pessoas', '53b75207-8158-4e2d-adfc-979666efa589');
