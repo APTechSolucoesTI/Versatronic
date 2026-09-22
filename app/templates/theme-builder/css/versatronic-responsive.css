@@ -1,0 +1,554 @@
+/* Responsive behavior: deliberate reflow instead of a compressed desktop. */
+@media (min-width: 1200px) {
+    .container-live {
+        padding-right: 32px;
+        padding-left: 32px;
+    }
+}
+
+@media (max-width: 1199px) {
+    :root {
+        --menu-width: 276px;
+    }
+
+    .versatronic-page-context {
+        min-width: 150px;
+        padding: 0 18px;
+    }
+
+    .header-profile-name {
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 992px) {
+    :root {
+        --header-height: 62px;
+        --menu-width: min(324px, 88vw);
+    }
+
+    body.builder-template-layout {
+        overflow: hidden;
+    }
+
+    .container-header {
+        height: var(--header-height);
+        flex-direction: row;
+    }
+
+    .header-logo {
+        width: 100%;
+        min-width: 100%;
+        height: var(--header-height);
+        justify-content: center;
+        border: 0;
+        background: var(--vt-sidebar-deep);
+    }
+
+    .header-logo .company-logo {
+        width: auto;
+        max-width: calc(100vw - 124px);
+    }
+
+    .header-logo .simulate-logo {
+        justify-content: center;
+        padding: 0;
+    }
+
+    .header-logo .versatronic-brand-mark {
+        width: 30px;
+        height: 30px;
+        flex-basis: 30px;
+        border-radius: 9px;
+        font-size: 15px;
+    }
+
+    .toggle-menu,
+    .toggle-top-menu {
+        width: 44px;
+        height: 44px;
+        top: 9px;
+        z-index: 42;
+        border-radius: 10px;
+        color: #c7d2e3;
+        font-size: 17px;
+    }
+
+    .toggle-menu:hover,
+    .toggle-top-menu:hover {
+        color: #ffffff;
+        background: rgba(255, 255, 255, .07);
+    }
+
+    .toggle-menu {
+        left: 9px;
+    }
+
+    .toggle-top-menu {
+        right: 9px;
+    }
+
+    .header-track {
+        top: var(--header-height);
+        right: 0;
+        left: 0;
+        max-height: calc(100vh - var(--header-height));
+        overflow-y: auto;
+        border-bottom: 1px solid var(--vt-border);
+        background: var(--vt-surface);
+        box-shadow: var(--vt-shadow-md);
+    }
+
+    .versatronic-page-context {
+        display: none;
+    }
+
+    .header-action.builder-dropdown-menu {
+        width: 100%;
+        min-height: 62px;
+        padding: 10px 16px;
+        justify-content: center;
+        border: 0;
+        border-bottom: 1px solid var(--vt-border);
+    }
+
+    .builder-profile-menu {
+        display: none;
+    }
+
+    .container-main {
+        height: calc(100% - var(--header-height));
+    }
+
+    .master-menu-content,
+    .master-menu-content.open {
+        position: fixed;
+        top: var(--header-height);
+        bottom: 0;
+        left: calc(var(--menu-width) * -1);
+        display: flex;
+        width: var(--menu-width);
+        height: calc(100vh - var(--header-height));
+        z-index: 41;
+        box-shadow: 18px 0 44px rgba(15, 23, 42, .2);
+        transition: left var(--vt-normal) var(--vt-ease);
+    }
+
+    .master-menu-content.open {
+        left: 0;
+    }
+
+    .versatronic-menu-backdrop {
+        position: fixed;
+        top: var(--header-height);
+        right: 0;
+        bottom: 0;
+        left: 0;
+        display: block;
+        z-index: 40;
+        visibility: hidden;
+        border: 0;
+        background: rgba(15, 23, 42, .48);
+        opacity: 0;
+        transition: opacity var(--vt-normal) ease, visibility var(--vt-normal) ease;
+        backdrop-filter: blur(2px);
+    }
+
+    body.vt-menu-open .versatronic-menu-backdrop {
+        visibility: visible;
+        opacity: 1;
+    }
+
+    .container-menu {
+        display: grid !important;
+        width: var(--header-box-width);
+    }
+
+    .container-submenu {
+        display: flex;
+        width: calc(var(--menu-width) - var(--header-box-width));
+    }
+
+    .master-container {
+        width: 100%;
+    }
+
+    .container-live {
+        min-height: calc(100vh - var(--header-height));
+        padding: 18px 18px 30px;
+    }
+
+    .card-header,
+    .panel-heading {
+        padding: 15px 17px;
+    }
+
+    .card-body,
+    .panel-body {
+        padding: 17px;
+    }
+
+    .datagrid-header-actions {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .datagrid-header-actions > div {
+        width: 100%;
+    }
+
+    .chart-container,
+    .info-box,
+    .bindicator-card {
+        margin-bottom: 12px;
+    }
+
+    .container-login {
+        padding: 24px;
+    }
+
+    .container-login .panel-login {
+        width: min(620px, 100%) !important;
+        height: auto !important;
+        max-width: 620px !important;
+        max-height: calc(100vh - 48px) !important;
+        min-height: 0;
+        border-radius: var(--vt-radius-xl) !important;
+    }
+
+    .container-login .panel-login .info-login {
+        display: none !important;
+    }
+
+    .container-login .panel-login .login-content {
+        padding: 52px 64px;
+        border-radius: var(--vt-radius-xl) !important;
+    }
+
+    .versatronic-login-intro .versatronic-login-brand {
+        display: flex;
+        margin-bottom: 42px;
+        color: var(--vt-ink);
+    }
+}
+
+@media (max-width: 767px) {
+    .container-live {
+        padding: 14px 13px 26px;
+    }
+
+    .adianti_tabs_container {
+        margin-bottom: 12px;
+    }
+
+    .tbreadcrumb {
+        overflow-x: auto;
+        margin-bottom: 9px;
+        padding-bottom: 2px;
+        white-space: nowrap;
+    }
+
+    .card,
+    .card.panel,
+    .panel-default {
+        margin-bottom: 13px;
+        border-radius: 11px;
+    }
+
+    .card-header,
+    .panel-heading {
+        min-height: 52px;
+        padding: 14px 15px;
+        border-radius: 11px 11px 0 0 !important;
+    }
+
+    .card-body,
+    .panel-body {
+        padding: 15px;
+    }
+
+    .card-footer,
+    .panel-footer {
+        padding: 10px 15px;
+        border-radius: 0 0 11px 11px;
+    }
+
+    .tformrow {
+        row-gap: 12px;
+        margin-bottom: 13px;
+    }
+
+    .tformrow > div[class*="col-"] {
+        width: 100%;
+        max-width: 100%;
+        flex: 0 0 100%;
+    }
+
+    .form-control,
+    .tfield,
+    .tcombo,
+    .tselect,
+    .select2-container {
+        max-width: 100%;
+    }
+
+    .btn {
+        min-height: 42px;
+    }
+
+    .card-footer .btn {
+        margin: 3px 5px 3px 0;
+    }
+
+    .header-actions,
+    .datagrid-header-actions > div {
+        flex-wrap: wrap;
+    }
+
+    .datagrid-header-actions .btn {
+        flex: 0 0 auto;
+    }
+
+    .table-responsive,
+    .tdatagrid_table_wrapper,
+    div[widget="tdatagrid"] {
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table,
+    .tdatagrid {
+        min-width: 680px;
+    }
+
+    .table thead th,
+    .table td,
+    .table th {
+        padding-right: 10px !important;
+        padding-left: 10px !important;
+    }
+
+    .tpagenavigation {
+        min-width: 100%;
+        overflow-x: auto;
+    }
+
+    .nav-tabs {
+        gap: 15px;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        scrollbar-width: none;
+    }
+
+    .nav-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .nav-tabs .nav-link {
+        white-space: nowrap;
+    }
+
+    .modal-dialog {
+        margin: 10px;
+    }
+
+    .modal-dialog .modal-content {
+        max-height: calc(100vh - 20px);
+    }
+
+    .modal-body,
+    .ui-dialog .ui-dialog-content {
+        max-height: calc(100vh - 140px);
+        overflow-y: auto;
+        padding: 16px;
+    }
+
+    .ui-dialog {
+        width: calc(100vw - 20px) !important;
+        max-width: calc(100vw - 20px);
+        left: 10px !important;
+    }
+
+    .fc .fc-toolbar {
+        gap: 12px;
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .fc .fc-toolbar-chunk {
+        display: flex;
+        justify-content: center;
+    }
+
+    .fc .fc-toolbar-title {
+        font-size: 16px;
+        text-align: center;
+    }
+
+    .right-panel {
+        width: 100% !important;
+        min-width: 100% !important;
+    }
+
+    #chat-container {
+        width: min(100vw, 380px);
+    }
+}
+
+@media (max-width: 575px) {
+    :root {
+        --header-box-width: 58px;
+    }
+
+    .versatronic-brand-copy small {
+        display: none;
+    }
+
+    .versatronic-brand-copy .logo-name {
+        font-size: 14px;
+    }
+
+    .container-menu {
+        padding-right: 6px;
+        padding-left: 6px;
+    }
+
+    .menu-elastic {
+        width: 46px !important;
+    }
+
+    .menu-elastic a,
+    .master-menu-content .container-menu a.button-circle {
+        width: 40px;
+    }
+
+    .splash-user-content {
+        padding: 16px 14px 13px;
+    }
+
+    .container-submenu ul li a {
+        min-height: 42px;
+    }
+
+    .panel-title,
+    .card-title {
+        font-size: 14px !important;
+    }
+
+    .card-header,
+    .panel-heading {
+        gap: 11px;
+        flex-wrap: wrap;
+    }
+
+    .card-header > .header-actions,
+    .panel-heading > .header-actions {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .card-header > .header-actions .btn,
+    .panel-heading > .header-actions .btn {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .container-login {
+        padding: 0;
+        background: var(--vt-surface);
+    }
+
+    .container-login .panel-login {
+        width: 100% !important;
+        min-height: 100% !important;
+        max-height: none !important;
+        border: 0;
+        border-radius: 0 !important;
+        box-shadow: none;
+    }
+
+    .container-login .panel-login .login-content {
+        min-height: 100vh;
+        padding: 34px 24px;
+        justify-content: center;
+        border-radius: 0 !important;
+    }
+
+    .versatronic-login-intro {
+        margin-bottom: 25px;
+    }
+
+    .versatronic-login-intro .versatronic-login-brand {
+        margin-bottom: 54px;
+    }
+
+    .versatronic-login-intro h2 {
+        font-size: 25px;
+    }
+
+    .container-login .login-content [page-name="LoginForm"] .tfield,
+    .container-login .login-content [page-name="LoginForm"] .tcombo,
+    .container-login .login-content [page-name="LoginForm"] .btn {
+        min-height: 46px !important;
+    }
+
+    .container-login .login-content [page-name="LoginForm"] .login-avatar {
+        top: 33px;
+        height: 44px;
+    }
+
+    .info-box {
+        min-height: 86px;
+    }
+
+    .info-box-icon {
+        width: 50px !important;
+        min-width: 50px;
+        height: 50px !important;
+        margin: 18px 0 18px 16px;
+        line-height: 50px !important;
+    }
+
+    .info-box-number {
+        font-size: 22px !important;
+    }
+
+    .swal-modal {
+        width: calc(100vw - 26px);
+    }
+}
+
+@media print {
+    .container-header,
+    .master-menu-content,
+    .adianti_tabs_container,
+    .tbreadcrumb,
+    .datagrid-header-actions,
+    .tpagenavigation,
+    .card-footer {
+        display: none !important;
+    }
+
+    html,
+    body,
+    .container-main,
+    .master-container,
+    .container-live {
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+        background: #ffffff !important;
+    }
+
+    .card,
+    .panel,
+    .chart-container {
+        break-inside: avoid;
+        border-color: #d8dce2 !important;
+        box-shadow: none !important;
+    }
+}

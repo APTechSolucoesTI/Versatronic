@@ -1,0 +1,237 @@
+/*
+ * Versatronic Design System
+ * Foundations shared by the authenticated shell, public views and login.
+ */
+:root {
+    color-scheme: light;
+
+    --vt-font-sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --vt-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+    --vt-canvas: #f4f6f9;
+    --vt-surface: #ffffff;
+    --vt-surface-subtle: #f8fafc;
+    --vt-surface-muted: #eef2f6;
+    --vt-ink: #172033;
+    --vt-ink-soft: #344054;
+    --vt-muted: #667085;
+    --vt-muted-light: #98a2b3;
+    --vt-border: #e4e8ee;
+    --vt-border-strong: #d3dae4;
+
+    --vt-brand: #2563eb;
+    --vt-brand-strong: #1d4ed8;
+    --vt-brand-soft: #eaf1ff;
+    --vt-brand-ghost: #f5f8ff;
+    --vt-accent: #0f9f8f;
+
+    --vt-success: #16875b;
+    --vt-success-soft: #e9f7f0;
+    --vt-warning: #b86e00;
+    --vt-warning-soft: #fff6df;
+    --vt-danger: #c73e4d;
+    --vt-danger-soft: #fff0f1;
+    --vt-info: #2877b9;
+    --vt-info-soft: #eaf5ff;
+
+    --vt-sidebar: #101827;
+    --vt-sidebar-deep: #0b1220;
+    --vt-sidebar-raised: #172235;
+    --vt-sidebar-text: #b9c4d5;
+    --vt-sidebar-muted: #77849a;
+    --vt-sidebar-active: #ffffff;
+
+    --vt-space-1: 4px;
+    --vt-space-2: 8px;
+    --vt-space-3: 12px;
+    --vt-space-4: 16px;
+    --vt-space-5: 20px;
+    --vt-space-6: 24px;
+    --vt-space-8: 32px;
+    --vt-space-10: 40px;
+    --vt-space-12: 48px;
+
+    --vt-radius-sm: 6px;
+    --vt-radius-md: 9px;
+    --vt-radius-lg: 13px;
+    --vt-radius-xl: 18px;
+    --vt-radius-pill: 999px;
+
+    --vt-shadow-xs: 0 1px 2px rgba(16, 24, 40, .04);
+    --vt-shadow-sm: 0 4px 14px rgba(16, 24, 40, .06);
+    --vt-shadow-md: 0 14px 36px rgba(16, 24, 40, .10);
+    --vt-shadow-focus: 0 0 0 3px rgba(37, 99, 235, .14);
+
+    --vt-ease: cubic-bezier(.2, .8, .2, 1);
+    --vt-fast: 140ms;
+    --vt-normal: 220ms;
+
+    /* Compatibility layer for Adianti/theme-builder variables. */
+    --font-family: var(--vt-font-sans);
+    --font-size: 13px;
+    --text-color: var(--vt-muted);
+    --text-color-strong: var(--vt-ink);
+    --text-color-light: var(--vt-muted-light);
+    --template-border-color: var(--vt-border);
+    --main-color: var(--vt-brand);
+    --scrollbar-color: #cbd3df;
+
+    --header-height: 68px;
+    --header-box-width: 64px;
+    --header-background-color: rgba(255, 255, 255, .96);
+    --header-border-bottom: var(--vt-border);
+    --header-logo-background: var(--vt-sidebar-deep);
+    --header-logo-border-right: rgba(255, 255, 255, .06);
+    --header-logo-border-bottom: rgba(255, 255, 255, .06);
+    --header-track-border-right: var(--vt-border);
+    --header-text-color: var(--vt-ink);
+    --header-logo-text-color: #ffffff;
+    --header-box-shadow: 0 1px 0 rgba(16, 24, 40, .04);
+
+    --menu-width: 292px;
+    --menu-background-color: var(--vt-sidebar-deep);
+    --menu-border-right: rgba(255, 255, 255, .05);
+    --menu-master-color-strong: #ffffff;
+    --menu-background-check: rgba(96, 165, 250, .16);
+    --menu-check-color: #ffffff;
+    --menu-button-border-color: transparent;
+    --menu-icon-font-size: 15px;
+    --menu-box-shadow: 8px 0 24px rgba(15, 23, 42, .08);
+
+    --submenu-background-color: var(--vt-sidebar);
+    --submenu-border-right: rgba(255, 255, 255, .05);
+    --submenu-text-color: var(--vt-sidebar-text);
+    --submenu-sub-text-color: #8f9db1;
+    --submenu-text-hover: #ffffff;
+    --submenu-background-check: rgba(59, 130, 246, .14);
+    --submenu-check-color: #ffffff;
+    --submenu-font-size: 13px;
+    --submenu-padding-horizontal: 10px;
+    --submenu-item-padding-horizontal: 12px;
+    --submenu-item-padding-vertical: 9px;
+    --menu-user-splash-background: transparent;
+
+    --live-background-color: var(--vt-canvas);
+    --live-area-width: 1680px;
+    --content-background: var(--vt-canvas);
+    --content-border-color: var(--vt-border);
+    --content-border-radius: var(--vt-radius-lg);
+
+    --button-height: 38px;
+    --button-border: var(--vt-border-strong);
+    --button-text-color: var(--vt-ink-soft);
+    --button-text-color-hover: var(--vt-brand);
+    --button-background: var(--vt-surface);
+    --button-border-radius: var(--vt-radius-md);
+    --button-padding: 14px;
+    --button-box-shadow: var(--vt-shadow-xs);
+
+    --field-height: 40px;
+    --field-border-color: var(--vt-border-strong);
+    --field-focus-border-color: var(--vt-brand);
+    --field-border-radius: var(--vt-radius-md);
+    --field-background: var(--vt-surface);
+    --field-color: var(--vt-ink);
+    --field-placeholder-color: var(--vt-muted-light);
+    --field-padding-horizontal: 12px;
+    --field-padding-vertical: 7px;
+    --field-disabled-background: var(--vt-surface-muted);
+    --field-disabled-text-color: var(--vt-muted);
+    --field-disabled-border: var(--vt-border);
+    --field-check-color: var(--vt-brand);
+
+    --panel-background: var(--vt-surface);
+    --panel-border-color: var(--vt-border);
+    --panel-border-radius: var(--vt-radius-lg);
+    --panel-box-shadow: var(--vt-shadow-xs);
+    --panel-header-background: transparent;
+    --panel-header-color: var(--vt-ink);
+    --panel-header-font-size: 15px;
+    --panel-header-font-weight: 650;
+    --panel-header-padding-vertical: 18px;
+    --panel-header-padding-horizontal: 20px;
+    --panel-header-border-color: var(--vt-border);
+    --panel-body-padding: 20px;
+    --panel-footer-background: var(--vt-surface-subtle);
+    --panel-row-margin-bottom: 16px;
+
+    --table-header-background: var(--vt-surface-subtle);
+    --table-header-color: #536176;
+    --table-header-border-color: var(--vt-border);
+    --table-header-font-size: 11px;
+    --table-header-font-weight: 650;
+    --table-header-padding-vertical: 12px;
+    --table-body-color: var(--vt-ink-soft);
+    --tr-odd-background: var(--vt-surface);
+    --tr-even-background: var(--vt-surface);
+    --tr-hover-background: #f7f9fc;
+    --tr-hover-color: var(--vt-ink);
+
+    --tab-background: transparent;
+    --tab-color: var(--vt-muted);
+    --tab-active-background: transparent;
+    --tab-active-color: var(--vt-brand);
+    --tab-active-border-color: var(--vt-brand);
+    --tab-border-color: transparent;
+    --tab-border-radius: 0;
+    --tab-font-size: 13px;
+    --tab-font-weight: 550;
+    --tab-active-font-weight: 650;
+
+    --modal-background: var(--vt-surface);
+    --modal-footer-background: var(--vt-surface-subtle);
+    --modal-header-background: var(--vt-surface);
+    --modal-header-color: var(--vt-ink);
+    --color-overlay: rgba(15, 23, 42, .52);
+    --preloader-color: var(--vt-brand);
+    --color-action: var(--vt-brand);
+
+    --color-green: var(--vt-success);
+    --color-red: var(--vt-danger);
+    --color-blue: var(--vt-brand);
+    --color-orange: var(--vt-warning);
+    --color-sea: var(--vt-accent);
+    --color-purple: #7c5cc4;
+}
+
+html,
+body {
+    background: var(--vt-canvas);
+    color: var(--vt-ink-soft);
+    font-family: var(--vt-font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+* {
+    scrollbar-color: #cbd3df transparent;
+    scrollbar-width: thin;
+}
+
+::selection {
+    color: #ffffff;
+    background: rgba(37, 99, 235, .82);
+}
+
+:focus-visible {
+    outline: 2px solid var(--vt-brand) !important;
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
+
+@media print {
+    :root {
+        --vt-canvas: #ffffff;
+        --panel-box-shadow: none;
+    }
+}
