@@ -331,7 +331,7 @@ class SigissWebService
                 "codigo_nbs"                => "1.2001.50.00",
                 "exterior_prestacao_servico"=> "0",
                 "pais_local_prest"          => "Brasil",
-                "cidade_local_prest"        => "Santa Barbara D'Oeste",
+                "cidade_local_prest"        => "Santa Barbara d'Oeste",
                 "uf_local_prest"            => "SP",
 
                 // ----------------------
@@ -341,7 +341,7 @@ class SigissWebService
                 "ind_op"                    => "050101",
                 "exterior_op"               => "0",
                 "uf_local_op"               => "SP",
-                "cidade_local_op"           => "Santa Barbara D'Oeste",
+                "cidade_local_op"           => "Santa Barbara d'Oeste",
                 "consumo_pessoal"           => "0",
 
                 // bloco destinatário CBS/IBS
@@ -364,7 +364,13 @@ class SigissWebService
             ];
             
             foreach ($campos as $tag => $valor) {
-                $el = $xml->createElement($tag, htmlspecialchars($valor));
+
+                $el = $xml->createElement($tag);
+
+                $el->appendChild(
+                    $xml->createTextNode((string) ($valor ?? ''))
+                );
+
                 $nf->appendChild($el);
             }
 
