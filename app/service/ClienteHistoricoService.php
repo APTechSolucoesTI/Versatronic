@@ -41,20 +41,22 @@ class ClienteHistoricoService
         foreach ($items as &$item) {
             $item['anterior'] = self::valor($item['oldvalue'], $categorias);
             $item['novo'] = self::valor($item['newvalue'], $categorias);
-            $item['responsavel'] = trim((string) $item['login']) !== '' ? $item['login'] : 'Não identificado';
             // The logger records the request class, not necessarily the method that performed the write.
-            // Only these specific entry points identify the origin; list screens may also run a sync.
+            // Only confirmed CRM form writes may attribute the change to the session user.
             $origens = ['PessoaCategoriaClienteForm' => 'Alteração no CRM', 'AtualizacaoService' => 'Sincronização TOTVS'];
             $item['origem'] = $origens[$item['class_name'] ?? ''] ?? 'Origem não identificada';
+            $trace = (string) ($item['log_trace'] ?? '');
+            if (preg_match('/\bPessoaCategoriaClienteForm(?:->|::)onSave\(/', $trace)) {
+                $item['origem'] = 'Alteração no CRM';
+            }
             // A list can trigger synchronization while retaining the initiating user's session.
             // The trace identifies that path; the session login is not the author in TOTVS.
-            if (strpos((string) ($item['log_trace'] ?? ''), 'AtualizacaoService::atualizarCliente') !== false) {
+            if (strpos($trace, 'AtualizacaoService::atualizarCliente') !== false) {
                 $item['origem'] = 'Sincronização TOTVS';
             }
-            if ($item['origem'] === 'Sincronização TOTVS' && trim((string) $item['login']) !== '') {
-                $item['responsavel'] = 'Sessão CRM: ' . $item['login'];
-            }
-            unset($item['log_trace']);
+            $item['responsavel'] = $item['origem'] === 'Alteração no CRM'
+                ? (trim((string) $item['login']) !== '' ? $item['login'] : 'Não identificado') : null;
+            unset($item['log_trace'], $item['login']);
             // Older logger versions classified NULL -> category as "created" even on existing customers.
             $item['evento'] = $item['operation'] === 'created' ? 'Categoria registrada'
                 : ($item['operation'] === 'deleted' ? 'Remoção registrada' : 'Alteração');

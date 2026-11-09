@@ -35,6 +35,7 @@ try {
     $db->exec("INSERT INTO pessoa (id, codigo, razao_social, categoria_cliente_id, obs)
         VALUES (1, 'C-TESTE', 'Cliente de teste', 1, NULL), (2, 'OUTRO', 'Outro cliente', 6, NULL)");
     TSession::setValue('login', 'teste');
+    $_REQUEST['class'] = 'PessoaCategoriaClienteForm';
 
     // Record a real change through the existing model hooks.
     $pessoa = new Pessoa(1);
@@ -55,7 +56,12 @@ try {
     check($historico['items'][1]['anterior'] === '01 — Não Classificado' && $historico['items'][1]['novo'] === '06 — E',
         'Resolve códigos e nomes das categorias');
     check($historico['items'][0]['novo'] === 'Não informada', 'Representa categoria removida');
-    check($historico['items'][0]['responsavel'] === 'teste', 'Preserva autoria do log');
+    check($historico['items'][0]['responsavel'] === 'teste' && $historico['items'][0]['origem'] === 'Alteração no CRM',
+        'Salvamento pela tela de categoria preserva o usuário do CRM');
+    $action = new TAction(['ClienteFormView', 'onShow'], ['key' => 1]);
+    $crmHtml = (string) ClienteHistoricoPanel::criar($historico, $action);
+    check(strpos($crmHtml, '>teste<') !== false && strpos($crmHtml, 'Alteração no CRM') !== false,
+        'Exibe o responsável quando a alteração foi feita pela tela do CRM');
 
     // Setting a previously null category is a change on an existing customer.
     TTransaction::open('minicrm');
@@ -81,7 +87,7 @@ try {
     $historico = ClienteHistoricoService::carregar(1, 999);
     check($historico['total'] === 15 && $historico['page'] === 2 && count($historico['items']) === 5,
         'Paginação tem total confiável e limita página inválida');
-    check($historico['items'][0]['responsavel'] === 'Não identificado', 'Não inventa autor em execução automática antiga');
+    check($historico['items'][0]['responsavel'] === null, 'Não inventa autor em execução automática antiga');
     $action = new TAction(['ClienteFormView', 'onShow'], ['key' => 1]);
     $html = (string) ClienteHistoricoPanel::criar($historico, $action);
     check(strpos($html, '<script>alert(1)</script>') === false && strpos($html, '&lt;script&gt;') !== false,
@@ -118,9 +124,41 @@ try {
         VALUES (301,'pessoa','1','categoria_cliente_id','changed','2026-12-02 10:00:00','1','6','usuario_sync','ClienteList','AtualizacaoService::atualizarCliente()')");
     TTransaction::close();
     $sync = ClienteHistoricoService::carregar(1)['items'][0];
-    check($sync['origem'] === 'Sincronização TOTVS' && $sync['responsavel'] === 'Sessão CRM: usuario_sync',
-        'Sincronização pela listagem identifica a sessão, sem atribuir autoria na TOTVS');
-    check(!array_key_exists('log_trace', $sync), 'Rastreio interno não é exposto no resultado do histórico');
+    check($sync['origem'] === 'Sincronização TOTVS' && $sync['responsavel'] === null,
+        'Sincronização não atribui a alteração ao usuário que sincronizou');
+    check(!array_key_exists('log_trace', $sync) && !array_key_exists('login', $sync),
+        'Rastreio e login bruto não são expostos no resultado do histórico');
+    $syncHtml = (string) ClienteHistoricoPanel::criar(ClienteHistoricoService::carregar(1), $action);
+    check(strpos($syncHtml, 'usuario_sync') === false && strpos($syncHtml, 'Usuário da sessão') === false,
+        'Histórico não exibe o login da sincronização como autor da alteração');
+    check(strpos($syncHtml, 'Sincronização TOTVS') !== false,
+        'Interface identifica mudanças recebidas da TOTVS sem mostrar usuário');
+
+    TTransaction::open('log');
+    $insertOrigin = TTransaction::get()->prepare("INSERT INTO system_change_log
+        (id,tablename,pkvalue,columnname,operation,logdate,oldvalue,newvalue,login,class_name,log_trace)
+        VALUES (?,'pessoa','1','categoria_cliente_id','changed','2026-12-03 10:00:00','1','6',?,?,?)");
+    foreach ([
+        [302, 'autor_crm', 'OutraTela', 'PessoaCategoriaClienteForm->onSave()'],
+        [303, 'sync_direto', 'AtualizacaoService', ''],
+        [304, 'legado_sem_origem', 'ClienteList', ''],
+        [305, 'sync_sobrepoe', 'PessoaCategoriaClienteForm', 'AtualizacaoService::atualizarCliente()'],
+        [306, '', 'PessoaCategoriaClienteForm', ''],
+    ] as $fixture) {
+        $insertOrigin->execute($fixture);
+    }
+    TTransaction::close();
+    $origens = array_column(ClienteHistoricoService::carregar(1)['items'], null, 'id');
+    check($origens[302]['responsavel'] === 'autor_crm' && $origens[302]['origem'] === 'Alteração no CRM',
+        'Rastreio do formulário também comprova alteração direta pelo CRM');
+    foreach ([303, 304, 305] as $id) {
+        check($origens[$id]['responsavel'] === null, 'Não atribui autoria de sincronização ou origem desconhecida: ' . $id);
+    }
+    check($origens[306]['responsavel'] === 'Não identificado', 'Alteração comprovada no CRM sem login não inventa usuário');
+    $origensHtml = (string) ClienteHistoricoPanel::criar(ClienteHistoricoService::carregar(1), $action);
+    check(strpos($origensHtml, '>autor_crm<') !== false && strpos($origensHtml, 'legado_sem_origem') === false
+        && strpos($origensHtml, 'sync_direto') === false && strpos($origensHtml, 'sync_sobrepoe') === false,
+        'Lista mista exibe somente os autores comprovados de alterações no CRM');
 
     // Audit failure must not leak configuration or break the customer's other tabs.
     TConnection::setDatabaseInfo('log', ['type' => 'sqlite', 'name' => sys_get_temp_dir() . '/versa-missing-directory/secret.db']);
