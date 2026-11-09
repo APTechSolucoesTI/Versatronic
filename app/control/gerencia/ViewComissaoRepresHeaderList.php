@@ -13,6 +13,7 @@ class ViewComissaoRepresHeaderList extends TPage
     private static $formName = 'formList_ViewComissaoRepres';
     private $showMethods = ['onReload', 'onSearch', 'onRefresh', 'onClearFilters', 'onGlobalSearch'];
     private $limit = 20;
+    private $totaisFiltrados = ['valor' => 0, 'comissao' => 0];
 
     use BuilderDatagridTrait;
 
@@ -29,8 +30,6 @@ class ViewComissaoRepresHeaderList extends TPage
         {
             $this->adianti_target_container = $param['target_container'];
         }
-
-        $this->limit = 0;
 
         $criteria_coligada_id = new TCriteria();
         $criteria_representante = new TCriteria();
@@ -121,11 +120,11 @@ class ViewComissaoRepresHeaderList extends TPage
         $column_comissao_transformed = new TDataGridColumn('comissao', "Comissao", 'left' , '8%');
 
         $column_valor_transformed->setTotalFunction( function($values) { 
-            return array_sum((array) $values); 
+            return $this->totaisFiltrados['valor'];
         }); 
 
         $column_comissao_transformed->setTotalFunction( function($values) { 
-            return array_sum((array) $values); 
+            return $this->totaisFiltrados['comissao'];
         }); 
 
         $column_coligada_id_transformed->setTransformer(function($value, $object, $row, $cell = null, $last_row = null)
@@ -365,6 +364,10 @@ class ViewComissaoRepresHeaderList extends TPage
         $this->datagrid->addAction($action_onVisualizarInteracao);
 
         $this->applyDatagridProperties();
+        $this->limit = (int) $this->limit;
+        if (!in_array($this->limit, [10, 20, 30, 50, 100], true)) {
+            $this->limit = 20;
+        }
 
         // create the datagrid model
         $this->datagrid->createModel();
@@ -1315,7 +1318,18 @@ class ViewComissaoRepresHeaderList extends TPage
 
             // reset the criteria for record count
             $criteria->resetProperties();
-            $count= $repository->count($criteria);
+            // Keep totals for the complete filtered set without rendering every invoice.
+            $summarySql = new TSqlSelect();
+            $summarySql->setEntity(ViewComissaoRepres::TABLENAME);
+            $summarySql->addColumn('COUNT(*) AS total');
+            $summarySql->addColumn('COALESCE(SUM(valor), 0) AS valor');
+            $summarySql->addColumn('COALESCE(SUM(comissao), 0) AS comissao');
+            $summarySql->setCriteria($criteria);
+            $summaryQuery = TTransaction::get()->prepare($summarySql->getInstruction(true));
+            $summaryQuery->execute($criteria->getPreparedVars());
+            $summary = $summaryQuery->fetch(PDO::FETCH_ASSOC);
+            $count = (int) $summary['total'];
+            $this->totaisFiltrados = ['valor' => (float) $summary['valor'], 'comissao' => (float) $summary['comissao']];
 
             $this->pageNavigation->setCount($count); // count of records
             $this->pageNavigation->setProperties($param); // order, page

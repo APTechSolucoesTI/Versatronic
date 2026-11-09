@@ -22,7 +22,7 @@ class ClienteHistoricoPanel
     {
         $panel = self::container();
         $descricao = 'Mudanças de categoria do cliente';
-        $panel->add('<p class="cliente-history-intro">Datas de registro no CRM, no horário de Brasília. Mudanças na TOTVS podem aparecer aqui após a sincronização. Nomes e códigos das categorias refletem o cadastro atual.</p>');
+        $panel->add('<p class="cliente-history-intro">Datas de registro no CRM, no horário de Brasília. Mudanças na TOTVS podem aparecer aqui após a sincronização. Nomes e códigos das categorias refletem o cadastro atual. Em sincronizações, o login identifica a sessão do CRM, não o autor na TOTVS.</p>');
 
         if (!$dados['total']) {
             $panel->add('<div class="cliente-history-state" role="status"><strong>Nenhuma alteração registrada</strong><p>Não há mudanças de categoria na auditoria do CRM. A categoria atual não comprova a classificação em datas anteriores.</p></div>');
@@ -32,13 +32,13 @@ class ClienteHistoricoPanel
         $inicio = ($dados['page'] - 1) * $dados['pageSize'] + 1;
         $fim = min($dados['page'] * $dados['pageSize'], $dados['total']);
         $panel->add('<p class="cliente-history-summary" role="status">' . $inicio . '–' . $fim . ' de ' . $dados['total'] . ' registros · Mais recentes primeiro</p>');
-        $table = '<div class="cliente-history-table-wrap"><table class="cliente-history-table"><caption class="sr-only">' . $descricao . '</caption><thead><tr><th scope="col">Registrado em</th><th scope="col">Valor anterior</th><th scope="col">Novo valor</th><th scope="col">Responsável / origem</th></tr></thead><tbody>';
+        $table = '<div class="cliente-history-table-wrap"><table class="cliente-history-table"><caption class="sr-only">' . $descricao . '</caption><thead><tr><th scope="col">Registrado em</th><th scope="col">Valor anterior</th><th scope="col">Novo valor</th><th scope="col">Usuário da sessão / origem</th></tr></thead><tbody>';
         foreach ($dados['items'] as $item) {
             $data = self::data((string) $item['logdate']);
             $table .= '<tr><td data-label="Registrado em"><span class="cliente-history-date">' . self::escape($data) . '</span><span class="cliente-history-meta">' . self::escape($item['evento']) . '</span></td>'
                 . '<td data-label="Valor anterior"><div class="cliente-history-value">' . self::escape($item['anterior']) . '</div></td>'
                 . '<td data-label="Novo valor"><div class="cliente-history-value cliente-history-new">' . self::escape($item['novo']) . '</div></td>'
-                . '<td data-label="Responsável / origem">' . self::escape($item['responsavel']) . '<span class="cliente-history-meta">' . self::escape($item['origem']) . '</span></td></tr>';
+                . '<td data-label="Usuário da sessão / origem">' . self::escape($item['responsavel']) . '<span class="cliente-history-meta">' . self::escape($item['origem']) . '</span></td></tr>';
         }
         $panel->add($table . '</tbody></table></div>');
         $nav = new TElement('nav');

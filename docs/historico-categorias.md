@@ -19,6 +19,10 @@ As datas são as de gravação no CRM, exibidas em Brasília. Uma alteração re
 
 Mudanças por SQL direto não passam pelo hook do model. A integração futura da OBS da comissão deve ser definida separadamente; não há garantia de captura de escritas externas.
 
+O login do log é o da sessão do CRM. Sincronizações disparadas por listagens podem registrar o usuário que iniciou a atualização, sem identificar quem alterou a categoria na TOTVS. Quando o rastreio confirma `AtualizacaoService::atualizarCliente`, a origem é **Sincronização TOTVS** e o login é rotulado **Sessão CRM**. O rastreio interno é usado somente nessa identificação e não é enviado para a interface.
+
+A listagem de comissões agora limita a abertura a 20 notas por página e aceita somente tamanhos entre 10 e 100. O carregamento ilimitado anterior podia enviar todas as notas e seus controles ao navegador. Os totais são calculados no banco para todo o conjunto filtrado, preservando seu significado sem renderizar todas as linhas.
+
 ## Implementação e validação
 
 1. Serviço de leitura `ClienteHistoricoService`, com consultas parametrizadas e paginação no banco.

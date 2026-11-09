@@ -23,7 +23,7 @@ class ClienteHistoricoService
         $pages = max(1, (int) ceil($total / self::PAGE_SIZE));
         $pagina = min(max(1, $pagina), $pages);
         $offset = ($pagina - 1) * self::PAGE_SIZE;
-        $query = $conn->prepare("SELECT id, logdate, login, operation, oldvalue, newvalue, class_name, php_sapi
+        $query = $conn->prepare("SELECT id, logdate, login, operation, oldvalue, newvalue, class_name, php_sapi, log_trace
             FROM system_change_log WHERE $where
             ORDER BY logdate DESC, id DESC LIMIT " . self::PAGE_SIZE . " OFFSET $offset");
         $query->execute($params);
@@ -46,6 +46,15 @@ class ClienteHistoricoService
             // Only these specific entry points identify the origin; list screens may also run a sync.
             $origens = ['PessoaCategoriaClienteForm' => 'Alteração no CRM', 'AtualizacaoService' => 'Sincronização TOTVS'];
             $item['origem'] = $origens[$item['class_name'] ?? ''] ?? 'Origem não identificada';
+            // A list can trigger synchronization while retaining the initiating user's session.
+            // The trace identifies that path; the session login is not the author in TOTVS.
+            if (strpos((string) ($item['log_trace'] ?? ''), 'AtualizacaoService::atualizarCliente') !== false) {
+                $item['origem'] = 'Sincronização TOTVS';
+            }
+            if ($item['origem'] === 'Sincronização TOTVS' && trim((string) $item['login']) !== '') {
+                $item['responsavel'] = 'Sessão CRM: ' . $item['login'];
+            }
+            unset($item['log_trace']);
             // Older logger versions classified NULL -> category as "created" even on existing customers.
             $item['evento'] = $item['operation'] === 'created' ? 'Categoria registrada'
                 : ($item['operation'] === 'deleted' ? 'Remoção registrada' : 'Alteração');

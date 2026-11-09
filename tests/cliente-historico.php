@@ -112,6 +112,16 @@ try {
     check(strpos((string) ClienteHistoricoPanel::criar($legado, $action), 'cadastro atual') !== false,
         'Interface informa que nomes das categorias refletem o cadastro atual');
 
+    TTransaction::open('log');
+    TTransaction::get()->exec("INSERT INTO system_change_log
+        (id,tablename,pkvalue,columnname,operation,logdate,oldvalue,newvalue,login,class_name,log_trace)
+        VALUES (301,'pessoa','1','categoria_cliente_id','changed','2026-12-02 10:00:00','1','6','usuario_sync','ClienteList','AtualizacaoService::atualizarCliente()')");
+    TTransaction::close();
+    $sync = ClienteHistoricoService::carregar(1)['items'][0];
+    check($sync['origem'] === 'Sincronização TOTVS' && $sync['responsavel'] === 'Sessão CRM: usuario_sync',
+        'Sincronização pela listagem identifica a sessão, sem atribuir autoria na TOTVS');
+    check(!array_key_exists('log_trace', $sync), 'Rastreio interno não é exposto no resultado do histórico');
+
     // Audit failure must not leak configuration or break the customer's other tabs.
     TConnection::setDatabaseInfo('log', ['type' => 'sqlite', 'name' => sys_get_temp_dir() . '/versa-missing-directory/secret.db']);
     $erro = (string) ClienteHistoricoPanel::carregar(1, 1, $action);
