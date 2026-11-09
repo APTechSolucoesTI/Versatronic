@@ -164,7 +164,7 @@ class ClienteFormView extends TPage
 
         $tab_622940daf9f3b->addContent([$panel]);
 
-        $tab_622940daf9f3b->appendPage("Histórico");
+        $tab_622940daf9f3b->appendPage("Histórico de Interações");
 
         $this->interacao_cliente_id_list = new TQuickGrid;
         $this->interacao_cliente_id_list->style = 'width:100%';
@@ -245,6 +245,15 @@ class ClienteFormView extends TPage
         $panel->add(new BootstrapDatagridWrapper($this->interacao_cliente_id_list));
 
         $tab_622940daf9f3b->addContent([$panel]);
+        $tab_622940daf9f3b->appendPage('Histórico de Categorias');
+        $historicoAction = new TAction(['ClienteFormView', 'onShow'], [
+            'key' => $pessoa->id,
+            'target_container' => 'adianti_right_panel',
+            'current_tab_tab_622940daf9f3b' => 3,
+        ]);
+        $tab_622940daf9f3b->addContent([ClienteHistoricoPanel::carregar(
+            (int) $pessoa->id, (int) ($param['categorias_page'] ?? 1), $historicoAction
+        )]);
         $row6 = $this->form->addFields([$tab_622940daf9f3b]);
         $row6->layout = [' col-sm-12'];
 

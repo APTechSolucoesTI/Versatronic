@@ -1,0 +1,61 @@
+.cliente-history {
+    --history-bg: var(--card, #fff);
+    --history-text: var(--foreground, #111827);
+    --history-muted: var(--muted-foreground, #667085);
+    --history-border: var(--border, #e4e7ec);
+    --history-subtle: var(--muted, #f1f3f5);
+    --history-primary: var(--primary, #1686a7);
+    color: var(--history-text);
+    background: var(--history-bg);
+    padding: 16px 0;
+    font: 14px/20px Inter, ui-sans-serif, system-ui, sans-serif;
+    min-width: 0;
+}
+.cliente-history-intro { color: var(--history-muted); margin: 0 0 16px; }
+.cliente-history-summary { color: var(--history-muted); font-size: 12px; margin: 0 0 8px; }
+.cliente-history-table-wrap { border: 1px solid var(--history-border); border-radius: 8px; overflow: auto; max-height: 65vh; background: var(--history-bg); }
+.cliente-history-table { border-collapse: collapse; width: 100%; font-size: 12px; line-height: 18px; }
+.cliente-history-table th { background: var(--history-subtle); padding: 8px; text-align: left; font-weight: 600; position: sticky; top: 0; z-index: 1; }
+.cliente-history-table td { border-top: 1px solid var(--history-border); padding: 12px 8px; vertical-align: top; }
+.cliente-history-table tbody tr:hover { background: var(--history-subtle); }
+.cliente-history-date { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cliente-history-meta { display: block; margin-top: 4px; color: var(--history-muted); font-size: 12px; }
+.cliente-history-value { white-space: pre-wrap; overflow-wrap: anywhere; min-width: 100px; max-width: 32rem; }
+.cliente-history-new { font-weight: 600; }
+.cliente-history-pagination { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 12px; font-size: 12px; }
+.cliente-history-pagination > span { margin-right: auto; }
+.cliente-history .btn:focus-visible { outline: 2px solid var(--history-primary); outline-offset: 3px; }
+.cliente-history-state { padding: 24px 16px; background: var(--history-bg); border: 1px dashed var(--history-border); border-radius: 8px; }
+.cliente-history-state strong { display: block; font-size: 14px; font-weight: 600; }
+.cliente-history-state p { color: var(--history-muted); margin: 8px 0 0; }
+.cliente-history-panel .nav-tabs, #tab_622940daf9f3b .nav-tabs { display: flex; flex-wrap: wrap; }
+.cliente-history-panel .nav-tabs a:focus-visible, #tab_622940daf9f3b .nav-tabs a:focus-visible { outline: 2px solid var(--ring, #45bdd6); outline-offset: 2px; }
+@media (max-width: 1023px) {
+    #adianti_right_panel > .container-part[page-name="ClienteFormView"],
+    #adianti_right_panel > .container-part[page-name="ViewComissaoRepresInteracoes"] { width: 100% !important; }
+}
+@media (max-width: 639px) {
+    .cliente-history { padding: 12px 0; }
+    .cliente-history-table-wrap { border: 0; overflow: visible; max-height: none; background: transparent; }
+    .cliente-history-table, .cliente-history-table tbody, .cliente-history-table tr, .cliente-history-table td { display: block; width: 100%; }
+    .cliente-history-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    .cliente-history-table tr { border: 1px solid var(--history-border); border-radius: 8px; background: var(--history-bg); padding: 4px 12px; margin-bottom: 12px; }
+    .cliente-history-table td { border: 0; padding: 8px 0; }
+    .cliente-history-table td::before { content: attr(data-label); display: block; color: var(--history-muted); font-size: 12px; margin-bottom: 4px; }
+    .cliente-history-value { max-width: none; min-width: 0; }
+    .cliente-history .btn, .cliente-history-panel .nav-tabs a, #tab_622940daf9f3b .nav-tabs a { min-height: 44px; display: inline-flex; align-items: center; }
+    .cliente-history-panel .interacao-history-info { grid-template-columns: 1fr; }
+    .cliente-history-panel .interacao-history-header { padding: 16px; }
+    .cliente-history-panel .interacao-history-card-top { flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .cliente-history-panel .interacao-history-card { transition: none; }
+}
+.dark .cliente-history, [data-theme="dark"] .cliente-history {
+    --history-bg: #0d0e11;
+    --history-text: #f4f6f8;
+    --history-muted: #9ca3af;
+    --history-border: #27292f;
+    --history-subtle: #191b20;
+    --history-primary: #47c4dd;
+}

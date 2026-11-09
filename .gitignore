@@ -1,0 +1,19 @@
+# Environment-specific settings stay on each server/workstation.
+/app/config/*
+!/app/config/.htaccess
+!/app/config/framework_hashes.php
+!/app/config/examples/
+
+# Local database files and generated runtime content.
+/app/database/*.db
+/app/database/*.db-*
+/tmp/
+/files/
+/anexos/
+/app/output/
+/.well-known/
+/files-archive.tgz
+/anexos-archive.tgz
+.env
+.env.*
+!.env.example

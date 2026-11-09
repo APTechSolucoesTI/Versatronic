@@ -70,7 +70,7 @@ class SystemChangeLogService
         {
             foreach ($currentState as $key => $value)
             {
-                if (isset($lastState[$key]) && ($value != $lastState[$key]) && !in_array($key, [$created_col, $updated_col, $deleted_col]))
+                if (array_key_exists($key, $lastState) && ($value != $lastState[$key]) && !in_array($key, [$created_col, $updated_col, $deleted_col]))
                 {
                     // changed
                     $log = new SystemChangeLog;
@@ -95,7 +95,7 @@ class SystemChangeLogService
                     $log->store();
                 }
                 
-                if (!isset($lastState[$key]) && !empty($value) && !in_array($key, [$created_col, $updated_col, $deleted_col]))
+                if (!array_key_exists($key, $lastState) && !empty($value) && !in_array($key, [$created_col, $updated_col, $deleted_col]))
                 {
                     // created
                     $log = new SystemChangeLog;

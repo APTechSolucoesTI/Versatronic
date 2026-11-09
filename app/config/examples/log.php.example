@@ -1,0 +1,11 @@
+<?php
+// Copy to app/config/log.php and configure this environment.
+return array (
+  'host' => 'CHANGE_ME_HOST',
+  'name' => 'CHANGE_ME_DATABASE',
+  'user' => 'CHANGE_ME_USER',
+  'pass' => 'CHANGE_ME_PASSWORD',
+  'type' => 'pgsql',
+  'prep' => '1',
+  'slog' => 'SystemSqlLogService',
+);

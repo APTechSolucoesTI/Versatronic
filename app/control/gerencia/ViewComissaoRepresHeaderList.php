@@ -356,7 +356,7 @@ class ViewComissaoRepresHeaderList extends TPage
         $action_onVisualizarInteracao = new TDataGridAction(array('ViewComissaoRepresHeaderList', 'onVisualizarInteracao'));
         $action_onVisualizarInteracao->setUseButton(false);
         $action_onVisualizarInteracao->setButtonClass('btn btn-default btn-sm');
-        $action_onVisualizarInteracao->setLabel("Visualizar Interações");
+        $action_onVisualizarInteracao->setLabel("Histórico do Cliente");
         $action_onVisualizarInteracao->setImage('fas:search-plus #000000');
         $action_onVisualizarInteracao->setField(self::$primaryKey);
 
@@ -522,6 +522,27 @@ class ViewComissaoRepresHeaderList extends TPage
                     throw new Exception(
                         "Cliente {$codigoCliente} não encontrado no CRM."
                     );
+                }
+
+                // Static Adianti actions append right panels. Page only this list into a
+                // stable inner container so pagination/retry never stacks duplicate panels.
+                $historicoAction = new TAction(['ViewComissaoRepresHeaderList', 'onVisualizarInteracao'], [
+                    'codigoc' => $codigoCliente,
+                    'historico_tab' => 1,
+                    'fragmento_categorias' => 1,
+                    'target_container' => 'cliente_categorias_comissao',
+                ]);
+                $categoriasPanel = ClienteHistoricoPanel::carregar(
+                    (int) $cliente->id, (int) ($param['categorias_page'] ?? 1), $historicoAction
+                );
+                if (!empty($param['fragmento_categorias'])) {
+                    TTransaction::close();
+                    $transactionOpen = false;
+                    $fragmento = new TElement('div');
+                    $fragmento->adianti_target_container = 'cliente_categorias_comissao';
+                    $fragmento->add($categoriasPanel);
+                    $fragmento->show();
+                    return;
                 }
 
                 /*
@@ -820,6 +841,21 @@ class ViewComissaoRepresHeaderList extends TPage
                 );
 
                 $totalInteracoes = count($interacoes ?: []);
+                $resumoInteracoes = $totalInteracoes . ($totalInteracoes === 1 ? ' interação' : ' interações');
+
+                $historicoTabs = new BootstrapFormBuilder('historico_cliente_comissao');
+                $historicoTabs->setTagName('div');
+                $historicoTabs->setProperty('style', 'border:none; box-shadow:none; margin:0;');
+                $historicoTabs->appendPage('Interações');
+                $interacoesPanel = new TElement('div');
+                $interacoesPanel->add($cards);
+                $historicoTabs->addContent([$interacoesPanel]);
+                $historicoTabs->appendPage('Histórico de Categorias');
+                $categoriasContainer = new TElement('div');
+                $categoriasContainer->id = 'cliente_categorias_comissao';
+                $categoriasContainer->add($categoriasPanel);
+                $historicoTabs->addContent([$categoriasContainer]);
+                $historicoTabs->setCurrentPage(min(1, max(0, (int) ($param['historico_tab'] ?? 0))));
 
                 TTransaction::close();
                 $transactionOpen = false;
@@ -828,7 +864,7 @@ class ViewComissaoRepresHeaderList extends TPage
                 * Conteúdo do painel.
                 */
                 $container = new TElement('div');
-                $container->class = 'interacao-history-container';
+                $container->class = 'interacao-history-container cliente-history-panel';
 
                 $container->add("
                     <style>
@@ -1019,7 +1055,7 @@ class ViewComissaoRepresHeaderList extends TPage
 
                             <div>
                                 <div class='interacao-history-title'>
-                                    Histórico de Interações
+                                    Histórico do Cliente
                                 </div>
 
                                 <div class='interacao-history-subtitle'>
@@ -1027,7 +1063,7 @@ class ViewComissaoRepresHeaderList extends TPage
                                     · Código {$codigoClienteHtml}
 
                                     <span class='interacao-history-count'>
-                                        {$totalInteracoes}
+                                        {$resumoInteracoes}
                                     </span>
                                 </div>
                             </div>
@@ -1037,6 +1073,7 @@ class ViewComissaoRepresHeaderList extends TPage
                                 class='btn btn-default btn-sm'
                                 onclick='Template.closeRightPanel();'
                                 title='Fechar'
+                                aria-label='Fechar histórico do cliente'
                             >
                                 <i class='fas fa-times'></i>
                             </button>
@@ -1045,10 +1082,11 @@ class ViewComissaoRepresHeaderList extends TPage
 
                     </div>
 
-                    <div class='interacao-history-list'>
-                        {$cards}
-                    </div>
                 ");
+                $tabsContainer = new TElement('div');
+                $tabsContainer->class = 'interacao-history-list';
+                $tabsContainer->add($historicoTabs);
+                $container->add($tabsContainer);
 
                 /*
                 * Abre no painel lateral direito.
@@ -1083,13 +1121,16 @@ class ViewComissaoRepresHeaderList extends TPage
                     'right-panel > .container-part[page-name=ViewComissaoRepresInteracoes]'
                 );
 
-                $style->width = '48% !important';
+                $style->width = 'min(100vw, 980px) !important';
                 $style->show(true);
 
             //</autoCode>
         }
         catch (Exception $e) 
         {
+            if ($transactionOpen) {
+                TTransaction::rollback();
+            }
             new TMessage('error', $e->getMessage());    
         }
     }
