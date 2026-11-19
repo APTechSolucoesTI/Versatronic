@@ -184,12 +184,12 @@ class SigissWebService
                     + '|'
                     + ISNULL(
                         (SELECT STRING_AGG(
-                                    'FATURA / DUPLICATA: ' + l.NUMERODOCUMENTO
+                                    'DUPLICATA: ' + l.NUMERODOCUMENTO
                                     + ' - VALOR : ' + FORMAT(
                                             (l.VALORORIGINAL - l.valorop1 - l.valorop2 - l.valorop3 - ISNULL(tt.valor_retido, 0)),
                                             'C', 'pt-br'
                                     )
-                                    + ' - DATA DE VENCIMENTO : ' + CONVERT(varchar(30), l.DATAVENCIMENTO, 103),
+                                    + ' - DATA DE VENC. : ' + CONVERT(varchar(30), l.DATAVENCIMENTO, 103),
                                     '|'
                             )
                         FROM flan l (NOLOCK)
