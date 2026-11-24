@@ -21,6 +21,7 @@ class SigissWebService
     // Método principal que executa todo o fluxo
     public static function buscarNota($numero, $coligada_id){
         try {
+            $bloqueio = self::bloquearProcessamentoNota(self::normalizarNumeroNota($numero), (int) $coligada_id);
             // Executa todos os passos do processo
             $resultGetNota = self::getNota($numero, $coligada_id);
             if ($resultGetNota['status'] === 'error') {
@@ -109,6 +110,9 @@ class SigissWebService
                 'numero' => $numero,
                 'mensagem' => $e->getMessage()
             ];
+        } finally {
+            // A sessão PostgreSQL mantém o bloqueio até a conexão ser liberada.
+            unset($bloqueio);
         }
     }
 
@@ -131,6 +135,9 @@ class SigissWebService
 
             TTransaction::open(self::$dbAp);
             $coligada = Coligada::find($coligada_id);
+            if (!$coligada) {
+                throw new DomainException('Coligada não encontrada.');
+            }
             if (NotaBaixada::where('numero', '=', $numero)->where('coligada_id', '=', $coligada->id)->count() > 0) {
                 TTransaction::close();
                 return [
@@ -141,6 +148,27 @@ class SigissWebService
             }
             TTransaction::close();
 
+            [$dados, $xml] = self::prepararNotaTotvs($numero, (int) $coligada_id, $coligada);
+            $arquivoPath = self::caminhoNota($coligada, $numero, 'totvs', 'xml');
+            self::salvarArquivoNota($arquivoPath, $xml);
+
+            TTransaction::open(self::$dbAp);
+            $nota = new NotaBaixada();
+            self::preencherNotaTotvs($nota, $dados, $numero, (int) $coligada_id, $arquivoPath);
+            $nota->nota_status_id = NotaStatus::ERRO;
+            $nota->store();
+            TTransaction::close();
+
+            return ['status' => 'success', 'numero' => $numero, 'mensagem' => 'XML gerado com sucesso'];
+        } catch (Exception $e) {
+            TTransaction::rollback();
+            LogCrontab::registrarLog(__CLASS__, __METHOD__, 1, $e->getMessage(), "Linha: " . $e->getLine());
+            return ['status' => 'error', 'numero' => $numero, 'mensagem' => $e->getMessage()];
+        }
+    }
+
+    private static function prepararNotaTotvs(string $numero, int $coligada_id, Coligada $coligada): array
+    {
             $sqlNota ="SELECT
                         m.numeromov as numero,
                         m.dataemissao as data_emissao,
@@ -219,54 +247,26 @@ class SigissWebService
                         LEFT JOIN GMUNICIPIO G (NOLOCK) ON G.CODETDMUNICIPIO = F.CODETDPGTO AND G.CODMUNICIPIO = F.CODMUNICIPIOPGTO
                     WHERE
                         m.codtmv = '2.2.15'
-                        AND m.codcoligada = $coligada_id
-                        AND m.numeromov = '$numero'
+                        AND m.codcoligada = :coligada
+                        AND m.numeromov = :numero
                     ORDER BY
                         m.numeromov";
 
             TTransaction::open(self::$dbRm);
             $conn = TTransaction::get();
-            $result = $conn->query($sqlNota);
-            $objects = $result->fetchAll(PDO::FETCH_CLASS, "stdClass");
+            $result = $conn->prepare($sqlNota);
+            $result->execute([':coligada' => $coligada_id, ':numero' => $numero]);
+            $dados = $result->fetch(PDO::FETCH_OBJ);
             TTransaction::close();
 
-            if (empty($objects)) {
-                return [
-                    'status' => 'error',
-                    'numero' => $numero,
-                    'mensagem' => "Nenhum registro encontrado para a nota {$numero}"
-                ];
+            if (!$dados) {
+                throw new DomainException("Nota {$numero} não encontrada na TOTVS para a coligada selecionada.");
             }
 
-            $dados = $objects[0];
-            
-            if(empty($dados->tiporua)){
-                return [
-                    'status' => 'error',
-                    'numero' => $numero,
-                    'mensagem' => "Campo tipo rua não informado para nota $numero"
-                ];
-            }
-            if(empty($dados->tipobairro)){
-                return [
-                    'status' => 'error',
-                    'numero' => $numero,
-                    'mensagem' => "Campo tipo bairro não informado para nota $numero"
-                ];
-            }
-            if(empty($dados->forma_pagamento)){
-                return [
-                    'status' => 'error',
-                    'numero' => $numero,
-                    'mensagem' => "Campo forma de pagamento não informado para nota $numero"
-                ];
-            }
-            if(empty($dados->cidadepgto)){
-                return [
-                    'status' => 'error',
-                    'numero' => $numero,
-                    'mensagem' => "Campo cidade de pagamento não informado para nota $numero"
-                ];
+            foreach (['tiporua' => 'tipo rua', 'tipobairro' => 'tipo bairro', 'forma_pagamento' => 'forma de pagamento', 'cidadepgto' => 'cidade de pagamento'] as $campo => $rotulo) {
+                if (empty($dados->$campo)) {
+                    throw new DomainException("Campo {$rotulo} não informado para nota {$numero}.");
+                }
             }
             
             $xml = new DOMDocument("1.0", "ISO-8859-1");
@@ -377,46 +377,211 @@ class SigissWebService
             $root->appendChild($nf);
             $xml->appendChild($root);
 
-            $numero = preg_replace('/\D/', '', $dados->numero);
-            $coligada_pasta = str_replace(' ', '_', $coligada->nome);
-            $arquivoPath = realpath('.') . "/files/notas/{$coligada_pasta}/totvs/{$numero}.xml";
-            $xml->save($arquivoPath);
-
-            if (!file_exists($arquivoPath)) {
-                return [
-                    'status' => 'error',
-                    'numero' => $numero,
-                    'mensagem' => "Erro ao salvar XML {$numero} da coligada {$coligada->nome}."
-                ];
-            } else {
-                TTransaction::open(self::$dbAp);
-                $nota = new NotaBaixada();
-                $nota->coligada_id    = $coligada_id;
-                $nota->nota_status_id = NotaStatus::ERRO;
-                $nota->numero         = $numero;
-                $nota->totvs_xml      = $arquivoPath;
-                $nota->data_emissao   = $dados->data_emissao;
-                $nota->razao_social   = $dados->razao_social;
-                $nota->documento      = preg_replace('/\D/', '', $dados->cnpj_cpf);
-                $nota->valor_total    = $dados->valor_total;
-                $nota->enviado_email  = 0;
-                $nota->store();
-                TTransaction::close();
-
-                return [
-                    'status' => 'success',
-                    'numero' => $numero,
-                    'mensagem' => 'XML gerado com sucesso'
-                ];
+            $conteudo = $xml->saveXML();
+            if ($conteudo === false) {
+                throw new DomainException("Não foi possível gerar o XML da TOTVS para a nota {$numero}.");
             }
-        } catch (Exception $e) {
-            LogCrontab::registrarLog(__CLASS__,__METHOD__,1,$e->getMessage(),"Arquivo: " . $e->getFile() . "<br/>Linha: " . $e->getLine());
+            return [$dados, $conteudo];
+    }
 
-            return [
-                'status' => 'error',
-                'numero' => $numero,
-                'mensagem' => $e->getMessage()
-            ];
+    private static function preencherNotaTotvs(NotaBaixada $nota, object $dados, string $numero, int $coligada, string $caminho): void
+    {
+        $nota->coligada_id = $coligada;
+        $nota->numero = $numero;
+        $nota->totvs_xml = $caminho;
+        $nota->data_emissao = $dados->data_emissao;
+        $nota->razao_social = $dados->razao_social;
+        $nota->documento = preg_replace('/\D/', '', $dados->cnpj_cpf);
+        $nota->valor_total = $dados->valor_total;
+        $nota->enviado_email = 0;
+    }
+
+    public static function recuperarNota(string $numero, int $coligadaId): array
+    {
+        $numero = trim($numero);
+        if (!preg_match('/^[0-9]{1,9}$/D', $numero) || (int) $numero === 0 || $coligadaId < 1) {
+            throw new DomainException('Selecione a coligada e informe o número da nota na TOTVS.');
+        }
+        $numero = str_pad(ltrim($numero, '0'), 6, '0', STR_PAD_LEFT);
+
+        $bloqueio = self::bloquearProcessamentoNota($numero, $coligadaId);
+        try {
+            TTransaction::open(self::$dbAp);
+            $coligada = Coligada::find($coligadaId);
+            TTransaction::close();
+            if (!$coligada) {
+                throw new DomainException('Coligada não encontrada.');
+            }
+
+            [$dados, $xmlTotvs] = self::prepararNotaTotvs($numero, $coligadaId, $coligada);
+            $dataOs = self::buscarDataEmissaoOsTotvs($numero, $coligadaId);
+            try {
+                $token = self::login($coligadaId);
+            } catch (Exception $e) {
+                throw new DomainException('Não foi possível autenticar a coligada no SigissWeb.');
+            }
+
+            // Estes endpoints apenas consultam documentos de uma nota que já existe no SigissWeb.
+            $xmlRps = self::consultarDocumentoSigiss("nfes/pegaxml/{$numero}/serierps/1", $token, 'XML do RPS');
+            $rps = self::lerXmlSigiss($xmlRps, 'XML do RPS');
+            $numeroNf = self::campoXmlSigiss($rps, 'numero_nf');
+            $serieNf = self::campoXmlSigiss($rps, 'serie');
+            if (!preg_match('/^[0-9]+$/D', $numeroNf) || (int) $numeroNf === 0 || $serieNf === '') {
+                throw new DomainException('O SigissWeb não retornou número e série de uma NFS-e emitida para esse RPS.');
+            }
+
+            $nf = rawurlencode($numeroNf);
+            $serie = rawurlencode($serieNf);
+            $xmlNf = self::consultarDocumentoSigiss("nfes/pegaxmlpelonumeronf/{$nf}/serienf/{$serie}", $token, 'XML da NFS-e');
+            $situacao = strtoupper(self::campoXmlSigiss(self::lerXmlSigiss($xmlNf, 'XML da NFS-e'), 'cancelada'));
+            if (!in_array($situacao, ['S', 'N'], true)) {
+                throw new DomainException('O XML da NFS-e retornado pelo SigissWeb não informa uma situação válida.');
+            }
+            $pdf = self::consultarDocumentoSigiss("nfes/nfimpressa/{$nf}/serie/{$serie}", $token, 'PDF da NFS-e');
+            if (!str_starts_with($pdf, '%PDF-')) {
+                throw new DomainException('O SigissWeb não retornou um PDF válido para essa NFS-e.');
+            }
+
+            TTransaction::open(self::$dbAp);
+            $notas = NotaBaixada::where('numero', '=', $numero)->where('coligada_id', '=', $coligadaId)->load();
+            if (count($notas ?? []) > 1) {
+                throw new DomainException('Há mais de um registro desse número na coligada. Confira a duplicidade antes de recuperar.');
+            }
+            $nota = $notas ? reset($notas) : new NotaBaixada();
+            if ((!empty($nota->numero_nf) && ltrim((string) $nota->numero_nf, '0') !== ltrim($numeroNf, '0'))
+                || (!empty($nota->serie_nf) && (string) $nota->serie_nf !== $serieNf)) {
+                throw new DomainException('O número ou a série da NFS-e diverge do registro que já está no sistema.');
+            }
+
+            $caminhoTotvs = self::caminhoNota($coligada, $numero, 'totvs', 'xml');
+            if (empty($nota->totvs_xml) || !is_file($nota->totvs_xml)) {
+                self::salvarArquivoNota($caminhoTotvs, $xmlTotvs);
+                if (!$nota->id) {
+                    self::preencherNotaTotvs($nota, $dados, $numero, $coligadaId, $caminhoTotvs);
+                } else {
+                    $nota->totvs_xml = $caminhoTotvs;
+                }
+            }
+
+            $nota->rps_xml = self::caminhoNota($coligada, $numero, 'rps', 'xml');
+            self::salvarArquivoNota($nota->rps_xml, $xmlRps);
+            $nota->nfs_xml = self::caminhoNota($coligada, $numero, 'nfs', 'xml');
+            self::salvarArquivoNota($nota->nfs_xml, $xmlNf);
+            $nota->nfs_pdf = self::caminhoNota($coligada, $numero, 'nfs', 'pdf');
+            self::salvarArquivoNota($nota->nfs_pdf, $pdf);
+            $nota->numero_nf = $numeroNf;
+            $nota->serie_nf = $serieNf;
+            $nota->nota_status_id = $situacao === 'S' ? NotaStatus::CANCELADA : NotaStatus::AUTORIZADA;
+            $nota->data_emissao = $nota->data_emissao ?: $dados->data_emissao;
+            $nota->data_emissao_os = $nota->data_emissao_os ?: $dataOs;
+            $nota->store();
+            TTransaction::close();
+
+            $mensagem = "NFS-e {$numeroNf} recuperada. O XML e o PDF foram salvos.";
+            if ($situacao === 'S') {
+                return ['status' => 'success', 'mensagem' => $mensagem . ' Situação no SigissWeb: cancelada.'];
+            }
+            if (empty($nota->data_emissao_os)) {
+                return ['status' => 'warning', 'mensagem' => $mensagem . ' A comissão ficou pendente porque a data da OS não foi localizada na TOTVS.'];
+            }
+            if (empty($nota->data_emissao)) {
+                return ['status' => 'warning', 'mensagem' => $mensagem . ' A comissão ficou pendente porque a data de emissão não foi localizada na TOTVS.'];
+            }
+
+            $dataEmissao = (new DateTimeImmutable((string) $nota->data_emissao))->format('Y-m-d');
+            $comissao = self::atualizarComissaoNotasBaixadasPorPeriodo($dataEmissao, $dataEmissao, false, (int) $nota->id);
+            if (($comissao['status'] ?? '') !== 'success' || ($comissao['status_rateio'] ?? '') !== 'success') {
+                return ['status' => 'warning', 'mensagem' => $mensagem . ' Houve uma falha no cálculo da comissão ou no rateio. Tente a recuperação novamente.'];
+            }
+
+            TTransaction::open(self::$dbAp);
+            $statusComissao = (new NotaBaixada($nota->id))->tem_comissao;
+            TTransaction::close();
+            $mensagem .= match ($statusComissao) {
+                'S' => ' Comissão calculada.',
+                'N' => ' A nota ficou sem comissão pelas regras do sistema.',
+                'C', 'P' => ' O status anterior da comissão foi preservado.',
+                default => ' A comissão ficou pendente. Confira o rateio da nota na TOTVS.',
+            };
+            return ['status' => empty($statusComissao) ? 'warning' : 'success', 'mensagem' => $mensagem];
+        } finally {
+            TTransaction::rollback();
+            unset($bloqueio);
+        }
+    }
+
+    private static function bloquearProcessamentoNota(string $numero, int $coligadaId): PDO
+    {
+        $conexao = TConnection::open(self::$dbAp);
+        $stmt = $conexao->prepare('SELECT CAST(pg_try_advisory_lock(:coligada, hashtext(:chave)) AS integer)');
+        $stmt->execute([':coligada' => $coligadaId, ':chave' => 'sigiss-nota:' . ltrim($numero, '0')]);
+        if ((int) $stmt->fetchColumn() !== 1) {
+            throw new DomainException('Essa nota já está sendo processada. Aguarde e tente novamente.');
+        }
+        return $conexao;
+    }
+
+    private static function consultarDocumentoSigiss(string $rota, string $token, string $tipo): string
+    {
+        $ch = curl_init(self::$url . $rota);
+        self::configurarSslCurl($ch);
+        curl_setopt_array($ch, [
+            CURLOPT_HTTPGET => true,
+            CURLOPT_HTTPHEADER => ["Authorization: {$token}"],
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 8,
+            CURLOPT_TIMEOUT => 20,
+        ]);
+        $conteudo = curl_exec($ch);
+        $codigo = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($conteudo === false || $conteudo === '' || $codigo !== 200) {
+            if ($codigo === 404 && $tipo === 'XML do RPS') {
+                throw new DomainException('O SigissWeb não encontrou uma NFS-e emitida para esse número e coligada.');
+            }
+            throw new DomainException("Não foi possível consultar {$tipo} no SigissWeb" . ($codigo ? " (HTTP {$codigo})." : '.'));
+        }
+        return $conteudo;
+    }
+
+    private static function lerXmlSigiss(string $conteudo, string $tipo): DOMXPath
+    {
+        $xml = new DOMDocument();
+        if (!$xml->loadXML($conteudo, LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING) || $xml->doctype) {
+            throw new DomainException("O SigissWeb não retornou um {$tipo} válido.");
+        }
+        return new DOMXPath($xml);
+    }
+
+    private static function campoXmlSigiss(DOMXPath $xml, string $campo): string
+    {
+        return trim($xml->evaluate("string((//*[local-name() = '{$campo}'])[1])"));
+    }
+
+    private static function caminhoNota(Coligada $coligada, string $numero, string $tipo, string $extensao): string
+    {
+        $pasta = str_replace(' ', '_', $coligada->nome);
+        return realpath('.') . "/files/notas/{$pasta}/{$tipo}/{$numero}.{$extensao}";
+    }
+
+    private static function salvarArquivoNota(string $caminho, string $conteudo): void
+    {
+        $diretorio = dirname($caminho);
+        if (!is_dir($diretorio) && !@mkdir($diretorio, 0755, true) && !is_dir($diretorio)) {
+            throw new DomainException('Não foi possível acessar a pasta de arquivos da nota.');
+        }
+        $temporario = @tempnam($diretorio, '.nota-');
+        if ($temporario === false) {
+            throw new DomainException('Não foi possível preparar o arquivo da nota no servidor.');
+        }
+        try {
+            if (@file_put_contents($temporario, $conteudo) !== strlen($conteudo) || !@rename($temporario, $caminho)) {
+                throw new DomainException('Não foi possível salvar um dos arquivos da nota no servidor.');
+            }
+        } finally {
+            if (is_file($temporario)) {
+                @unlink($temporario);
+            }
         }
     }
 
@@ -446,6 +611,8 @@ class SigissWebService
             ]);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 8);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 20);
 
             $resposta = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -1289,7 +1456,7 @@ class SigissWebService
     // Filtra pelo período de emissão da nota,
     // mas só sincroniza notas que possuem data de emissão da OS preenchida
     
-    public static function atualizarComissaoNotasBaixadasPorPeriodo($dataInicial, $dataFinal, $zerarCanceladasErro = true)
+    public static function atualizarComissaoNotasBaixadasPorPeriodo($dataInicial, $dataFinal, $zerarCanceladasErro = true, ?int $notaId = null)
     {
         try {
             $dataInicial = self::normalizarDataFiltroComissao($dataInicial);
@@ -1303,11 +1470,12 @@ class SigissWebService
 
             $conn = TTransaction::get();
 
+            $filtroNota = $notaId === null ? '' : 'AND nb.id = :nota_id';
             $canceladasZeradas = 0;
 
             if ($zerarCanceladasErro) {
                 $stmtZerar = $conn->prepare("
-                    UPDATE nota_baixada
+                    UPDATE nota_baixada nb
                     SET tem_comissao = 'N',
                         comissao = 0
                     WHERE nota_status_id IN (2, 3)
@@ -1317,6 +1485,7 @@ class SigissWebService
                     AND tem_comissao IS DISTINCT FROM 'S'
                     AND tem_comissao IS DISTINCT FROM 'P'
                     AND data_emissao::date BETWEEN :data_inicial AND :data_final
+                    {$filtroNota}
                     AND (
                             tem_comissao IS DISTINCT FROM 'N'
                             OR comissao IS DISTINCT FROM 0
@@ -1325,6 +1494,9 @@ class SigissWebService
 
                 $stmtZerar->bindValue(':data_inicial', $dataInicial);
                 $stmtZerar->bindValue(':data_final', $dataFinal);
+                if ($notaId !== null) {
+                    $stmtZerar->bindValue(':nota_id', $notaId, PDO::PARAM_INT);
+                }
                 $stmtZerar->execute();
 
                 $canceladasZeradas = $stmtZerar->rowCount();
@@ -1346,6 +1518,7 @@ class SigissWebService
                 AND nb.tem_comissao IS DISTINCT FROM 'N'
                 AND nb.tem_comissao IS DISTINCT FROM 'S'
                 AND nb.data_emissao::date BETWEEN :data_inicial AND :data_final
+                {$filtroNota}
             ),
 
             base AS (
@@ -1762,13 +1935,16 @@ class SigissWebService
             $stmt = $conn->prepare($sql);
             $stmt->bindValue(':data_inicial', $dataInicial);
             $stmt->bindValue(':data_final', $dataFinal);
+            if ($notaId !== null) {
+                $stmt->bindValue(':nota_id', $notaId, PDO::PARAM_INT);
+            }
             $stmt->execute();
 
             $resumo = $stmt->fetch(PDO::FETCH_OBJ);
 
             TTransaction::close();
 
-            $centroCusto = self::atualizarCentroCustoNotasBaixadasPorPeriodo($dataInicial, $dataFinal);
+            $centroCusto = self::atualizarCentroCustoNotasBaixadasPorPeriodo($dataInicial, $dataFinal, $notaId);
 
             $mensagemCentroCusto = '';
 
@@ -1784,6 +1960,7 @@ class SigissWebService
 
             return [
                 'status' => 'success',
+                'status_rateio' => $centroCusto['status'],
                 'mensagem' =>
                     'Comissões atualizadas com sucesso.' .
                     '<br>Período: ' . date('d/m/Y', strtotime($dataInicial)) . ' até ' . date('d/m/Y', strtotime($dataFinal)) .
@@ -1818,11 +1995,12 @@ class SigissWebService
         }
     }
 
-    public static function atualizarCentroCustoNotasBaixadasPorPeriodo($dataInicial, $dataFinal)
+    public static function atualizarCentroCustoNotasBaixadasPorPeriodo($dataInicial, $dataFinal, ?int $notaId = null)
     {
         try {
             $dataInicial = self::normalizarDataFiltroComissao($dataInicial);
             $dataFinal   = self::normalizarDataFiltroComissao($dataFinal);
+            $filtroNota = $notaId === null ? '' : 'AND nb.id = :nota_id';
 
             if ($dataInicial > $dataFinal) {
                 throw new Exception('A data inicial não pode ser maior que a data final.');
@@ -1970,6 +2148,7 @@ class SigissWebService
                 USING nota_baixada nb
                 WHERE nb.id = ccn.nota_baixada_id
                 AND nb.data_emissao::date BETWEEN :data_inicial AND :data_final
+                {$filtroNota}
                 AND nb.tem_comissao IS DISTINCT FROM 'C'
                 AND nb.tem_comissao IS DISTINCT FROM 'P'
 
@@ -1978,6 +2157,9 @@ class SigissWebService
 
             $stmtDelete->bindValue(':data_inicial', $dataInicial);
             $stmtDelete->bindValue(':data_final', $dataFinal);
+            if ($notaId !== null) {
+                $stmtDelete->bindValue(':nota_id', $notaId, PDO::PARAM_INT);
+            }
             $stmtDelete->execute();
 
             $rateiosApagados = $stmtDelete->rowCount();
@@ -2033,6 +2215,7 @@ class SigissWebService
                     ON nb.coligada_id = r.coligada_id
                 AND nb.numero = r.numero
                 AND nb.data_emissao::date BETWEEN :data_inicial AND :data_final
+                {$filtroNota}
                 AND nb.tem_comissao IS DISTINCT FROM 'C'
                 AND nb.tem_comissao IS DISTINCT FROM 'P'
                 
@@ -2044,6 +2227,9 @@ class SigissWebService
 
             $stmtInsert->bindValue(':data_inicial', $dataInicial);
             $stmtInsert->bindValue(':data_final', $dataFinal);
+            if ($notaId !== null) {
+                $stmtInsert->bindValue(':nota_id', $notaId, PDO::PARAM_INT);
+            }
             $stmtInsert->execute();
 
             $rateiosInseridos = $stmtInsert->rowCount();
@@ -2060,6 +2246,7 @@ class SigissWebService
                     tem_comissao = NULL,
                     comissao = 0
                 WHERE nb.data_emissao::date BETWEEN :data_inicial AND :data_final
+                {$filtroNota}
                 AND nb.coligada_id IN (1, 2)
                 AND nb.nota_status_id = 1
 
@@ -2086,6 +2273,9 @@ class SigissWebService
 
             $stmtSemCentroCusto->bindValue(':data_inicial', $dataInicial);
             $stmtSemCentroCusto->bindValue(':data_final', $dataFinal);
+            if ($notaId !== null) {
+                $stmtSemCentroCusto->bindValue(':nota_id', $notaId, PDO::PARAM_INT);
+            }
             $stmtSemCentroCusto->execute();
 
             $notasSemCentroCusto = $stmtSemCentroCusto->rowCount();

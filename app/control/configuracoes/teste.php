@@ -129,6 +129,12 @@ class teste extends TPage
 
         $this->datagrid_form->addField($button_atualizar_comissao);
 
+        $button_salvar_nota = new TButton('button_salvar_nota_no_sistema');
+        $button_salvar_nota->setAction(new TAction([self::class, 'onAbrirRecuperacaoNota'], ['static' => 1]), 'Salvar nota no sistema');
+        $button_salvar_nota->addStyleClass('btn-default');
+        $button_salvar_nota->setImage('fas:file-download');
+        $this->datagrid_form->addField($button_salvar_nota);
+
         $dropdown_button_exportar = new TDropDown("Exportar", 'fas:file-export #2d3436');
         $dropdown_button_exportar->setPullSide('right');
         $dropdown_button_exportar->setButtonClass('btn btn-default waves-effect dropdown-toggle');
@@ -143,6 +149,7 @@ class teste extends TPage
         $head_left_actions->add($button_atualizar_cpfs);
         $head_left_actions->add($button_atualizar_notas);
         $head_left_actions->add($button_atualizar_comissao);
+        $head_left_actions->add($button_salvar_nota);
 
         $head_right_actions->add($dropdown_button_exportar);
 
@@ -1043,6 +1050,93 @@ class teste extends TPage
         catch (Exception $e) 
         {
             new TMessage('error', $e->getMessage());    
+        }
+    }
+
+    public static function onAbrirRecuperacaoNota($param = null)
+    {
+        if (!TSession::getValue('logged') || !SystemPermission::checkPermission(self::class)) {
+            new TMessage('error', 'Você não tem acesso à recuperação de notas.');
+            return;
+        }
+
+        try {
+            $window = TWindow::create('Salvar nota no sistema', 0.5, null);
+            $window->setMinWidth(0.95, 600);
+            $window->removePadding();
+
+            $form = new BootstrapFormBuilder('form_recuperar_nota_sigiss');
+            $form->addContent([new TLabel('Recupere uma NFS-e já emitida. Informe o número da nota na TOTVS.')]);
+
+            $coligada = new TDBCombo('coligada_id', 'minicrm', 'Coligada', 'id', '{nome}', 'nome asc');
+            $coligada->enableSearch();
+            $coligada->setSize('100%');
+            $numero = new TEntry('numero');
+            $numero->setSize('100%');
+            $numero->setMaxLength(9);
+            $numero->setProperty('inputmode', 'numeric');
+            $coligada->setProperty('aria-required', 'true');
+            $numero->setProperty('aria-required', 'true');
+
+            $rotuloColigada = new TLabel('Coligada');
+            $rotuloColigada->setProperty('for', $coligada->getId());
+            $rotuloNumero = new TLabel('Número na TOTVS');
+            $rotuloNumero->setProperty('for', $numero->getId());
+            $row = $form->addFields([$rotuloColigada, $coligada], [$rotuloNumero, $numero]);
+            $row->layout = ['col-sm-4 mb-2', 'col-sm-8 mb-2'];
+
+            $token = bin2hex(random_bytes(32));
+            TSession::setValue('recuperacao_nota_sigiss', ['token' => $token, 'window' => $window->getId()]);
+            $csrf = new THidden('recuperacao_token');
+            $csrf->setValue($token);
+            $form->addFields([$csrf]);
+            $form->addAction('Salvar nota no sistema', new TAction([self::class, 'onSalvarNotaNoSistema'], ['static' => 1]), 'fas:save #ffffff')
+                ->addStyleClass('btn-primary');
+
+            $window->add($form);
+            $window->show();
+        } catch (Throwable $e) {
+            error_log('Falha ao abrir recuperação de NFS-e: ' . get_class($e));
+            new TMessage('error', 'Não foi possível abrir o formulário de recuperação. Tente novamente.');
+        }
+    }
+
+    public static function onSalvarNotaNoSistema($param = null)
+    {
+        if (!TSession::getValue('logged') || !SystemPermission::checkPermission(self::class)) {
+            new TMessage('error', 'Você não tem acesso à recuperação de notas.');
+            return;
+        }
+
+        $recuperacao = TSession::getValue('recuperacao_nota_sigiss');
+        $token = $_POST['recuperacao_token'] ?? null;
+        if (!is_string($token) || empty($recuperacao['token']) || !hash_equals($recuperacao['token'], $token)) {
+            new TMessage('error', 'Abra novamente o formulário para recuperar a nota.');
+            return;
+        }
+
+        $coligada = filter_var($_POST['coligada_id'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 2147483647]]);
+        $numero = $_POST['numero'] ?? '';
+        if ($coligada === false || !is_string($numero)) {
+            new TMessage('error', 'Selecione a coligada e informe o número da nota na TOTVS.');
+            return;
+        }
+
+        try {
+            $resultado = SigissWebService::recuperarNota($numero, $coligada);
+            if ($resultado['status'] === 'warning') {
+                new TMessage('warning', $resultado['mensagem']);
+                return;
+            }
+
+            TSession::setValue('recuperacao_nota_sigiss', null);
+            TWindow::closeWindow($recuperacao['window']);
+            new TMessage('info', $resultado['mensagem']);
+        } catch (DomainException $e) {
+            new TMessage('error', $e->getMessage());
+        } catch (Throwable $e) {
+            error_log('Falha ao recuperar NFS-e: ' . get_class($e));
+            new TMessage('error', 'Não foi possível concluir a recuperação. Tente novamente.');
         }
     }
 
