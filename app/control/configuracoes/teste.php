@@ -965,21 +965,13 @@ class teste extends TPage
                 }
 
                 $dados = CNPJService::get($cnpj);
-                $dadosFull = CNPJService::getFull($cnpj);
-
-                if (!$dados || !$dadosFull)
-                {
-                    $ignoradas++;
-                    $erros[] = "Pessoa ID {$pessoaRow->id}: CNPJ não encontrado na API.";
-                    continue;
-                }
 
                 $cidadeId = $dados->cidade_id ?? null;
 
                 if (empty($cidadeId))
                 {
                     $ignoradas++;
-                    $erros[] = "Pessoa ID {$pessoaRow->id}: cidade_id não encontrado para o CNPJ {$cnpj}.";
+                    $erros[] = "Pessoa ID {$pessoaRow->id}: município do CNPJ {$cnpj} não localizado no cadastro de cidades.";
                     continue;
                 }
 
@@ -1005,16 +997,21 @@ class teste extends TPage
 
                 $sucesso++;
             }
-            catch (Exception $eItem)
+            catch (DomainException $eItem)
             {
+                $ignoradas++;
                 $erros[] = "Pessoa ID {$pessoaRow->id}: " . $eItem->getMessage();
+                if (in_array($eItem->getCode(), [429, 503], true)) {
+                    $erros[] = 'A atualização foi interrompida. Execute novamente para continuar com os cadastros pendentes.';
+                    break;
+                }
             }
         }
 
         TTransaction::close();
 
         $mensagem = "Processamento concluído.<br>"
-                  . "Total encontrados: {$total}<br>"
+                  . "Cadastros verificados: {$total}<br>"
                   . "Endereços criados: {$sucesso}<br>"
                   . "Ignorados: {$ignoradas}";
 
@@ -1029,7 +1026,9 @@ class teste extends TPage
         }
         catch (Exception $e) 
         {
-            new TMessage('error', $e->getMessage());    
+            TTransaction::rollback();
+            error_log('Falha na atualização de endereços por CNPJ: ' . get_class($e));
+            new TMessage('error', 'Não foi possível concluir a atualização de endereços por CNPJ.');
         }
     }
 

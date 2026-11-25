@@ -82,7 +82,7 @@ class PessoaForm extends TPage
         $pessoa_endereco_pessoa_principal->setInactiveIndexValue("N");
         $button_buscar_pessoa_endereco_pessoa->setAction(new TAction([$this, 'onBuscarCEP']), "Buscar");
         $button_adicionar_pessoa_endereco_pessoa->setAction(new TAction([$this, 'onAddDetailPessoaEnderecoPessoa'],['static' => 1]), "Adicionar");
-        $buscar_cnpj->setAction(new TAction(['BuscarCNPJForm', 'onShow'],['campo' => '["razao_social", "nome_fantasia","fone" ,"cpf_cnpj", "pessoa_endereco_pessoa_cep" ,"pessoa_endereco_pessoa_cidade_id", "pessoa_endereco_pessoa_id", "pessoa_endereco_pessoa_bairro", "pessoa_endereco_pessoa_rua" ,"pessoa_endereco_pessoa_numero" ,"pessoa_endereco_pessoa_complemento"]',"form" => self::$formName,"page" => "PessoaForm"]), "Buscar");
+        $buscar_cnpj->setAction(new TAction(['BuscarCNPJForm', 'onShow']), 'Buscar');
 
         $buscar_cnpj->addStyleClass('btn-default');
         $button_buscar_pessoa_endereco_pessoa->addStyleClass('btn-default');
